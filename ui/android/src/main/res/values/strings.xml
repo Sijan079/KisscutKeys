@@ -3,7 +3,7 @@
     <string name="app_name">Stickers</string>
     <string name="share_target_label">Save to library</string>
 
-    <!-- Home (placeholder until the Library screen, M3) -->
+    <!-- Library empty state -->
     <string name="home_empty_body">Share an image from any app, or add stickers from your photos.</string>
     <string name="home_add_stickers">Add stickers</string>
 
@@ -56,4 +56,105 @@
     <string name="new_collection_name">Name</string>
     <string name="new_collection_create">Create</string>
     <string name="new_collection_cancel">Cancel</string>
+    <!-- Navigation -->
+    <string name="nav_stickers">Stickers</string>
+    <string name="nav_collections">Collections</string>
+    <string name="nav_add">Add stickers</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Library -->
+    <string name="library_title">Stickers</string>
+    <string name="library_select">Select</string>
+    <string name="library_empty_title">No stickers yet</string>
+    <string name="rail_all">All</string>
+    <string name="rail_favorites">Favorites</string>
+    <string name="rail_recents">Recents</string>
+    <string name="kind_all">All</string>
+    <string name="kind_static">Static</string>
+    <string name="kind_animated">Animated</string>
+    <string name="hero_most_used">MOST USED</string>
+    <string name="hero_newest">NEWEST</string>
+    <string name="view_empty">Nothing here yet</string>
+    <string name="recents_empty">Stickers you send from the keyboard show up here.</string>
+    <string name="cd_sticker">Sticker</string>
+    <string name="cd_sticker_in">Sticker in %1$s</string>
+    <string name="cd_favorite">Favorite</string>
+    <string name="cd_animated">Animated</string>
+    <string name="state_selected">Selected</string>
+    <string name="state_not_selected">Not selected</string>
+    <string name="action_select">Select</string>
+
+    <!-- Select mode -->
+    <plurals name="select_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="select_all">Select all</string>
+    <string name="select_hint">Tap stickers to add or remove them.</string>
+    <string name="cd_cancel_selection">Cancel selection</string>
+    <string name="action_move">Move</string>
+    <string name="action_favorite">Favorite</string>
+    <string name="action_unfavorite">Unfavorite</string>
+    <plurals name="cd_delete_stickers">
+        <item quantity="one">Delete %d sticker</item>
+        <item quantity="other">Delete %d stickers</item>
+    </plurals>
+    <plurals name="move_stickers_title">
+        <item quantity="one">Move %d sticker</item>
+        <item quantity="other">Move %d stickers</item>
+    </plurals>
+    <plurals name="delete_stickers_title">
+        <item quantity="one">Delete %d sticker?</item>
+        <item quantity="other">Delete %d stickers?</item>
+    </plurals>
+    <string name="delete_stickers_body">They are removed from your library and from this device.</string>
+    <string name="move_unsorted_target">Unsorted</string>
+    <string name="delete_confirm">Delete</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Collections -->
+    <string name="collections_title">Collections</string>
+    <string name="collections_new">New</string>
+    <string name="collections_hint">Touch and hold a collection to rename, move or delete it.</string>
+    <string name="system_favorites">Favorites</string>
+    <string name="system_unsorted">Unsorted</string>
+    <plurals name="count_stickers">
+        <item quantity="one">%d sticker</item>
+        <item quantity="other">%d stickers</item>
+    </plurals>
+    <plurals name="count_subcollections">
+        <item quantity="one">%d subcollection</item>
+        <item quantity="other">%d subcollections</item>
+    </plurals>
+    <string name="count_join">%1$s · %2$s</string>
+    <string name="menu_rename">Rename</string>
+    <string name="menu_move">Move</string>
+    <string name="menu_delete">Delete</string>
+    <string name="menu_new_inside">New collection inside</string>
+    <string name="rename_title">Rename collection</string>
+    <string name="rename_save">Save</string>
+    <string name="name_refused">That name or place was not accepted. Collections nest at most 3 levels.</string>
+    <string name="move_collection_title">Move %1$s</string>
+    <string name="move_top_level">Top level</string>
+    <string name="move_nowhere">There is nowhere else this collection can go.</string>
+    <string name="delete_collection_title">Delete %1$s?</string>
+    <string name="delete_only">Delete collection only</string>
+    <string name="delete_only_body">Its stickers and subcollections move up one level. Nothing is lost.</string>
+    <string name="delete_everything">Delete everything</string>
+    <plurals name="delete_everything_body">
+        <item quantity="one">Also deletes %d sticker and every subcollection, from this device too.</item>
+        <item quantity="other">Also deletes %d stickers and every subcollection, from this device too.</item>
+    </plurals>
+
+    <!-- Inside a collection -->
+    <string name="cd_back">Back</string>
+    <string name="cd_more_options">More options</string>
+    <string name="cd_breadcrumb">Location</string>
+    <string name="section_subcollections">Subcollections</string>
+    <string name="section_in">In %1$s</string>
+    <string name="cd_new_subcollection">New subcollection</string>
+
+    <!-- Settings (placeholder until M5) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_soon">Theme, backup and keyboard settings arrive in a later update.</string>
 </resources>
