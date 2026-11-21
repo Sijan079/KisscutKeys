@@ -1,5 +1,6 @@
 package com.example.stickers.collections
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.toSize
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.stickers.TestLibrary
 import com.example.stickers.common.DialogTags
@@ -155,5 +157,24 @@ class CollectionsUiTest {
         openCollectionsTab()
         compose.onNodeWithTag(CollectionsTags.FAVORITES).performClick()
         waitFor(TileTags.sticker(s.id))
+    }
+
+    private fun bounds(tag: String): Rect =
+        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
+            .let { Rect(it.positionInRoot, it.size.toSize()) }
+
+    @Test
+    fun longTitleStaysClearOfTheArt() {
+        val id = runBlocking {
+            lib.collections.create("Mascots and items", null).id.also { c -> repeat(3) { lib.face(it + 1, c) } }
+        }
+        openCollectionsTab()
+        waitFor(CollectionsTags.row(id))
+        compose.onNodeWithTag(CollectionsTags.row(id)).performClick()
+        waitFor(DetailTags.ART)
+
+        val title = bounds(DetailTags.TITLE)
+        val art = bounds(DetailTags.ART)
+        assertTrue(title.right <= art.left || title.top >= art.bottom, "title $title runs under the art $art")
     }
 }

@@ -67,6 +67,9 @@ fun MiniStickers(previews: List<Sticker>, size: Dp, overlap: Dp, modifier: Modif
     }
 }
 
+/** Width of [StickerArt]; the title next to it leaves this much room. */
+val StickerArtWidth = 150.dp
+
 /** Three stickers scattered next to a collection title (decoration only). */
 @Composable
 fun StickerArt(art: List<Sticker>, modifier: Modifier = Modifier) {
@@ -75,7 +78,7 @@ fun StickerArt(art: List<Sticker>, modifier: Modifier = Modifier) {
         Triple(0.dp, 58.dp, 64.dp) to -12f,
         Triple(80.dp, 62.dp, 70.dp) to 14f,
     )
-    Box(modifier.size(150.dp, 132.dp)) {
+    Box(modifier.size(StickerArtWidth, 132.dp)) {
         // Die-cut stills look best scattered; photos and GIFs only fill in when there are too few.
         art.sortedByDescending { it.hasAlpha && !it.isAnimated }.take(spots.size).forEachIndexed { i, s ->
             val (place, angle) = spots[i]

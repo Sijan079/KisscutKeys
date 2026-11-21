@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -86,6 +87,7 @@ object DetailTags {
     const val BREADCRUMB = "detail:breadcrumb"
     const val EMPTY = "detail:empty"
     const val NEW_CHILD = "detail:new-child"
+    const val ART = "detail:art"
     fun child(id: Long) = "detail-child:$id"
     fun crumb(id: Long?) = "crumb:${id ?: "root"}"
 }
@@ -237,11 +239,11 @@ private fun Header(
 ) {
     Box(Modifier.fillMaxWidth()) {
         if (state.art.isNotEmpty()) {
-            StickerArt(state.art, Modifier.align(Alignment.TopEnd).clearAndSetSemantics {})
+            StickerArt(state.art, Modifier.align(Alignment.TopEnd).clearAndSetSemantics { testTag = DetailTags.ART })
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(end = if (state.art.isNotEmpty()) 120.dp else 0.dp, top = 6.dp),
+            modifier = Modifier.padding(end = if (state.art.isNotEmpty()) StickerArtWidth + 8.dp else 0.dp, top = 6.dp),
         ) {
             Breadcrumb(state, name, onCollectionsRoot, onOpen)
             Text(
