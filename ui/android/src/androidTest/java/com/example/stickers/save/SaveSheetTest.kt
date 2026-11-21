@@ -21,6 +21,13 @@ import com.example.stickers.shared.db.StickerCollection
 import com.example.stickers.ui.theme.StickersTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onAllNodesWithTag
+import com.example.stickers.shared.core.ImageInfo
+import com.example.stickers.shared.core.ImageType
+import kotlin.math.abs
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,11 +42,28 @@ class SaveSheetTest {
 
     private val backend = UiFakeBackend()
 
-    private fun show(vararg uris: String): SaveViewModel {
+    private fun show(vararg uris: String, dark: Boolean = true): SaveViewModel {
         val vm = SaveViewModel(backend, uris.toList())
-        compose.setContent { StickersTheme { SaveSheet(vm, onFinished = {}) } }
+        compose.setContent { StickersTheme(dark = dark) { SaveSheet(vm, onFinished = {}) } }
         compose.waitForIdle()
         return vm
+    }
+
+    @Test
+    fun gifBadgeIsDarkInLightModeLikeEveryOtherBadge() {
+        backend.details = ItemDetails(ImageInfo(ImageType.GIF, 512, 512, isAnimated = true, mayHaveAlpha = true), 1000)
+        show("content://test/1", dark = false)
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag(SaveTags.GIF_BADGE).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val img = compose.onNodeWithTag(SaveTags.GIF_BADGE).captureToImage().toPixelMap()
+        val fill = img[2, img.height / 2] // left edge of the pill, clear of the letters
+        val ink = Color(0xFF14131C)
+        val close = abs(fill.red - ink.red) < 0.05f &&
+            abs(fill.green - ink.green) < 0.05f &&
+            abs(fill.blue - ink.blue) < 0.05f
+        assertTrue(close, "badge fill $fill should be the dark badge color $ink")
     }
 
     @Test
@@ -133,7 +157,9 @@ private class UiFakeBackend : SaveBackend {
     override suspend fun createCollection(name: String, parentId: Long?): StickerCollection =
         StickerCollection(nextId++, name.trim(), parentId, 999, 0).also { collections.value = collections.value + it }
 
-    override suspend fun describe(uri: String): ItemDetails? = null
+    var details: ItemDetails? = null
+
+    override suspend fun describe(uri: String): ItemDetails? = details
 
     override suspend fun import(uri: String, collectionId: Long?): ImportResult {
         imported += uri to collectionId

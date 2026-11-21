@@ -1,4 +1,4 @@
-# ROADMAP.md
+﻿# ROADMAP.md
 
 Work top to bottom. Tick boxes as you finish. Do not start a milestone until the previous one's done criteria pass. Every milestone ends with: `gradlew test` green and notes added below it.
 
@@ -117,6 +117,7 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M2: "New collection" creates inside the selected collection, or beside it when the selected one is at depth 3.
 - 2026-11-21, M2: Checked on the emulator: shared from Google Photos ("Save to library" in the share sheet), saved into a nested collection, then shared again with "1 was already in your library" and still one file. The photo picker path works too. Chrome was not tried.
 - 2026-11-21, M2: Gotcha: `image/*` inside a KDoc comment opens a nested Kotlin comment and breaks the build.
+- 2026-11-21, M2: Save sheet checked against its board (dark and light, nested picker, GIF): matches. Fixed: the GIF badge used the page colors, so it was light in light mode (board: dark in both). Kept on purpose: rows are 48dp (board 44px, our 48dp rule), Unsorted has an inbox icon, "New collection in" names the selected collection (see above), preview tile uses the neutral raised fill (board: a violet tint).
 - 2026-11-21, M3: Design vs UI_SPEC conflicts settled with the user: the design's Library layout (round filter rail plus All/Static/Animated chips), with Recents added to the rail; hero = most used, else newest ("NEWEST" label until M4 counts uses); long-press on a collection opens rename/move/delete (drag-to-reorder later, hint text changed); 4-item nav with Add, Settings a placeholder until M5.
 - 2026-11-21, M3: Cut line is baked into the thumbnail at import (radius 12px of 384, white, anti-aliased) only for still images with transparent pixels; `hasAlpha` is read before padding. The shadow is drawn in Compose (same image tinted black, offset down) because its strength differs per theme. M2-era thumbnails had no outline: cleared emulator app data, no migration (nothing shipped).
 - 2026-11-21, M3: Versions: Navigation Compose 2.10.2 (approved list). No schema change; new queries only (all collections with counts, newest 3 stickers per collection, stickers in a subtree).
@@ -125,4 +126,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M3: UI tests use an in-memory database and temp folder (TestLibrary), so they never touch the emulator's real library. Debug-only SeedData/SeedReceiver fill the real library for screenshots (`adb shell am broadcast -n com.example.stickers/.debug.SeedReceiver --ez clear true`).
 - 2026-11-21, M3: Differences from the designs (screenshots in artifacts/): collection previews are real stickers on tinted rounded squares (design draws round faces); subcollection cards are 150-190dp wide (design 150); Recents in the rail; rail and nav labels ellipsize at font 2.0; GIFs show their first frame only (playback while visible is M6); a sticker tile reacts only to long-press outside select mode (no sticker viewer in v1).
 - 2026-11-21, M3: The emulator process exited once mid-run of connectedAndroidTest (reported as "status -1"); a restart and rerun passed 38/38.
-- 2026-11-21, M3: Trying official game stickers (Pokémon GIPHY, Atelier Ryza 3 icons) found 3 layout bugs the generated seed missed: long titles under the art, hero label covering the GIF badge, and the rail button's rounded clip shaving long labels. Fixed with tests. JPEG is rejected by spec (PNG, WebP, GIF only).
+- 2026-11-21, M3: Trying official game stickers (PokÃ©mon GIPHY, Atelier Ryza 3 icons) found 3 layout bugs the generated seed missed: long titles under the art, hero label covering the GIF badge, and the rail button's rounded clip shaving long labels. Fixed with tests. JPEG is rejected by spec (PNG, WebP, GIF only).

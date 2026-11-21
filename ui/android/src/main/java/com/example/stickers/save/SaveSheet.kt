@@ -211,12 +211,14 @@ private fun PreviewTile(item: SaveItem) {
             Text(
                 text = stringResource(R.string.save_badge_gif),
                 style = StickerType.Label.copy(fontSize = 10.sp, fontWeight = FontWeight(800)),
-                color = MaterialTheme.colorScheme.onBackground,
+                // Same badge colors as the library tiles: dark in both themes (design boards).
+                color = StickersTheme.colors.badgeText,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(8.dp)
+                    .testTag(SaveTags.GIF_BADGE)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(StickersTheme.colors.badgeFill)
                     .padding(horizontal = 7.dp, vertical = 2.dp),
             )
         }
@@ -496,4 +498,5 @@ object SaveTags {
     const val NEW_COLLECTION = "save_new_collection"
     const val NEW_COLLECTION_NAME = "save_new_collection_name"
     const val SUMMARY = "save_summary"
+    const val GIF_BADGE = "save_gif_badge"
 }
