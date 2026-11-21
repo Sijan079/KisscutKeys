@@ -32,11 +32,11 @@ Done when: all those tests pass.
 Done when: sharing an image from the emulator's browser or gallery saves it; duplicate share is a no-op; test coverage per TESTING.
 
 ## M3: Library and collections UI
-- [ ] Library screen (chips, grid, hero tile, floating nav) with true sticker look (cut line for transparent, tile for opaque, GIF badge)
-- [ ] Collections list (nested, counts) and Inside-a-collection screen with breadcrumb
-- [ ] Select mode: move, favorite, delete
-- [ ] Empty states and accessibility pass
-- [ ] Dark and light verified against the artifact with screenshots
+- [x] Library screen (chips, grid, hero tile, floating nav) with true sticker look (cut line for transparent, tile for opaque, GIF badge)
+- [x] Collections list (nested, counts) and Inside-a-collection screen with breadcrumb
+- [x] Select mode: move, favorite, delete
+- [x] Empty states and accessibility pass
+- [x] Dark and light verified against the artifact with screenshots
 
 Done when: UI tests pass and screenshots match the designs; differences listed.
 
@@ -101,3 +101,11 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M2: "New collection" creates inside the selected collection, or beside it when the selected one is at depth 3.
 - 2026-11-21, M2: Checked on the emulator: shared from Google Photos ("Save to library" in the share sheet), saved into a nested collection, then shared again with "1 was already in your library" and still one file. The photo picker path works too. Chrome was not tried.
 - 2026-11-21, M2: Gotcha: `image/*` inside a KDoc comment opens a nested Kotlin comment and breaks the build.
+- 2026-11-21, M3: Design vs UI_SPEC conflicts settled with the user: the design's Library layout (round filter rail plus All/Static/Animated chips), with Recents added to the rail; hero = most used, else newest ("NEWEST" label until M4 counts uses); long-press on a collection opens rename/move/delete (drag-to-reorder later, hint text changed); 4-item nav with Add, Settings a placeholder until M5.
+- 2026-11-21, M3: Cut line is baked into the thumbnail at import (radius 12px of 384, white, anti-aliased) only for still images with transparent pixels; `hasAlpha` is read before padding. The shadow is drawn in Compose (same image tinted black, offset down) because its strength differs per theme. M2-era thumbnails had no outline: cleared emulator app data, no migration (nothing shipped).
+- 2026-11-21, M3: Versions: Navigation Compose 2.10.2 (approved list). No schema change; new queries only (all collections with counts, newest 3 stickers per collection, stickers in a subtree).
+- 2026-11-21, M3: LazyVerticalGrid has no row span, so the 2x2 hero and the tiles beside it are one full-width block. Columns are 3 on phones, more on wide screens (100dp minimum cell).
+- 2026-11-21, M3: Bugs caught on the emulator: tapping the active Collections tab inside a collection reopened that collection (now returns to the list); at font scale 2.0 the nav pushed Settings off-screen (active label now ellipsizes). Both have tests.
+- 2026-11-21, M3: UI tests use an in-memory database and temp folder (TestLibrary), so they never touch the emulator's real library. Debug-only SeedData/SeedReceiver fill the real library for screenshots (`adb shell am broadcast -n com.example.stickers/.debug.SeedReceiver --ez clear true`).
+- 2026-11-21, M3: Differences from the designs (screenshots in artifacts/): collection previews are real stickers on tinted rounded squares (design draws round faces); subcollection cards are 150-190dp wide (design 150); Recents in the rail; rail and nav labels ellipsize at font 2.0; GIFs show their first frame only (playback while visible is M6); a sticker tile reacts only to long-press outside select mode (no sticker viewer in v1).
+- 2026-11-21, M3: The emulator process exited once mid-run of connectedAndroidTest (reported as "status -1"); a restart and rerun passed 38/38.
