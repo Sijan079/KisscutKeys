@@ -9,7 +9,8 @@ A sticker-only panel. It is **not** a full typing keyboard in v1. It provides a 
 ## Components
 
 - `StickerImeService : InputMethodService`: creates the panel view in `onCreateInputView()`, reads `currentInputEditorInfo` in `onStartInputView()`.
-- `StickerPanelView`: tab row (Recents, Favorites, collections), `RecyclerView` with `GridLayoutManager`, bottom bar (globe, back).
+- `StickerPanelView`: tab row (Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row, `RecyclerView` with `GridLayoutManager`, bottom bar (globe, All/Static/GIF, Backspace). Globe switches to the previous keyboard; long-press opens the system picker. Backspace is a key event, so the keyboard never reads the field.
+- `KeyboardModel`: the panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
 - `StickerAdapter`: binds thumbnails with Coil; for animated stickers loads the animation only when the item is attached and visible.
 - `StickerInserter`: commits the sticker to the target app.
 - Manifest: service with `android.permission.BIND_INPUT_METHOD`, intent filter `android.view.InputMethod`, `meta-data` pointing at `res/xml/method.xml`.

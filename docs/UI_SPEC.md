@@ -84,7 +84,7 @@ If building the true cut line proves too slow or ugly, fall back to a white 3dp 
 4. **Collections list:** nested list with expand/collapse, counts (total including descendants), add collection, long-press for rename, move, delete.
 5. **Inside a collection:** breadcrumb of parents, child collections as tiles first, then stickers.
 6. **Save (from share sheet):** bottom sheet with preview, a nested collection picker (tree with disclosure), "New collection", Save button. Handles multiple incoming images.
-7. **Keyboard in a chat:** see KEYBOARD.md. Panel height about 40% of the screen; top row of tabs (Recents, Favorites, collections), grid below, bottom row with globe key and back-to-letters key.
+7. **Keyboard in a chat:** see KEYBOARD.md. Panel height about 40% of the screen; top row of tabs (Recents and Favorites as icons, top-level collections, then Unsorted while it has stickers); a chip row with the selected collection's subcollections (All first, hidden when there are none); a 5-column grid on phones; bottom row with the globe key, an All/Static/GIF switch and Backspace (settled with the user in M4: the board wins over the old back-to-letters key).
 8. **Settings, backup and sharing:** theme, animation toggle, export all, export selected collection, import pack, keyboard setup shortcut, about.
 
 ## Navigation

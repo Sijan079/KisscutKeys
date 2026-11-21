@@ -59,7 +59,8 @@ Start with manual DI: a small `AppContainer` built in `Application.onCreate`, al
 | Database | Room (KMP) with KSP and `BundledSQLiteDriver` |
 | Settings | DataStore (preferences) |
 | UI | Jetpack Compose (Material 3), Navigation Compose |
-| Images in Compose | Coil 3, with GIF and animated WebP decoders |
+| Images in Compose | Coil 3, with GIF and animated WebP decoders (`coil` for the keyboard's ImageViews) |
+| Keyboard | AndroidX Core (commit content, FileProvider), RecyclerView |
 | Async | kotlinx.coroutines |
 | Serialization | kotlinx.serialization (manifest JSON) |
 | Tests | kotlin.test, JUnit4, Turbine (Flow), AndroidX Test, Compose UI test |

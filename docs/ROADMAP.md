@@ -41,11 +41,11 @@ Done when: sharing an image from the emulator's browser or gallery saves it; dup
 Done when: UI tests pass and screenshots match the designs; differences listed.
 
 ## M4: Keyboard
-- [ ] `StickerImeService`, panel view, tabs, grid, globe key (KEYBOARD)
-- [ ] Insert via commit-content with clipboard fallback and hints
-- [ ] `markUsed` on success; Recents works
-- [ ] Keyboard setup onboarding screen (enable, select, state tracking)
-- [ ] `ImeTestActivity` and keyboard tests
+- [x] `StickerImeService`, panel view, tabs, grid, globe key (KEYBOARD)
+- [x] Insert via commit-content with clipboard fallback and hints
+- [x] `markUsed` on success; Recents works
+- [x] Keyboard setup onboarding screen (enable, select, state tracking)
+- [x] `ImeTestActivity` and keyboard tests
 
 Done when: on the emulator a sticker is inserted into `ImeTestActivity` via the keyboard and tests pass.
 
@@ -127,3 +127,10 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M3: Differences from the designs (screenshots in artifacts/): collection previews are real stickers on tinted rounded squares (design draws round faces); subcollection cards are 150-190dp wide (design 150); Recents in the rail; rail and nav labels ellipsize at font 2.0; GIFs show their first frame only (playback while visible is M6); a sticker tile reacts only to long-press outside select mode (no sticker viewer in v1).
 - 2026-11-21, M3: The emulator process exited once mid-run of connectedAndroidTest (reported as "status -1"); a restart and rerun passed 38/38.
 - 2026-11-21, M3: Trying official game stickers (Pokémon GIPHY, Atelier Ryza 3 icons) found 3 layout bugs the generated seed missed: long titles under the art, hero label covering the GIF badge, and the rail button's rounded clip shaving long labels. Fixed with tests. JPEG is rejected by spec (PNG, WebP, GIF only).
+- 2026-11-21, M4: Panel follows the Keyboard board, not the old UI_SPEC line (user's call): globe, All/Static/GIF and Backspace at the bottom, a subcollection chip row, 5 columns. Unsorted tab added (user's call) so unsorted stickers stay reachable; the panel opens on Recents if used, else the first non-empty tab.
+- 2026-11-21, M4: Versions: RecyclerView 1.4.0, core-ktx 1.19.0, coil (views) 3.6.3, DataStore preferences 1.1.7 (all approved). DataStore holds only "setup dismissed" so far.
+- 2026-11-21, M4: Still stickers whose type the field rejects go as a lossless PNG copy in `cache/send/` (cleared on the next send); stills over 4096x4096 px skip conversion and go to the clipboard. Animated ones are never converted.
+- 2026-11-21, M4: Keyboard tests swap `App.container` for an in-memory library under `files/ime-test/` (debug-only FileProvider path). The emulator hands tests a redacted text clip, so the clipboard test checks what the inserter copied, not the clipboard itself.
+- 2026-11-21, M4: Gotchas: setting a View background replaces its padding with the drawable's insets; `connectedAndroidTest` uninstalls the app, which wipes the emulator library and turns the keyboard off; switching keyboards per test raced with Gboard, so the IME is selected once per class.
+- 2026-11-21, M4: Setup shows at launch until Skip or Done (not after a share); the steps update live from system settings (the picker is a dialog, so resume alone misses it). Also reachable from a keyboard card in the Settings placeholder.
+- 2026-11-21, M4: Differences from the boards (screenshots in artifacts/): touch areas are 48dp around the 40dp tabs, 32dp chips and 38dp segments; GIFs show their first frame (playback is M6); thumbnails take 2-3s to appear on the first cold open on the emulator; in dark mode a done step and the current step are both lime (check vs number).
