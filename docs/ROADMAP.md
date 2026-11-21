@@ -63,6 +63,7 @@ Done when: on the emulator, typing "Hi there" plus a sticker into `ImeTestActivi
 Still images:
 - [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
 - [ ] Hash the bytes as received so duplicates still match; existing stickers untouched
+- [ ] Keyboard clipboard fallback copies still stickers as a PNG copy (same pixels, `cache/send/`), like the direct send; GIFs stay GIF (KEYBOARD, Inserting a sticker)
 
 Large GIFs (output stays GIF so every chat app accepts it; near-lossless, as GIF allows 256 colors per frame; no new library):
 - [ ] Pure Kotlin GIF reader in `shared:core` commonMain (frames, disposal, transparency, interlace, local palettes), with safety limits for broken or hostile files

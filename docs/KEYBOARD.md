@@ -60,6 +60,8 @@ InputConnectionCompat.commitContent(currentInputConnection, currentInputEditorIn
 
 Still stickers are stored mostly as lossless WebP, which some apps do not accept. Before falling back to the clipboard, if the target accepts `image/png` but not the stored type, convert that one sticker to PNG (lossless, same pixels) into `cache/send/`, commit that, and clear the folder on the next send. Never change the stored file.
 
+From M4.5 the clipboard fallback also copies still stickers as a PNG copy, since pasting WebP fails in some apps.
+
 Animated stickers (GIF, animated WebP) are sent in their stored format. If the target rejects the type, tell the user in the same hint.
 
 ## Performance
