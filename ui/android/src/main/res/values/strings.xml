@@ -154,6 +154,28 @@
     <string name="section_in">In %1$s</string>
     <string name="cd_new_subcollection">New subcollection</string>
 
+    <!-- Keyboard panel -->
+    <string name="ime_name">Sticker keyboard</string>
+    <string name="kb_tab_recents">Recents</string>
+    <string name="kb_tab_favorites">Favorites</string>
+    <string name="kb_tab_unsorted">Unsorted</string>
+    <string name="kb_chip_all">All</string>
+    <string name="kb_kind_group">Sticker type</string>
+    <string name="kb_kind_all">All</string>
+    <string name="kb_kind_static">Static</string>
+    <string name="kb_kind_gif">GIF</string>
+    <string name="kb_switch_keyboard">Switch keyboard</string>
+    <string name="kb_backspace">Backspace</string>
+    <string name="kb_empty_library_title">No stickers yet</string>
+    <string name="kb_empty_library_body">Share an image to the Stickers app to save it, then send it from here.</string>
+    <string name="kb_open_app">Open Stickers</string>
+    <string name="kb_empty_tab">Nothing here yet</string>
+    <string name="kb_empty_recents">Stickers you send show up here.</string>
+    <string name="kb_password">Stickers are off in password fields.</string>
+    <string name="kb_hint_copied">Copied. Paste to send.</string>
+    <string name="kb_hint_type_rejected">This app does not take animated stickers. Copied, paste to try.</string>
+    <string name="kb_hint_failed">Could not send this sticker.</string>
+
     <!-- Settings (placeholder until M5) -->
     <string name="settings_title">Settings</string>
     <string name="settings_soon">Theme, backup and keyboard settings arrive in a later update.</string>

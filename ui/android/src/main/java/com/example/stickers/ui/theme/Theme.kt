@@ -113,6 +113,8 @@ data class StickerColors(
     /** Small dark badges on tiles ("GIF", "MOST USED"). */
     val badgeFill: Color,
     val badgeText: Color,
+    /** Keyboard panel background (Keyboard board): #14131C dark, white light. */
+    val keyboardPanel: Color,
 )
 
 internal val DarkStickerColors = StickerColors(
@@ -136,6 +138,7 @@ internal val DarkStickerColors = StickerColors(
     heart = DieCutShared.Heart,
     badgeFill = DieCutDark.Ink,
     badgeText = DieCutDark.Text,
+    keyboardPanel = DieCutShared.StickerInk,
 )
 
 internal val LightStickerColors = StickerColors(
@@ -159,6 +162,7 @@ internal val LightStickerColors = StickerColors(
     heart = DieCutShared.Heart,
     badgeFill = DieCutLight.Ink,
     badgeText = DieCutDark.Text,
+    keyboardPanel = DieCutLight.Surface,
 )
 
 // ---------------------------------------------------------------------------------------------

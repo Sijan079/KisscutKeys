@@ -2,6 +2,7 @@ package com.example.stickers
 
 import android.app.Application
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import java.io.File
 import com.example.stickers.common.AppLibraryBackend
 import com.example.stickers.common.LibraryBackend
@@ -17,8 +18,9 @@ import com.example.stickers.shared.db.StickerDatabase
 import com.example.stickers.shared.db.createStickerDatabase
 
 class App : Application() {
+    /** Replaced only by keyboard tests, to point the keyboard at an isolated library. */
     lateinit var container: AppContainer
-        private set
+        @VisibleForTesting internal set
 
     override fun onCreate() {
         super.onCreate()
@@ -30,13 +32,18 @@ class App : Application() {
  * Manual DI (docs/ARCHITECTURE.md). Built once in [App.onCreate]; the keyboard service reaches it
  * through `(applicationContext as App).container`. Everything is lazy so startup stays cheap.
  */
-class AppContainer(context: Context) {
+class AppContainer(
+    context: Context,
+    /** Tests only: an in-memory database and a separate files folder instead of the real library. */
+    databaseOverride: StickerDatabase? = null,
+    filesDir: File = context.applicationContext.filesDir,
+) {
     private val appContext = context.applicationContext
     private val clock: () -> Long = { System.currentTimeMillis() }
 
     /** The one database shared by the app and the keyboard. */
-    val database: StickerDatabase by lazy { createStickerDatabase(appContext) }
-    val androidFileStore: AndroidFileStore by lazy { AndroidFileStore(appContext.filesDir) }
+    val database: StickerDatabase by lazy { databaseOverride ?: createStickerDatabase(appContext) }
+    val androidFileStore: AndroidFileStore by lazy { AndroidFileStore(filesDir) }
     val fileStore: FileStore get() = androidFileStore
     val collections: CollectionRepository by lazy { CollectionRepository(database, fileStore, clock) }
     val stickers: StickerRepository by lazy { StickerRepository(database, fileStore, clock) }
@@ -46,4 +53,8 @@ class AppContainer(context: Context) {
     /** Thumbnail file of [sticker] for Coil; null when the stored name is not a safe file name. */
     fun thumbnailOf(sticker: Sticker): File? =
         runCatching { androidFileStore.file(FileArea.THUMBS, sticker.thumbPath) }.getOrNull()
+
+    /** Stored original of [sticker] (what the keyboard sends); null when the name is not safe. */
+    fun originalOf(sticker: Sticker): File? =
+        runCatching { androidFileStore.file(FileArea.STICKERS, sticker.filePath) }.getOrNull()
 }

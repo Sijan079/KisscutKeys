@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the keyboard may share with chat apps: stored stickers and one-off PNG copies. -->
+<paths>
+    <files-path name="stickers" path="stickers/" />
+    <cache-path name="send" path="send/" />
+</paths>

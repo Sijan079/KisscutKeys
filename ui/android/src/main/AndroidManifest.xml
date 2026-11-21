@@ -27,6 +27,31 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+
+        <!-- The sticker keyboard (docs/KEYBOARD.md). Only the system may bind it. -->
+        <service
+            android:name=".keyboard.StickerImeService"
+            android:exported="true"
+            android:label="@string/ime_name"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
+
+        <!-- Hands sticker files to chat apps with a per-use read grant. Never exported. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
