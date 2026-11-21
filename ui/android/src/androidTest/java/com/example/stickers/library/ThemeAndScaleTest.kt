@@ -10,6 +10,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.stickers.TestLibrary
 import com.example.stickers.common.PartTags
@@ -64,10 +65,17 @@ class ThemeAndScaleTest {
         // On the Collections tab the active label is longest.
         compose.onNode(hasTestTag(PartTags.NAV_COLLECTIONS)).performClick()
         compose.waitForIdle()
-        val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val rootWidth = compose.onRoot().fetchSemanticsNode().size.width
+        val px = compose.density.run { 1.dp.toPx() }
+        // The bar sits 20dp from each screen edge; every button must keep its full 48dp target inside it.
+        val barRight = rootWidth - 20 * px
         for (tag in listOf(PartTags.NAV_LIBRARY, PartTags.NAV_COLLECTIONS, PartTags.NAV_ADD, PartTags.NAV_SETTINGS)) {
-            val b = compose.onNode(hasTestTag(tag)).fetchSemanticsNode().boundsInRoot
-            assertTrue(b.left >= root.left && b.right <= root.right && b.width > 0, "$tag at $b, root $root")
+            // Unclipped position + size: boundsInRoot is clipped by the bar and would hide an overflow.
+            val node = compose.onNode(hasTestTag(tag)).fetchSemanticsNode()
+            val left = node.positionInRoot.x
+            val right = left + node.size.width
+            assertTrue(node.size.width >= 48 * px - 1, "$tag squeezed to ${node.size.width / px}dp")
+            assertTrue(left >= 20 * px - 1 && right <= barRight + 1, "$tag spans $left..$right, bar ends at $barRight")
         }
     }
 }
