@@ -90,3 +90,7 @@ Enable and select the IME via adb: `adb shell ime enable <APP_ID>/<service class
 
 - Behavior differs per target app (WhatsApp, Telegram, Messenger, Gmail). Real-app behavior must be checked on a device the user owns later; the emulator can't cover it.
 - Some apps accept only PNG or only static images. Record findings in a table under this section as they are discovered.
+
+| App | Device | Date | Build | Typing | Still sticker | GIF | Notes |
+|---|---|---|---|---|---|---|---|
+| Discord | Xiaomi M2103K19G (user's phone) | 2026-11-21 | M4.2 (stickers stored as received: PNG/WebP/GIF) | works | works | works | Direct insert vs clipboard paste not noted; re-check after M4.5 makes WebP the stored format |
