@@ -36,6 +36,14 @@ internal object DieCutDark {
     val Text = Color(0xFFF5F4FB)
     val Muted = Color(0xFFA9A7BC)
     val Danger = Color(0xFFFF8A7A)
+    val Dashed = Color(0xFF4A4860)
+    val FavoriteTint = Color(0xFF3A1B2E)
+
+    /** Soft tile fills behind stickers (lime, violet, coral, sky, pink, yellow, mint, orange). */
+    val TileTints = listOf(
+        Color(0xFF252A14), Color(0xFF24203F), Color(0xFF3A1F1A), Color(0xFF17293A),
+        Color(0xFF3A1B2E), Color(0xFF3A3012), Color(0xFF123229), Color(0xFF3A2412),
+    )
 }
 
 internal object DieCutLight {
@@ -48,6 +56,14 @@ internal object DieCutLight {
     val Olive = Color(0xFF4D6B00)
     val VioletIcon = Color(0xFF5B4BD6)
     val Danger = Color(0xFFB3261E)
+    val Dashed = Color(0xFFC4C1D6)
+    val FavoriteTint = Color(0xFFFFD3E8)
+
+    /** Pastel versions of the dark tile fills, same order. */
+    val TileTints = listOf(
+        Color(0xFFE8F2BC), Color(0xFFDCD7FA), Color(0xFFFFD9CE), Color(0xFFCDEBFA),
+        Color(0xFFFFD3E8), Color(0xFFFFEFB0), Color(0xFFC6F2E3), Color(0xFFFFE0BD),
+    )
 }
 
 internal object DieCutShared {
@@ -55,6 +71,7 @@ internal object DieCutShared {
     val Violet = Color(0xFF9B8CFF)
     val StickerInk = Color(0xFF14131C)
     val White = Color(0xFFFFFFFF)
+    val Heart = Color(0xFFFF6FB5)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -86,6 +103,16 @@ data class StickerColors(
     val cutLine: Color,
     /** Shadow alpha under stickers: about 40% dark, 25% light. */
     val stickerShadowAlpha: Float,
+    /** Tile fills behind stickers; picked by sticker id so a sticker keeps its color. */
+    val tileTints: List<Color>,
+    /** Dashed "New" outlines. */
+    val dashed: Color,
+    /** Favorites icon circle and the heart on it. */
+    val favoriteTint: Color,
+    val heart: Color,
+    /** Small dark badges on tiles ("GIF", "MOST USED"). */
+    val badgeFill: Color,
+    val badgeText: Color,
 )
 
 internal val DarkStickerColors = StickerColors(
@@ -103,6 +130,12 @@ internal val DarkStickerColors = StickerColors(
     stickerInk = DieCutShared.StickerInk,
     cutLine = DieCutShared.White,
     stickerShadowAlpha = 0.40f,
+    tileTints = DieCutDark.TileTints,
+    dashed = DieCutDark.Dashed,
+    favoriteTint = DieCutDark.FavoriteTint,
+    heart = DieCutShared.Heart,
+    badgeFill = DieCutDark.Ink,
+    badgeText = DieCutDark.Text,
 )
 
 internal val LightStickerColors = StickerColors(
@@ -120,6 +153,12 @@ internal val LightStickerColors = StickerColors(
     stickerInk = DieCutShared.StickerInk,
     cutLine = DieCutShared.White,
     stickerShadowAlpha = 0.25f,
+    tileTints = DieCutLight.TileTints,
+    dashed = DieCutLight.Dashed,
+    favoriteTint = DieCutLight.FavoriteTint,
+    heart = DieCutShared.Heart,
+    badgeFill = DieCutLight.Ink,
+    badgeText = DieCutDark.Text,
 )
 
 // ---------------------------------------------------------------------------------------------
@@ -227,6 +266,10 @@ object StickerShapes {
 }
 
 object StickerSizes {
+    val NavBarHeight = 68.dp
+    val NavItem = 52.dp
+    /** Room left under scrolling content so the floating nav never covers the last row. */
+    val NavClearance = 108.dp
     val PrimaryButtonHeight = 44.dp
     val ChipHeight = 36.dp
     val MinTouchTarget = 48.dp

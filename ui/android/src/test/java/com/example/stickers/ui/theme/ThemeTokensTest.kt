@@ -44,4 +44,16 @@ class ThemeTokensTest {
         assertEquals(0.40f, dark.stickerShadowAlpha)
         assertEquals(0.25f, light.stickerShadowAlpha)
     }
+
+    @Test
+    fun tileTintsComeInMatchingDarkAndLightSets() {
+        val dark = stickerColors(dark = true)
+        val light = stickerColors(dark = false)
+        assertEquals(8, dark.tileTints.size)
+        assertEquals(dark.tileTints.size, light.tileTints.size)
+        assertEquals(Color(0xFF24203F), dark.tileTints[1], "violet tint, dark")
+        assertEquals(Color(0xFFDCD7FA), light.tileTints[1], "violet tint, light")
+        assertEquals(Color(0xFF4A4860), dark.dashed)
+        assertEquals(Color(0xFFC4C1D6), light.dashed)
+    }
 }
