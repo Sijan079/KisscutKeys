@@ -1,0 +1,107 @@
+package com.example.stickers.save
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.stickers.shared.core.ImportResult
+import com.example.stickers.shared.db.Sticker
+import com.example.stickers.shared.db.StickerCollection
+import com.example.stickers.ui.theme.StickersTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import kotlin.test.assertEquals
+
+/** Save sheet UI with a fake backend (TESTING.md, UI: Save sheet). */
+@RunWith(AndroidJUnit4::class)
+class SaveSheetTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    private val backend = UiFakeBackend()
+
+    private fun show(vararg uris: String): SaveViewModel {
+        val vm = SaveViewModel(backend, uris.toList())
+        compose.setContent { StickersTheme { SaveSheet(vm, onFinished = {}) } }
+        compose.waitForIdle()
+        return vm
+    }
+
+    @Test
+    fun nestedPickerSelectsTheRightCollection() {
+        backend.add(1, "Reactions", null)
+        backend.add(2, "Memes", 1)
+        backend.add(3, "Work", null)
+        show("content://test/1")
+
+        compose.onNodeWithText("Memes").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Expand Reactions").performClick()
+        compose.onNodeWithText("Memes").performClick()
+
+        compose.onNodeWithTag(SaveTags.PATH).assertTextEquals("Reactions › Memes")
+        compose.onNodeWithTag(SaveTags.SAVE_BUTTON).performClick()
+        compose.waitUntil(5_000) { backend.imported.isNotEmpty() }
+        assertEquals(listOf<Pair<String, Long?>>("content://test/1" to 2L), backend.imported)
+        compose.onNodeWithText("1 sticker saved").assertIsDisplayed()
+    }
+
+    @Test
+    fun newCollectionIsCreatedInsideTheSelectedOneAndSelected() {
+        backend.add(1, "Reactions", null)
+        show("content://test/1")
+
+        compose.onNodeWithText("Reactions").performClick()
+        compose.onNodeWithText("New collection in Reactions").performClick()
+        compose.onNodeWithTag(SaveTags.NEW_COLLECTION_NAME).performTextInput("Cats")
+        compose.onNodeWithText("Create").performClick()
+        compose.waitForIdle()
+
+        assertEquals(1L, backend.collections.value.single { it.name == "Cats" }.parentId)
+        compose.onNodeWithTag(SaveTags.PATH).assertTextEquals("Reactions › Cats")
+        compose.onNodeWithText("Save to Cats").assertIsDisplayed()
+    }
+
+    @Test
+    fun multipleImagesAllSave() {
+        show("content://test/1", "content://test/2", "content://test/3")
+
+        compose.onNodeWithText("Save 3 stickers").assertIsDisplayed()
+        compose.onNodeWithText("Save to Unsorted").performClick()
+        compose.waitUntil(5_000) { backend.imported.size == 3 }
+
+        assertEquals(listOf(null, null, null), backend.imported.map { it.second })
+        compose.onNodeWithText("3 stickers saved").assertIsDisplayed()
+    }
+}
+
+private class UiFakeBackend : SaveBackend {
+    val collections = MutableStateFlow<List<StickerCollection>>(emptyList())
+    val imported = mutableListOf<Pair<String, Long?>>()
+    private var nextId = 100L
+
+    fun add(id: Long, name: String, parentId: Long?) {
+        collections.value = collections.value + StickerCollection(id, name, parentId, id.toInt(), 0)
+    }
+
+    override fun observeCollections(): Flow<List<StickerCollection>> = collections
+
+    override suspend fun createCollection(name: String, parentId: Long?): StickerCollection =
+        StickerCollection(nextId++, name.trim(), parentId, 999, 0).also { collections.value = collections.value + it }
+
+    override suspend fun describe(uri: String): ItemDetails? = null
+
+    override suspend fun import(uri: String, collectionId: Long?): ImportResult {
+        imported += uri to collectionId
+        val n = imported.size.toLong()
+        val sticker = Sticker(n, "$n.png", "$n.webp", "image/png", false, true, "h$n", collectionId, addedAt = 0)
+        return ImportResult.Added(sticker)
+    }
+}
