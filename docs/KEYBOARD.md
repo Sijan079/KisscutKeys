@@ -40,7 +40,9 @@ InputConnectionCompat.commitContent(currentInputConnection, currentInputEditorIn
 3. If not supported, copy the URI to the clipboard as a `ClipData` with the image and show a short hint ("Paste to send"). Do not claim success.
 4. Only when `commitContent` returns true, call `markUsed(id)`.
 
-Animated stickers (GIF, animated WebP) are sent in their original format. If the target rejects the type, tell the user in the same hint.
+Still stickers are stored mostly as lossless WebP, which some apps do not accept. Before falling back to the clipboard, if the target accepts `image/png` but not the stored type, convert that one sticker to PNG (lossless, same pixels) into `cache/send/`, commit that, and clear the folder on the next send. Never change the stored file.
+
+Animated stickers (GIF, animated WebP) are sent in their stored format. If the target rejects the type, tell the user in the same hint.
 
 ## Performance
 

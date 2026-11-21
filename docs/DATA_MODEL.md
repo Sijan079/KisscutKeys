@@ -21,10 +21,10 @@ Index on `parentId`.
 | id | Long PK autogenerate | |
 | filePath | String | relative to `files/stickers/` |
 | thumbPath | String | relative to `files/thumbs/` |
-| mimeType | String | sniffed from bytes: image/png, image/webp, image/gif |
+| mimeType | String | type of the **stored** file: usually image/webp; also image/png (API 26-28 or kept original), image/jpeg (small JPEG kept), image/gif. See IMPORT_EXPORT, Stored format |
 | isAnimated | Boolean | |
 | hasAlpha | Boolean | true when the image has transparency (decides cut-line style) |
-| hash | String | SHA-256 of file bytes, **unique index** |
+| hash | String | SHA-256 of the bytes **as received**, before conversion, **unique index** (dedupe) |
 | collectionId | Long? | FK to StickerCollection, ON DELETE SET NULL; null = Unsorted |
 | isFavorite | Boolean | default false |
 | useCount | Int | default 0 |

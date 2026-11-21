@@ -12,7 +12,7 @@ Stickers saved from the web end up scattered in galleries and downloads. Finding
 
 ## v1 features
 
-1. **Save** stickers: share-sheet "Save to library" from any app, and a picker inside the app. Supports PNG, WebP, GIF, animated WebP.
+1. **Save** stickers: share-sheet "Save to library" from any app, and a picker inside the app. Supports PNG, JPEG, WebP, GIF, animated WebP. Still images are stored at most 512px on the longest side as lossless WebP to keep the library small (see IMPORT_EXPORT, Stored format).
 2. **Library:** grid of all stickers, favorites, recents, "Unsorted".
 3. **Collections:** user-made, nestable (depth cap 3). Move stickers between collections. Select mode for bulk move, favorite and delete.
 4. **Keyboard:** custom keyboard with a sticker panel: tabs for Recents, Favorites and collections, a grid, a globe key to switch keyboards. Animated stickers play only while visible.

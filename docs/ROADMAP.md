@@ -40,6 +40,13 @@ Done when: sharing an image from the emulator's browser or gallery saves it; dup
 
 Done when: UI tests pass and screenshots match the designs; differences listed.
 
+## M3.5: Smaller storage and JPEG
+- [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
+- [ ] Hash the bytes as received so duplicates still match; existing stickers untouched
+- [ ] Tests per TESTING (Import / export, Stored format); check on the emulator with the game sticker sets
+
+Done when: a 3000px PNG saves as a 512px lossless WebP with identical pixels to a 512px scale of the source; a JPEG saves; animated stickers are unchanged; tests pass.
+
 ## M4: Keyboard
 - [ ] `StickerImeService`, panel view, tabs, grid, globe key (KEYBOARD)
 - [ ] Insert via commit-content with clipboard fallback and hints

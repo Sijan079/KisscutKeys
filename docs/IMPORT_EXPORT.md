@@ -54,6 +54,24 @@ settings.json        (optional)
 3. Offer through the system file picker (`ACTION_CREATE_DOCUMENT`, SAF) or the share sheet (`ACTION_SEND` with a `FileProvider` URI). Delete the temp file afterwards.
 4. Progress as `Flow<Progress>`; cancellable.
 
+## Stored format (every import: share sheet, picker, pack)
+
+Goal: a library of thousands of stickers stays in the hundreds of MB, with no visible quality loss on a phone.
+
+Accepted input, sniffed from magic bytes: PNG, JPEG, WebP (still or animated), GIF. Anything else is rejected.
+
+Still images (PNG, JPEG, still WebP):
+1. Decode. If the longest side is over **512px**, scale down to 512 (keep aspect ratio, high-quality filtering). Never scale up.
+2. Encode as **lossless WebP** (`WEBP_LOSSLESS` on API 30+, `WEBP` at quality 100 on API 29, which Android encodes lossless). On API 26 to 28 Android has no lossless WebP encoder, so encode **PNG** instead.
+3. **Never store something bigger than the input:** if the input was not scaled down and its original bytes are smaller than the encoded result, keep the original bytes and type (for example a small JPEG or a lossy WebP; re-encoding those losslessly only makes them bigger, never better).
+4. Thumbnail, `hasAlpha` and the cut line come from the stored image, as before.
+
+Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap). Android has no built-in encoder for animated WebP or GIF; shrinking them would need a new library (open decision, ask the user).
+
+Duplicates: `hash` is the SHA-256 of the **bytes as received**, before conversion, so saving the same file twice is still a no-op. Known gap: a sticker sent from this app and saved back arrives as the converted bytes, so it is not recognised as the same; accepted for v1.
+
+Existing stickers saved before this rule keep their original files; nothing is rewritten. A later Settings action may shrink them (needs its own tests over old data).
+
 ## Import
 
 Entry points: Settings "Import pack" (SAF `ACTION_OPEN_DOCUMENT`) and opening a `.stickerpack` from another app (intent filter for the MIME type and the extension).
@@ -62,9 +80,9 @@ Steps:
 1. Open the stream, **never extract the zip to disk first**. Read `manifest.json`, validate, then process entries.
 2. For each sticker entry:
    - Verify the path is exactly under `stickers/` and contains no `..`, absolute path or drive letter (**zip-slip protection**). Reject the whole pack on violation.
-   - Read bytes with a size cap, sniff the real type from magic bytes (PNG, WebP, GIF), ignore the declared `mimeType` if it disagrees, skip anything else.
-   - Compute SHA-256. If the hash already exists, skip the copy and reuse the existing sticker (still apply collection mapping if the user chose to).
-   - Write the file, generate the thumbnail, compute `hasAlpha` and `isAnimated`, insert the row.
+   - Read bytes with a size cap, sniff the real type from magic bytes (PNG, JPEG, WebP, GIF), ignore the declared `mimeType` if it disagrees, skip anything else.
+   - Compute SHA-256 of the entry bytes. If that hash or the manifest `hash` already exists, skip the copy and reuse the existing sticker (still apply collection mapping if the user chose to). A pack exported from this app carries the original hash, so restoring a backup into the same library adds no duplicates.
+   - Convert per "Stored format" (already-converted stickers pass through unchanged), write the file, generate the thumbnail, compute `hasAlpha` and `isAnimated`, insert the row with the manifest `hash` when present and valid hex, else the computed one.
 3. Create collections first (parents before children), respecting the depth cap of 3. If an imported tree is deeper, flatten the extra levels into the deepest allowed collection and report it.
 4. Put the pack's top-level collections under a user-chosen parent, or the root.
 5. Show a summary: added, skipped as duplicates, rejected with reasons.
@@ -74,7 +92,8 @@ Steps:
 | Limit | Value |
 |---|---|
 | Max pack file size | 200 MB |
-| Max single sticker | 10 MB |
+| Max single sticker (input) | 10 MB |
+| Max stored side (still images) | 512 px |
 | Max stickers per pack | 2000 |
 | Max zip entries read | 5000 |
 | Max total uncompressed | 500 MB (guards against zip bombs; abort when exceeded) |

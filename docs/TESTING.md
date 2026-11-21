@@ -30,6 +30,10 @@ Goal: Claude Code can verify its own work without a human. Cheapest checks first
 - Migration tests for every schema version bump.
 
 ### Import / export
+- Stored format: a large still image is stored at 512px on the longest side as lossless WebP (PNG on API 26-28), and its decoded pixels equal the source scaled to 512 (lossless check, not "looks close").
+- Small images are never scaled up; a small JPEG or lossy WebP whose original is smaller is kept as-is.
+- JPEG is accepted (opaque tile, no cut line); animated GIF and animated WebP are stored unchanged.
+- Saving the same file twice is a no-op (hash of received bytes); restoring an exported pack into the same library adds no duplicates.
 See `docs/IMPORT_EXPORT.md` Tests. Use small fixture files (a few KB) in `src/test/resources`; generate zips in test code rather than committing binaries where possible.
 
 ### UI
