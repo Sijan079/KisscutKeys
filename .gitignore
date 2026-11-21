@@ -1,0 +1,16 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+
+# Machine-specific
+local.properties
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+
+# Screenshots and UI dumps
+artifacts/
