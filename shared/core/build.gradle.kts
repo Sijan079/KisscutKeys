@@ -8,8 +8,12 @@ kotlin {
         namespace = "com.example.stickers.shared.core"
         compileSdk = 37
         minSdk = 26
+        // Host (JVM) tests for androidMain code that needs no Context, e.g. AndroidFileStore.
         withHostTest {}
     }
+
+    // JVM target: repository tests run against a real in-memory Room database.
+    jvm()
 
     sourceSets {
         commonMain.dependencies {
@@ -17,6 +21,10 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
+        jvmTest.dependencies {
+            implementation(libs.turbine)
         }
     }
 }
