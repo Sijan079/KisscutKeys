@@ -78,7 +78,7 @@ If building the true cut line proves too slow or ugly, fall back to a white 3dp 
 
 ## Screens
 
-1. **Keyboard setup (onboarding):** steps to enable the keyboard and select it; buttons open the system input settings. Shows state of each step, updated when the user returns.
+1. **Keyboard setup (onboarding):** three steps (turn on, choose, add stickers) with one main button for the current step: open the system keyboard settings, show the keyboard picker, or add stickers. Step states follow the system live (it watches the enabled and default keyboard settings; the picker is a dialog, so a resume check alone misses it). Shown at launch until Skip or Done, never after a share; reachable later from the keyboard card in Settings.
 2. **Library (main):** top title, search is not in v1; filter chips (All, Favorites, Recents, then collections), sticker grid with a spanning hero tile at the top for the latest or a favorite, floating pill nav (Library, Collections, Settings).
 3. **Select mode:** long-press enters; top bar shows count; actions: move, favorite, delete.
 4. **Collections list:** nested list with expand/collapse, counts (total including descendants), add collection, long-press for rename, move, delete.

@@ -22,6 +22,8 @@
 - `ui/android` depends on `shared:core` and `shared:db`.
 - `shared:core` depends on `shared:db`.
 - The keyboard lives in `ui/android` under a `keyboard` package, **not** a separate module. It uses the same repositories and database as the app.
+
+Packages in `ui/android` (`com.example.stickers`): `library`, `collections`, `save` and `share` (Save sheet and share intents), `settings`, `setup` (keyboard setup and the DataStore settings store), `keyboard` (IME), `nav`, `common` (shared parts), `ui/theme`. Debug-only code (seed data, `ImeTestActivity`) lives in `src/debug`. One feature per package; a new screen gets its own package.
 - `ui/ios` does not exist yet.
 
 ## expect/actual and interfaces

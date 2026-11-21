@@ -44,10 +44,17 @@ See `docs/IMPORT_EXPORT.md` Tests. Use small fixture files (a few KB) in `src/te
 
 ### Keyboard
 - IME enabled and selected via adb; `ImeTestActivity` field focused; panel visible.
-- Tap a sticker; field receives the content (listener fires with the right MIME type).
+- Tap a sticker; field receives the content (listener fires with the right MIME type) and the sticker lands in Recents.
+- PNG-only field gets a PNG copy of a WebP sticker; an animated sticker it rejects is copied with the hint.
 - Field that does not accept images triggers the clipboard fallback and hint.
-- Password field disables insertion.
-- Switching tabs shows the right stickers.
+- Password field opens on letters with the sticker key off.
+- Switching tabs and chips shows the right stickers.
+- Typing: Shift, letters, space and Backspace produce the right text; Enter runs a Send action; the sticker and ABC keys swap views.
+
+How the keyboard tests run (`KeyboardTest`):
+- They swap `App.container` for an in-memory database and `files/ime-test/`, so the real library is never touched, and select the IME once per class (switching per test races with the old keyboard).
+- The emulator gives tests a blanked-out text clip, so the clipboard test checks what the inserter copied (`lastCopied`), not the system clipboard. Real clipboard behavior is checked by hand on a phone.
+- With a phone plugged in, Gradle runs device tests on every device and uninstalls the app afterwards. Set `$env:ANDROID_SERIAL = 'emulator-5554'` first.
 
 ## Test data
 

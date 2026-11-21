@@ -21,13 +21,17 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 
 ## Components
 
-- `StickerImeService : InputMethodService`: creates the panel view in `onCreateInputView()`, reads `currentInputEditorInfo` in `onStartInputView()`.
-- `StickerPanelView`: tab row (Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row, `RecyclerView` with `GridLayoutManager`, bottom bar (globe, All/Static/GIF, Backspace). Globe switches to the previous keyboard; long-press opens the system picker. Backspace is a key event, so the keyboard never reads the field.
-- `KeyboardModel`: the panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
-- `StickerAdapter`: binds thumbnails with Coil; for animated stickers loads the animation only when the item is attached and visible.
-- `StickerInserter`: commits the sticker to the target app.
+All in `ui/android/src/main/java/com/example/stickers/keyboard/`:
+
+- `StickerImeService : InputMethodService`: builds both views in `onCreateInputView()` inside a frame sized to the sticker panel, picks the view and page for each field in `onStartInputView()`, sends keys and stickers. All coroutines live in a scope cancelled on rebuild and in `onDestroy`.
+- `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on), unit-tested on the JVM.
+- `StickerPanelView`: tab row (Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row, `RecyclerView` with `GridLayoutManager`, bottom bar (ABC, All/Static/GIF, Backspace). ABC returns to the letters; long-press opens the system keyboard list.
+- `KeyboardModel`: the sticker panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
+- `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M6.
+- `StickerInserter`: sends a sticker (see Inserting a sticker). `InputFields.kt`: password detection. `KeyboardPalette`: Theme.kt tokens as ARGB ints.
+- Shared rules in `shared/core`: `InsertPlan.kt` (MIME matching and the insert route) and `KeyboardTabs.kt` (tabs, chips, start tab).
 - Manifest: service with `android.permission.BIND_INPUT_METHOD`, intent filter `android.view.InputMethod`, `meta-data` pointing at `res/xml/method.xml`.
-- `FileProvider` with authority `<APP_ID>.fileprovider` exposing `files/stickers/`.
+- `FileProvider` with authority `<APP_ID>.fileprovider` exposing `files/stickers/` and `cache/send/` (PNG copies). Debug builds add `files/ime-test/` for the keyboard tests.
 
 ## Data
 
@@ -69,13 +73,14 @@ Animated stickers (GIF, animated WebP) are sent in their stored format. If the t
 
 - No stickers yet: panel shows a message and a button that opens the app.
 - Tab with zero items: empty text.
-- Password and no-image fields (`InputType` password): disable insertion, show hint.
+- Password fields: open on letters, the sticker key is off (dimmed). If the sticker panel is somehow shown, it says stickers are off.
+- Fields that take no images: stickers go to the clipboard with "Copied. Paste to send."
 - Dark and light: follow the app theme; the panel reads the same tokens (see UI_SPEC).
 - Landscape and split screen: panel adapts column count.
 
 ## Testing
 
-See TESTING.md. Include a debug-only `ImeTestActivity` with an `EditText` that declares supported MIME types (`androidx.core.view.ViewCompat.setOnReceiveContentListener` or `setContentMimeTypes`) so insertion can be verified without a third-party chat app.
+See TESTING.md. The debug-only `ImeTestActivity` has five fields: any image, PNG only, plain text, password, and a Send-action field. Image fields wrap their input connection with `InputConnectionCompat.createWrapper` and record what they receive, so insertion is verified without a chat app.
 
 Enable and select the IME via adb: `adb shell ime enable <APP_ID>/<service class>` then `adb shell ime set <APP_ID>/<service class>`.
 

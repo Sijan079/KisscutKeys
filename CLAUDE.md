@@ -13,7 +13,7 @@ Read this file first, then the doc for the area you are touching.
 | `docs/ARCHITECTURE.md` | Modules, layering, DI, platform split |
 | `docs/DATA_MODEL.md` | Room schema, DAOs, nesting, migrations |
 | `docs/UI_SPEC.md` | Screens, design tokens, Compose constraints |
-| `docs/KEYBOARD.md` | The `InputMethodService` and sticker insertion |
+| `docs/KEYBOARD.md` | The `InputMethodService`, typing layout and sticker insertion |
 | `docs/IMPORT_EXPORT.md` | `.stickerpack` format, security rules |
 | `docs/TESTING.md` | What to test and how, per layer |
 | `docs/ROADMAP.md` | Ordered milestones and the current task |
@@ -32,6 +32,7 @@ Design source of truth: the "Sticker app: UI designs" artifact. Die-cut (dark an
 8. Do not delete or rewrite user data code (migrations, import) without a test that covers old data.
 9. Small commits, one concern each. Do not commit `local.properties`, keystores, `artifacts/`, or build output.
 10. If a requirement is unclear or two docs conflict, ask instead of guessing.
+11. Keep the tree clean, every task: code goes in its feature package (ARCHITECTURE, Packages), debug-only code in `src/debug`, no stray or scratch files in the repo, no unused code, imports, strings or drawables left behind, and docs updated in the same task as the change. Screenshots in `artifacts/` use `<screen>-<dark|light>.png`; delete throwaway ones.
 
 ## Commands
 
@@ -45,6 +46,8 @@ Windows PowerShell. Details in `SETUP.md`.
 .\scripts\emu-start.ps1             # boot emulator `stickertest`
 .\scripts\emu-stop.ps1
 ```
+
+With a phone plugged in, Gradle installs and tests on every device, and device tests uninstall the app afterwards. Before tests run `$env:ANDROID_SERIAL = 'emulator-5554'`.
 
 ## Conventions
 

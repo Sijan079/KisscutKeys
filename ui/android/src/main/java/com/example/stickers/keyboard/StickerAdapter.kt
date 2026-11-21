@@ -35,7 +35,6 @@ object KeyboardTags {
     const val MESSAGE = "kb:message"
     const val OPEN_APP = "kb:open-app"
     const val HINT = "kb:hint"
-    const val GLOBE = "kb:globe"
     const val BACKSPACE = "kb:backspace"
     /** ABC key on the sticker panel. */
     const val LETTERS = "kb:letters"

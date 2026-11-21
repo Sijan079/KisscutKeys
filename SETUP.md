@@ -162,19 +162,36 @@ On Windows PowerShell, `>` may re-encode binary output. If `screen.png` is corru
 
 ## 8. Testing the keyboard (IME)
 
-The sticker keyboard is an `InputMethodService`. After `installDebug`:
+The keyboard is `com.example.stickers/.keyboard.StickerImeService`. After `installDebug`:
 
 ```powershell
-adb shell ime list -a                                   # find <package>/<service>
-adb shell ime enable <package>/<service>
-adb shell ime set <package>/<service>
+adb shell ime enable com.example.stickers/.keyboard.StickerImeService
+adb shell ime set com.example.stickers/.keyboard.StickerImeService
+adb shell am start -n com.example.stickers/.debug.ImeTestActivity   # debug-only test fields
 ```
 
-Then open any app with a text field (Settings search, or a test activity), tap the field, and confirm the keyboard shows. Check that sticker commits work by watching `adb logcat` and the receiving field.
+Tap a field in `ImeTestActivity`; the keyboard opens on letters (or on stickers if they were used last). Fill the library first with `adb shell am broadcast -n com.example.stickers/.debug.SeedReceiver --ez clear true`.
 
 Reset to the default keyboard afterwards: `adb shell ime reset`.
 
-Known unknown: commit-content (image insertion) depends on the target app supporting it. For automated checks, include a small test activity in the debug build with an `EditText` that declares the MIME types the keyboard sends.
+Things that bite:
+- `connectedAndroidTest` uninstalls the app at the end: the library is wiped and the keyboard is switched off. Reseed and re-enable after a test run.
+- Force-stopping the app makes Android fall back to the previous keyboard.
+- The emulator is slow on its first cold start: thumbnails and the keyboard can take a few seconds. Tap the field again if the keyboard does not appear.
+- Which apps accept stickers directly is checked on a real phone (KEYBOARD.md, Known unknowns).
+
+## 8b. Installing on your own phone
+
+1. On the phone: Settings, About phone, tap Build number 7 times. Then in Developer options turn on USB debugging. (Xiaomi: also turn on "Install via USB".)
+2. Plug it in with a data cable and tap Allow on the "Allow USB debugging?" prompt. `adb devices` must say `device`, not `unauthorized`.
+3. Build and install only on the phone (replace the serial with yours from `adb devices`):
+
+```powershell
+.\gradlew.bat assembleDebug
+adb -s <phone-serial> install -r ui/android/build/outputs/apk/debug/android-debug.apk
+```
+
+`install -r` keeps the phone's library and settings. Do not run `connectedAndroidTest` with the phone plugged in unless `ANDROID_SERIAL` points at the emulator: the test run uninstalls the app and wipes the phone's library.
 
 ---
 
