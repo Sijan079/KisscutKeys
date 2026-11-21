@@ -24,10 +24,10 @@ Done when: `assembleDebug` and `installDebug` succeed and a screenshot of the th
 Done when: all those tests pass.
 
 ## M2: Import a sticker (core path)
-- [ ] Type sniffing, thumbnail generation, `hasAlpha`, `isAnimated`
-- [ ] Share-sheet intent (`ACTION_SEND`, `ACTION_SEND_MULTIPLE`, `image/*`) opens the Save sheet
-- [ ] Save sheet with nested collection picker and "New collection"
-- [ ] In-app "Add stickers" using the system photo picker / SAF
+- [x] Type sniffing, thumbnail generation, `hasAlpha`, `isAnimated`
+- [x] Share-sheet intent (`ACTION_SEND`, `ACTION_SEND_MULTIPLE`, `image/*`) opens the Save sheet
+- [x] Save sheet with nested collection picker and "New collection"
+- [x] In-app "Add stickers" using the system photo picker / SAF
 
 Done when: sharing an image from the emulator's browser or gallery saves it; duplicate share is a no-op; test coverage per TESTING.
 
@@ -91,3 +91,13 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M1: File delete failures are returned as `FileDeleteReport.failed`, not logged yet; callers log them. The startup orphan-file sweep (DATA_MODEL) is not built yet. DataStore settings are not in M1.
 - 2026-11-21, M1: `AndroidFileStore` only accepts plain file names `[A-Za-z0-9._-]{1,128}`; import (M2) must name files by hash.
 - 2026-11-21, M1: `DataLayerSmokeTest` (ui:android androidTest) checks the real Android database builder, bundled SQLite and file store on the emulator.
+- 2026-11-21, M2: Versions: lifecycle-viewmodel-compose 2.11.1, Coil 3.6.3 (coil-compose only), material-icons-extended and ui-test-junit4 from the Compose BOM. The user approved the two not named in ARCHITECTURE (ViewModel, icons).
+- 2026-11-21, M2: `hasAlpha` comes from the decoded thumbnail pixels, not the header: many opaque screenshots are RGBA PNGs. The header only says "may have alpha".
+- 2026-11-21, M2: Thumbnails are plain 384px WebP. The die-cut outline is not baked in yet (M3); thumbnails saved before M3 will need regenerating.
+- 2026-11-21, M2: Animated PNG (APNG) is stored as a still PNG (`isAnimated = false`); Android decoders only show its first frame. Max image side is 16384px, rejected as too large above that.
+- 2026-11-21, M2: A duplicate import is a pure no-op (no decode, no writes, no move), even when the user picked a different collection. DATA_MODEL allows "optionally moving"; not offered in the UI.
+- 2026-11-21, M2: MainActivity is the share target (single activity). Done after a share calls `finish()` and returns to the sharing app. Only `content:` URIs are read.
+- 2026-11-21, M2: The Save design uses a 56dp Save button and 44px rows; built with a 56dp button and 48dp rows (48dp touch minimum). UI_SPEC's generic primary button is 44dp.
+- 2026-11-21, M2: "New collection" creates inside the selected collection, or beside it when the selected one is at depth 3.
+- 2026-11-21, M2: Checked on the emulator: shared from Google Photos ("Save to library" in the share sheet), saved into a nested collection, then shared again with "1 was already in your library" and still one file. The photo picker path works too. Chrome was not tried.
+- 2026-11-21, M2: Gotcha: `image/*` inside a KDoc comment opens a nested Kotlin comment and breaks the build.
