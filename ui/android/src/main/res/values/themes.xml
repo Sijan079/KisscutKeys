@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window background only, so launch shows the right color before Compose draws.
+         All real tokens live in Theme.kt. Light: Paper. -->
+    <style name="Theme.Stickers" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+
+    <color name="window_background">#F7F6FB</color>
+</resources>
