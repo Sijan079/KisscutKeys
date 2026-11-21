@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds: the main paths plus the isolated library used by keyboard tests. -->
+<paths>
+    <files-path name="stickers" path="stickers/" />
+    <cache-path name="send" path="send/" />
+    <files-path name="ime_test" path="ime-test/" />
+</paths>
