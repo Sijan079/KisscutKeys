@@ -51,11 +51,11 @@ Done when: on the emulator a sticker is inserted into `ImeTestActivity` via the 
 
 ## M4.2: Typing keyboard
 Added after M4 at the user's request: the keyboard must also type (KEYBOARD, Typing layout).
-- [ ] Letters, `?123` and `=\<` pages with Shift, caps lock, auto-capitals, Backspace repeat, Enter action
-- [ ] Sticker key and ABC key swap between letters and the sticker panel; last view remembered
-- [ ] Field rules: number and phone fields open on numbers, password fields on letters with stickers off
-- [ ] Setup screen privacy text updated (types, never stores what is typed)
-- [ ] Tests: layout and shift logic on the JVM; typing into `ImeTestActivity` fields on the device
+- [x] Letters, `?123` and `=\<` pages with Shift, caps lock, auto-capitals, Backspace repeat, Enter action
+- [x] Sticker key and ABC key swap between letters and the sticker panel; last view remembered
+- [x] Field rules: number and phone fields open on numbers, password fields on letters with stickers off
+- [x] Setup screen privacy text updated (types, never stores what is typed)
+- [x] Tests: layout and shift logic on the JVM; typing into `ImeTestActivity` fields on the device
 
 Done when: on the emulator, typing "Hi there" plus a sticker into `ImeTestActivity` works, Enter sends in a field with a Send action, and tests pass. The user tries it in Discord on their phone.
 
@@ -144,3 +144,7 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M4: Gotchas: setting a View background replaces its padding with the drawable's insets; `connectedAndroidTest` uninstalls the app, which wipes the emulator library and turns the keyboard off; switching keyboards per test raced with Gboard, so the IME is selected once per class.
 - 2026-11-21, M4: Setup shows at launch until Skip or Done (not after a share); the steps update live from system settings (the picker is a dialog, so resume alone misses it). Also reachable from a keyboard card in the Settings placeholder.
 - 2026-11-21, M4: Differences from the boards (screenshots in artifacts/): touch areas are 48dp around the 40dp tabs, 32dp chips and 38dp segments; GIFs show their first frame (playback is M6); thumbnails take 2-3s to appear on the first cold open on the emulator; in dark mode a done step and the current step are both lime (check vs number).
+- 2026-11-21, M4.2: Typing added at the user's request after trying M4 (they expected a full keyboard; the spec said stickers only). Basic QWERTY, no autocorrect or suggestions. The sticker panel's globe became an ABC key (hold it for the keyboard list); the globe lives on the letters.
+- 2026-11-21, M4.2: Opens on the view used last (kept in memory while the keyboard runs, not saved). Enter sends `\n` with commitText for new lines, not a KEYCODE_ENTER event, because some chat apps treat that key as Send.
+- 2026-11-21, M4.2: Gotchas: in strings.xml `?123` must be written `\?123` (a leading `?` is a theme reference) and the backslash in `=\<` doubled; a MATCH_PARENT child of a wrap-content FrameLayout in an IME window takes the whole screen, so the frame is measured to the sticker panel's height. With a phone plugged in, `installDebug` and `connectedAndroidTest` hit both devices: set `ANDROID_SERIAL=emulator-5554` for tests.
+- 2026-11-21, M4.2: Not built: key preview popups, long-press for accents or digits, other layouts and languages. No board exists for the letters; screenshots in artifacts/ (typing-dark, typing-light).
