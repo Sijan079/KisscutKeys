@@ -37,6 +37,18 @@ object KeyboardTags {
     const val HINT = "kb:hint"
     const val GLOBE = "kb:globe"
     const val BACKSPACE = "kb:backspace"
+    /** ABC key on the sticker panel. */
+    const val LETTERS = "kb:letters"
+
+    // Typing keyboard
+    fun key(text: String) = "key:$text"
+    fun page(name: String) = "key:page:$name"
+    const val SPACE = "key:space"
+    const val SHIFT = "key:shift"
+    const val KEY_BACKSPACE = "key:backspace"
+    const val ENTER = "key:enter"
+    const val STICKERS = "key:stickers"
+    const val KEY_GLOBE = "key:globe"
 }
 
 /**
@@ -175,6 +187,18 @@ class StickerAdapter(
 
 internal fun Context.dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
 internal fun Context.dp(v: Float): Float = v * resources.displayMetrics.density
+
+/** Panel fill with rounded top corners and a 1dp top line (Keyboard board). Shared by both views. */
+internal fun panelBackground(context: Context, palette: KeyboardPalette): android.graphics.drawable.Drawable {
+    val r = context.dp(28f)
+    fun top(color: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+    }
+    return android.graphics.drawable.LayerDrawable(
+        arrayOf(top(palette.line), android.graphics.drawable.InsetDrawable(top(palette.panel), 0, context.dp(1), 0, 0)),
+    )
+}
 
 internal fun rounded(color: Int, radius: Float, stroke: Int = 0, strokeColor: Int = 0) = GradientDrawable().apply {
     setColor(color)

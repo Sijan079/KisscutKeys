@@ -16,6 +16,8 @@ import com.example.stickers.debug.SeedData
 import com.example.stickers.keyboard.StickerImeService.Companion.inserterForTest
 import com.example.stickers.keyboard.StickerImeService.Companion.loadedForTest
 import com.example.stickers.keyboard.StickerImeService.Companion.panelForTest
+import com.example.stickers.keyboard.StickerImeService.Companion.typingForTest
+import com.example.stickers.keyboard.StickerImeService.Companion.viewForTest
 import com.example.stickers.keyboard.StickerImeService.Companion.rebuildForTest
 import com.example.stickers.shared.core.ByteSource
 import com.example.stickers.shared.core.ImportResult
@@ -87,7 +89,7 @@ class KeyboardTest {
 
     @Test
     fun tappedStickerIsCommittedAndCountsAsUsed() = runBlocking {
-        focus { it.anyImage }
+        focusStickers { it.anyImage }
         tapSticker(reactions)
 
         val got = waitFor { ImeTestActivity.received.firstOrNull() }
@@ -103,7 +105,7 @@ class KeyboardTest {
 
     @Test
     fun webpGoesAsPngWhereOnlyPngIsAccepted() {
-        focus { it.pngOnly }
+        focusStickers { it.pngOnly }
         tab(KeyboardTags.collection(workId))
         tapSticker(webp)
 
@@ -117,7 +119,7 @@ class KeyboardTest {
 
     @Test
     fun animatedStickerRejectedByFieldIsCopiedWithHint() {
-        focus { it.pngOnly }
+        focusStickers { it.pngOnly }
         tab(KeyboardTags.collection(workId))
         tapSticker(gif)
 
@@ -128,7 +130,7 @@ class KeyboardTest {
 
     @Test
     fun fieldWithoutImagesGetsClipboardAndHint() {
-        focus { it.plain }
+        focusStickers { it.plain }
         tab(KeyboardTags.collection(reactionsId))
         tapSticker(reactions)
 
@@ -145,20 +147,54 @@ class KeyboardTest {
     }
 
     @Test
-    fun passwordFieldDisablesStickers() {
+    fun passwordFieldOpensLettersWithStickersOff() {
         focus { it.password }
-        waitFor {
-            onMain {
-                panel().findViewWithTag<View>(KeyboardTags.MESSAGE)
-                    ?.takeIf { it.visibility == View.VISIBLE && containsText(it, app.getString(R.string.kb_password)) }
-            }
-        }
-        assertTrue(ImeTestActivity.received.isEmpty())
+        assertEquals(KeyboardView.LETTERS, onMain { service().viewForTest })
+        val stickerKey = onMain { service().typingForTest!!.findViewWithTag<View>(KeyboardTags.STICKERS) }
+        assertTrue(!onMain { stickerKey.isEnabled })
+        onMain { stickerKey.performClick() }
+        assertEquals(KeyboardView.LETTERS, onMain { service().viewForTest })
+        type(listOf("p", "w").map(::keyTag))
+        waitFor { scenarioText { it.password }.takeIf { t -> t == "pw" } }
+    }
+
+    @Test
+    fun typesTextWithShiftSpaceAndBackspace() {
+        focus { it.plain }
+        type(listOf(KeyboardTags.SHIFT, "h", "i", KeyboardTags.SPACE, "t", "h", "e", "r", "e", "x").map(::keyTag))
+        click(KeyboardTags.KEY_BACKSPACE, inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "Hi there" } }
+    }
+
+    @Test
+    fun enterRunsTheFieldsSendAction() {
+        focus { it.send }
+        type(listOf("o", "k").map(::keyTag))
+        click(KeyboardTags.ENTER, inTyping = true)
+        var actions = emptyList<Int>()
+        waitFor { scenario.onActivity { actions = it.actions.toList() }; actions.takeIf { a -> a.isNotEmpty() } }
+        assertEquals(listOf(android.view.inputmethod.EditorInfo.IME_ACTION_SEND), actions)
+        assertEquals("ok", scenarioText { it.send })
+    }
+
+    @Test
+    fun stickerKeyAndAbcSwapViewsAndTypingContinues() {
+        focus { it.anyImage }
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        type(listOf("a").map(::keyTag))
+        click(KeyboardTags.STICKERS, inTyping = true)
+        assertEquals(KeyboardView.STICKERS, onMain { service().viewForTest })
+        tapSticker(reactions)
+        waitFor { ImeTestActivity.received.firstOrNull() }
+        click(KeyboardTags.LETTERS)
+        assertEquals(KeyboardView.LETTERS, onMain { service().viewForTest })
+        type(listOf("b").map(::keyTag))
+        waitFor { scenarioText { it.anyImage }.takeIf { t -> t == "ab" } }
     }
 
     @Test
     fun switchingTabsAndChipsShowsTheRightStickers() {
-        focus { it.anyImage }
+        focusStickers { it.anyImage }
         tab(KeyboardTags.collection(reactionsId))
         waitFor { gridIds().takeIf { it == setOf(reactions.id, cat.id) } }
 
@@ -195,12 +231,12 @@ class KeyboardTest {
                 }
             }
             Thread.sleep(200)
-            onMain { StickerImeService.active?.get()?.panelForTest?.takeIf { it.isShown } }
+            onMain { StickerImeService.active?.get()?.panelForTest?.takeIf { (it.parent as View).isShown } }
         }
         onMain { service().rebuildForTest() }
         val ready = runCatching {
             waitFor(timeoutMs = 5_000) {
-                onMain { panel().takeIf { it.isShown && it.isLaidOut && service().loadedForTest } }
+                onMain { panel().takeIf { it.isLaidOut && service().loadedForTest && (it.parent as View).isShown } }
             }
         }
         // The keyboard can hide again while the field settles; show it once more.
@@ -210,15 +246,42 @@ class KeyboardTest {
         }
     }
 
+    /** Opens the field with the sticker panel showing (the keyboard may open on letters). */
+    private fun focusStickers(field: (ImeTestActivity) -> EditText) {
+        focus(field = field)
+        if (onMain { service().viewForTest } != KeyboardView.STICKERS) click(KeyboardTags.STICKERS, inTyping = true)
+        waitFor { onMain { panel().takeIf { it.isShown } } }
+    }
+
     private fun service() = StickerImeService.active?.get() ?: fail("keyboard not running")
 
     private fun panel() = service().panelForTest ?: fail("no panel")
 
     private fun tab(tag: String) = click(tag)
 
-    private fun click(tag: String) {
-        val view = waitFor { onMain { panel().findViewWithTag<View>(tag)?.takeIf { it.isShown } } }
+    private fun click(tag: String, inTyping: Boolean = false) {
+        val view = waitFor {
+            onMain {
+                val root: View = if (inTyping) service().typingForTest ?: fail("no letters") else panel()
+                root.findViewWithTag<View>(tag)?.takeIf { it.isShown }
+            }
+        }
         onMain { view.performClick() }
+    }
+
+    /** Taps keys on the letters, switching from the sticker panel first if it is showing. */
+    private fun type(keys: List<String>) {
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        keys.forEach { click(it, inTyping = true) }
+    }
+
+    /** Letters map to their key tag; other tags pass through. */
+    private fun keyTag(k: String) = if (k.length == 1) KeyboardTags.key(k) else k
+
+    private fun scenarioText(field: (ImeTestActivity) -> EditText): String {
+        var text = ""
+        scenario.onActivity { text = field(it).text.toString() }
+        return text
     }
 
     private fun tapSticker(sticker: Sticker) = click(KeyboardTags.sticker(sticker.id))

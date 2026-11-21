@@ -175,6 +175,21 @@
     <string name="kb_hint_copied">Copied. Paste to send.</string>
     <string name="kb_hint_type_rejected">This app does not take animated stickers. Copied, paste to try.</string>
     <string name="kb_hint_failed">Could not send this sticker.</string>
+    <string name="kb_page_letters">ABC</string>
+    <string name="kb_page_symbols">\?123</string>
+    <string name="kb_page_more_symbols">=\\&lt;</string>
+    <string name="kb_key_letters">Letters</string>
+    <string name="kb_key_space">Space</string>
+    <string name="kb_key_space_label">Sticker keyboard</string>
+    <string name="kb_key_shift">Shift</string>
+    <string name="kb_key_shift_on">Shift, on for one letter</string>
+    <string name="kb_key_caps_lock">Caps lock</string>
+    <string name="kb_key_enter">Enter</string>
+    <string name="kb_key_send">Send</string>
+    <string name="kb_key_search">Search</string>
+    <string name="kb_key_done">Done</string>
+    <string name="kb_key_go">Go</string>
+    <string name="kb_key_stickers">Stickers</string>
 
     <!-- Keyboard setup -->
     <string name="setup_title">Every sticker, one tap away</string>
@@ -185,7 +200,7 @@
     <string name="setup_step2_body">Pick it from the keyboard list, or tap the globe key in any chat.</string>
     <string name="setup_step3_title">Add your first stickers</string>
     <string name="setup_step3_body">Share an image to the app to save it.</string>
-    <string name="setup_privacy">Android will warn that keyboards can read what you type. This one only inserts stickers and does not read your typing.</string>
+    <string name="setup_privacy">Android will warn that keyboards can see what you type. This one sends your keys straight to the app and never stores, logs or shares them.</string>
     <string name="setup_open_settings">Open keyboard settings</string>
     <string name="setup_pick_keyboard">Choose Sticker keyboard</string>
     <string name="setup_add_stickers">Add stickers</string>

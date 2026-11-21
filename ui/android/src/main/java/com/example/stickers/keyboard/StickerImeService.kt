@@ -7,6 +7,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.WindowCompat
 import com.example.stickers.App
@@ -30,8 +31,12 @@ class StickerImeService : InputMethodService() {
     private var scope: CoroutineScope? = null
     private var model: KeyboardModel? = null
     private var panel: StickerPanelView? = null
+    private var typing: TypingView? = null
     private var inserter: StickerInserter? = null
     private var password = false
+
+    /** Letters or stickers; kept while the keyboard runs, so it reopens on the view used last. */
+    private var view = KeyboardView.LETTERS
 
     /** Last result of a sticker tap (tests read it). */
     @VisibleForTesting
@@ -51,18 +56,68 @@ class StickerImeService : InputMethodService() {
         inserter = StickerInserter(this, container::originalOf, container.stickers::markUsed)
         val palette = KeyboardPalette.of(this)
         val panel = StickerPanelView(this, palette, container::thumbnailOf, Actions(model))
+        val typing = TypingView(this, palette, Keys())
         this.panel = panel
+        this.typing = typing
+        // The sticker panel sets the height; the letters fill the same space on top of it.
+        val root = PanelFrame(this).apply {
+            addView(panel, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
+            addView(typing, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        }
         // Dark system buttons under a light panel, light ones under a dark panel.
-        window?.window?.let { WindowCompat.getInsetsController(it, panel).isAppearanceLightNavigationBars = !palette.dark }
+        window?.window?.let { WindowCompat.getInsetsController(it, root).isAppearanceLightNavigationBars = !palette.dark }
         scope.launch { model.state.collect { panel.render(it, password) } }
-        return panel
+        show(view)
+        return root
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         password = info != null && isPasswordField(info.inputType)
+        val start = fieldStart(info?.inputType ?: 0, view)
+        typing?.apply {
+            showPage(start.page)
+            setEnter(enterAction(info?.imeOptions ?: 0, info?.inputType ?: 0))
+            setStickersAllowed(start.stickersAllowed)
+        }
+        show(start.view)
+        updateAutoCaps()
         val model = model ?: return
         panel?.render(model.state.value, password)
+    }
+
+    override fun onUpdateSelection(
+        oldSelStart: Int,
+        oldSelEnd: Int,
+        newSelStart: Int,
+        newSelEnd: Int,
+        candidatesStart: Int,
+        candidatesEnd: Int,
+    ) {
+        super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+        updateAutoCaps()
+    }
+
+    /** Shows letters or stickers. The hidden one stays laid out (INVISIBLE) so the height never jumps. */
+    private fun show(target: KeyboardView) {
+        view = target
+        typing?.visibility = if (target == KeyboardView.LETTERS) View.VISIBLE else View.INVISIBLE
+        panel?.visibility = if (target == KeyboardView.STICKERS) View.VISIBLE else View.INVISIBLE
+        if (target == KeyboardView.LETTERS) panel?.clearHint()
+    }
+
+    /**
+     * Capital at the start of a sentence when the field asks for it. Reads only the cursor's caps mode,
+     * never the text.
+     */
+    private fun updateAutoCaps() {
+        val typing = typing ?: return
+        if (typing.page != TypingPage.LETTERS) return
+        val info = currentInputEditorInfo
+        val wanted = info != null && info.inputType != 0 && !password &&
+            (currentInputConnection?.getCursorCapsMode(info.inputType) ?: 0) != 0
+        typing.shift.autoCap(wanted)
+        typing.refreshShift()
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
@@ -110,12 +165,41 @@ class StickerImeService : InputMethodService() {
 
     private fun showPicker() = getSystemService(InputMethodManager::class.java).showInputMethodPicker()
 
+    /** Key presses from the letters. Text goes straight to the field; nothing is kept. */
+    private inner class Keys : TypingView.Actions {
+        override fun onText(text: String) {
+            currentInputConnection?.commitText(text, 1)
+            typing?.shift?.typed()
+            updateAutoCaps()
+        }
+
+        override fun onBackspace() {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+        }
+
+        override fun onEnter() {
+            val info = currentInputEditorInfo
+            when (val action = enterAction(info?.imeOptions ?: 0, info?.inputType ?: 0)) {
+                is EnterAction.Action -> currentInputConnection?.performEditorAction(action.id)
+                EnterAction.NewLine -> currentInputConnection?.commitText("\n", 1)
+            }
+            updateAutoCaps()
+        }
+
+        override fun onStickers() {
+            if (!password) show(KeyboardView.STICKERS)
+        }
+
+        override fun onGlobe() = switchBack()
+        override fun onGlobeLongPress() = showPicker()
+    }
+
     private inner class Actions(private val model: KeyboardModel) : StickerPanelView.Actions {
         override fun onTab(tab: KeyboardTab) = model.selectTab(tab)
         override fun onChip(id: Long?) = model.selectChip(id)
         override fun onKind(kind: StickerKind) = model.selectKind(kind)
         override fun onSticker(sticker: Sticker) = send(sticker)
-        override fun onGlobe() = switchBack()
+        override fun onLetters() = show(KeyboardView.LETTERS)
         override fun onGlobeLongPress() = showPicker()
         override fun onBackspace() = sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
         override fun onOpenApp() {
@@ -133,6 +217,12 @@ class StickerImeService : InputMethodService() {
         internal val StickerImeService.panelForTest: StickerPanelView? get() = panel
 
         @VisibleForTesting
+        internal val StickerImeService.typingForTest: TypingView? get() = typing
+
+        @VisibleForTesting
+        internal val StickerImeService.viewForTest: KeyboardView get() = view
+
+        @VisibleForTesting
         internal val StickerImeService.loadedForTest: Boolean get() = model?.state?.value?.loaded == true
 
         @VisibleForTesting
@@ -145,5 +235,14 @@ class StickerImeService : InputMethodService() {
             setInputView(onCreateInputView())
             onStartInputView(currentInputEditorInfo, false)
         }
+    }
+}
+
+/** Holds both views at the sticker panel's height, so the letters never grow past it. */
+private class PanelFrame(context: android.content.Context) : FrameLayout(context) {
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val panel = getChildAt(0)
+        measureChild(panel, widthMeasureSpec, heightMeasureSpec)
+        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(panel.measuredHeight, MeasureSpec.EXACTLY))
     }
 }

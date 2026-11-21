@@ -30,6 +30,11 @@ class ImeTestActivity : Activity() {
         private set
     lateinit var password: EditText
         private set
+    lateinit var send: EditText
+        private set
+
+    /** Editor actions the Send field received (Enter key). */
+    val actions: MutableList<Int> = java.util.Collections.synchronizedList(mutableListOf())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,8 +50,18 @@ class ImeTestActivity : Activity() {
             hint = FIELD_PASSWORD
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
+        send = EditText(this).apply {
+            tag = FIELD_SEND
+            hint = FIELD_SEND
+            isSingleLine = true
+            imeOptions = EditorInfo.IME_ACTION_SEND
+            setOnEditorActionListener { _, action, _ ->
+                actions += action
+                true
+            }
+        }
         column.addView(TextView(this).apply { text = "Keyboard test" })
-        listOf(anyImage, pngOnly, plain, password).forEach { column.addView(it) }
+        listOf(anyImage, pngOnly, plain, password, send).forEach { column.addView(it) }
         setContentView(column)
     }
 
@@ -79,6 +94,7 @@ class ImeTestActivity : Activity() {
         const val FIELD_PNG = "png-only"
         const val FIELD_PLAIN = "plain"
         const val FIELD_PASSWORD = "password"
+        const val FIELD_SEND = "send"
 
         /** Everything the image fields received, oldest first. */
         val received: MutableList<Received> = java.util.Collections.synchronizedList(mutableListOf())

@@ -5,9 +5,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
-import android.graphics.drawable.LayerDrawable
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
@@ -46,7 +44,7 @@ class StickerPanelView(
         fun onChip(id: Long?)
         fun onKind(kind: StickerKind)
         fun onSticker(sticker: Sticker)
-        fun onGlobe()
+        fun onLetters()
         fun onGlobeLongPress()
         fun onBackspace()
         fun onOpenApp()
@@ -110,12 +108,7 @@ class StickerPanelView(
 
     init {
         orientation = VERTICAL
-        background = LayerDrawable(
-            arrayOf(
-                topRounded(palette.line, dp(28f)),
-                InsetDrawable(topRounded(palette.panel, dp(28f)), 0, dp(1), 0, 0),
-            ),
-        )
+        background = panelBackground(context, palette)
         setPadding(0, dp(8), 0, dp(10))
 
         tabRow.setPadding(dp(12), 0, dp(12), 0)
@@ -290,8 +283,19 @@ class StickerPanelView(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(10), 0, dp(10), 0)
         }
-        val globe = key(R.drawable.ic_kb_globe, R.string.kb_switch_keyboard, KeyboardTags.GLOBE).apply {
-            setOnClickListener { actions.onGlobe() }
+        // ABC returns to the letters; holding it opens the system keyboard list (the letters have the globe).
+        val letters = TextView(context).apply {
+            tag = KeyboardTags.LETTERS
+            text = context.getString(R.string.kb_page_letters)
+            contentDescription = context.getString(R.string.kb_key_letters)
+            setTextColor(palette.text)
+            textSize = 15f
+            applyFigtree(700)
+            gravity = Gravity.CENTER
+            background = InsetDrawable(rounded(palette.raised, dp(14f)), 0, dp(2), 0, dp(2))
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { actions.onLetters() }
             setOnLongClickListener { actions.onGlobeLongPress(); true }
         }
         val backspace = key(R.drawable.ic_kb_backspace, R.string.kb_backspace, KeyboardTags.BACKSPACE).apply {
@@ -326,7 +330,7 @@ class StickerPanelView(
         val center = FrameLayout(context).apply {
             addView(group, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
         }
-        row.addView(globe, lp(dp(64), dp(48)))
+        row.addView(letters, lp(dp(64), dp(48)))
         row.addView(center, lp(0, WRAP).apply { weight = 1f; marginStart = dp(6); marginEnd = dp(6) })
         row.addView(backspace, lp(dp(64), dp(48)))
         return row
@@ -361,11 +365,6 @@ class StickerPanelView(
         val inset = dp((48 - visualHeight) / 2)
         val shape = rounded(fill, dp(visualHeight / 2f), if (stroke != null) dp(1) else 0, stroke ?: 0)
         return InsetDrawable(shape, 0, inset, 0, inset)
-    }
-
-    private fun topRounded(color: Int, r: Float) = GradientDrawable().apply {
-        setColor(color)
-        cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
     }
 
     private fun text(size: Float, weight: Int, color: Int) = TextView(context).apply {
