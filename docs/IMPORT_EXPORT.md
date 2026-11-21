@@ -56,6 +56,8 @@ settings.json        (optional)
 
 ## Stored format (every import: share sheet, picker, pack)
 
+Built in ROADMAP M4.5. Until then stickers are stored as received (PNG, WebP, GIF; JPEG is rejected).
+
 Goal: a library of thousands of stickers stays in the hundreds of MB, with no visible quality loss on a phone.
 
 Accepted input, sniffed from magic bytes: PNG, JPEG, WebP (still or animated), GIF. Anything else is rejected.
@@ -66,7 +68,7 @@ Still images (PNG, JPEG, still WebP):
 3. **Never store something bigger than the input:** if the input was not scaled down and its original bytes are smaller than the encoded result, keep the original bytes and type (for example a small JPEG or a lossy WebP; re-encoding those losslessly only makes them bigger, never better).
 4. Thumbnail, `hasAlpha` and the cut line come from the stored image, as before.
 
-Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap) until ROADMAP M4.5, which shrinks GIFs over 512px with our own Kotlin GIF encoder (output stays GIF; near-lossless, as GIF allows 256 colors per frame). Animated WebP stays unchanged (shrinking it would need libwebp; undecided).
+Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap) until ROADMAP M4.5 shrinks GIFs over 512px with our own Kotlin GIF encoder (output stays GIF; near-lossless, as GIF allows 256 colors per frame). Animated WebP stays unchanged (shrinking it would need libwebp; undecided).
 
 Duplicates: `hash` is the SHA-256 of the **bytes as received**, before conversion, so saving the same file twice is still a no-op. Known gap: a sticker sent from this app and saved back arrives as the converted bytes, so it is not recognised as the same; accepted for v1.
 
