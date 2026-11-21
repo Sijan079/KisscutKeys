@@ -18,6 +18,14 @@ object TestImageFiles {
         return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
     }
 
+    /** Square PNG of [size] px: a filled circle of [color] on a transparent background (a die-cut sticker). */
+    fun circlePng(size: Int = 200, color: Int = Color.rgb(255, 122, 89)): ByteArray {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+        android.graphics.Canvas(bitmap).drawCircle(size / 2f, size / 2f, size * 0.4f, paint)
+        return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+    }
+
     /** Lossless WebP (API 30+ encoder), same pixels as [png]. */
     fun webp(width: Int = 64, height: Int = 64, transparent: Boolean = true): ByteArray {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)

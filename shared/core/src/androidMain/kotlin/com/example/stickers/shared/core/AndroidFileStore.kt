@@ -42,6 +42,9 @@ class AndroidFileStore(private val filesDir: File) : FileStore {
         return withContext(Dispatchers.IO) { !file.exists() || file.delete() }
     }
 
+    /** The file behind [relativePath], for image loaders. Same name rules as the other calls. */
+    fun file(area: FileArea, relativePath: String): File = resolve(area, relativePath)
+
     private fun resolve(area: FileArea, name: String): File {
         require(name.matches(SAFE_NAME) && name != "." && name != "..") { "unsafe file name '$name'" }
         val folder = when (area) {

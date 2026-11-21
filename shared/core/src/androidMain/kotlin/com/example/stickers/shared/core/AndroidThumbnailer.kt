@@ -11,15 +11,18 @@ import kotlin.math.roundToInt
 
 /**
  * Decodes with BitmapFactory (first frame for GIF and animated WebP), downsampled while decoding so
- * memory stays bounded, then scales to [maxSide] and encodes WebP. `hasAlpha` is read from the pixels.
- * The die-cut outline is not drawn here yet (M3).
+ * memory stays bounded, then scales to fit [maxSide] and encodes WebP. `hasAlpha` is read from the pixels
+ * before any padding. Still images with transparency get the die-cut line baked in ([DieCut]); the
+ * result still fits [maxSide]. Opaque and animated images are left as they are.
  */
 class AndroidThumbnailer(private val maxSide: Int = ImportLimits.THUMB_MAX_SIDE) : Thumbnailer {
 
-    override suspend fun thumbnail(bytes: ByteArray, info: ImageInfo): Thumbnail? =
-        withContext(Dispatchers.Default) { decode(bytes) }
+    private val cutRadius = DieCut.radiusFor(maxSide)
 
-    private fun decode(bytes: ByteArray): Thumbnail? {
+    override suspend fun thumbnail(bytes: ByteArray, info: ImageInfo): Thumbnail? =
+        withContext(Dispatchers.Default) { decode(bytes, info) }
+
+    private fun decode(bytes: ByteArray, info: ImageInfo): Thumbnail? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         val width = bounds.outWidth
@@ -33,18 +36,41 @@ class AndroidThumbnailer(private val maxSide: Int = ImportLimits.THUMB_MAX_SIDE)
         }
         val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
         val scaled = scaleToFit(decoded, maxSide)
+        var inner: Bitmap? = null
+        var outlined: Bitmap? = null
         try {
-            val pixels = IntArray(scaled.width * scaled.height)
-            scaled.getPixels(pixels, 0, scaled.width, 0, 0, scaled.width, scaled.height)
-            val hasAlpha = scaled.hasAlpha() && hasTransparentPixel(pixels)
+            val hasAlpha = scaled.hasAlpha() && hasTransparentPixel(scaled.pixels())
+            val image = if (hasAlpha && !info.isAnimated) {
+                // Shrink to leave room for the cut line, so the result still fits maxSide.
+                val fit = scaleToFit(
+                    scaled,
+                    maxSide - 2 * DieCut.padFor(cutRadius),
+                ).also { if (it !== scaled) inner = it }
+                val cut = DieCut.outline(ArgbImage(fit.width, fit.height, fit.pixels()), cutRadius)
+                Bitmap.createBitmap(cut.pixels, cut.width, cut.height, Bitmap.Config.ARGB_8888).also { outlined = it }
+            } else {
+                scaled
+            }
             val out = ByteArrayOutputStream()
-            if (!scaled.compress(webpFormat(), WEBP_QUALITY, out)) return null
+            if (!image.compress(webpFormat(), WEBP_QUALITY, out)) return null
             return Thumbnail(out.toByteArray(), hasAlpha)
         } finally {
+            outlined?.recycle()
+            inner?.recycle()
             if (scaled !== decoded) scaled.recycle()
             decoded.recycle()
         }
     }
+
+    private fun Bitmap.pixels(): IntArray = IntArray(width * height).also { getPixels(
+        it,
+        0,
+        width,
+        0,
+        0,
+        width,
+        height,
+    ) }
 
     private fun scaleToFit(bitmap: Bitmap, maxSide: Int): Bitmap {
         val longest = max(bitmap.width, bitmap.height)
