@@ -1,4 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Stickers</string>
+    <string name="share_target_label">Save to library</string>
+
+    <!-- Home (placeholder until the Library screen, M3) -->
+    <string name="home_empty_body">Share an image from any app, or add stickers from your photos.</string>
+    <string name="home_add_stickers">Add stickers</string>
+
+    <!-- Save sheet -->
+    <plurals name="save_title">
+        <item quantity="one">Save sticker</item>
+        <item quantity="other">Save %d stickers</item>
+    </plurals>
+    <string name="save_to">Save to</string>
+    <string name="save_unsorted">Unsorted</string>
+    <string name="save_path_separator">" › "</string>
+    <string name="save_new_collection">New collection</string>
+    <string name="save_new_collection_in">New collection in %1$s</string>
+    <string name="save_button_to">Save to %1$s</string>
+    <string name="save_progress">Saving %1$d of %2$d</string>
+    <string name="save_item_details">%1$s · %2$d × %3$d</string>
+    <string name="save_item_loading">Reading image</string>
+    <string name="save_item_unsupported">Not a PNG, WebP or GIF, or too large</string>
+    <string name="save_count_images">%1$d images</string>
+    <string name="save_type_png">PNG sticker</string>
+    <string name="save_type_webp">WebP sticker</string>
+    <string name="save_type_webp_animated">Animated WebP</string>
+    <string name="save_type_gif">GIF</string>
+    <string name="save_type_gif_animated">Animated GIF</string>
+    <string name="save_badge_gif">GIF</string>
+    <string name="save_cd_preview">Sticker preview</string>
+    <string name="save_cd_expand">Expand %1$s</string>
+    <string name="save_cd_collapse">Collapse %1$s</string>
+    <string name="save_cd_selected">Selected</string>
+
+    <!-- Save result -->
+    <string name="save_done_title">Saved</string>
+    <string name="save_done_nothing_new">Nothing new saved</string>
+    <plurals name="save_done_added">
+        <item quantity="one">%d sticker saved</item>
+        <item quantity="other">%d stickers saved</item>
+    </plurals>
+    <plurals name="save_done_duplicates">
+        <item quantity="one">%d was already in your library</item>
+        <item quantity="other">%d were already in your library</item>
+    </plurals>
+    <plurals name="save_done_rejected">
+        <item quantity="one">%d could not be saved</item>
+        <item quantity="other">%d could not be saved</item>
+    </plurals>
+    <string name="save_done_button">Done</string>
+
+    <!-- New collection dialog -->
+    <string name="new_collection_title">New collection</string>
+    <string name="new_collection_name">Name</string>
+    <string name="new_collection_create">Create</string>
+    <string name="new_collection_cancel">Cancel</string>
 </resources>
