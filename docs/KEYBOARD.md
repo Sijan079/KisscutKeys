@@ -4,7 +4,20 @@ The keyboard is an `InputMethodService` in the Android app module (`keyboard` pa
 
 ## Purpose
 
-A sticker-only panel. It is **not** a full typing keyboard in v1. It provides a globe key to switch back to the user's normal keyboard (Android requires every keyboard to offer a way to switch).
+A basic typing keyboard plus the sticker panel (typing added in ROADMAP M4.2, user's call). Letters, numbers and symbols, no autocorrect, word suggestions, swipe typing or emoji search. A sticker key swaps the letters for the sticker panel and an ABC key swaps back. A globe key switches to another keyboard (Android requires every keyboard to offer a way to switch).
+
+Privacy: keys are sent to the field as they are pressed. Nothing typed is stored, logged, read back or sent anywhere. The only reads of the field are the cursor's caps mode (for auto-capitalization) and the editor's action (Send, Search, Done) for the Enter key.
+
+### Typing layout (M4.2)
+
+- Letters: `q`-`p`, `a`-`l`, then Shift, `z`-`m`, Backspace; bottom row `?123`, sticker key, globe, comma, space, period, Enter.
+- Shift: tap for one capital, double-tap for caps lock. Auto-capital at sentence start when the field asks for it (`getCursorCapsMode`).
+- `?123` page: digits and common symbols, with a `=\<` page for the rest. `ABC` returns to letters.
+- Enter performs the field's action (Send, Search, Go, Done, Next) unless the field is multi-line or sets `IME_FLAG_NO_ENTER_ACTION`; then it types a new line.
+- Backspace repeats while held. Keys give a light haptic tap.
+- Number and phone fields open on the `?123` page. Password fields open on letters and the sticker key is off.
+- The keyboard opens on the view used last (letters or stickers), except in password, number and phone fields.
+- Same panel height as the sticker panel, same tokens: keys on Raised, special keys on Line, Enter on Lime.
 
 ## Components
 

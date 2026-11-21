@@ -49,6 +49,16 @@ Done when: UI tests pass and screenshots match the designs; differences listed.
 
 Done when: on the emulator a sticker is inserted into `ImeTestActivity` via the keyboard and tests pass.
 
+## M4.2: Typing keyboard
+Added after M4 at the user's request: the keyboard must also type (KEYBOARD, Typing layout).
+- [ ] Letters, `?123` and `=\<` pages with Shift, caps lock, auto-capitals, Backspace repeat, Enter action
+- [ ] Sticker key and ABC key swap between letters and the sticker panel; last view remembered
+- [ ] Field rules: number and phone fields open on numbers, password fields on letters with stickers off
+- [ ] Setup screen privacy text updated (types, never stores what is typed)
+- [ ] Tests: layout and shift logic on the JVM; typing into `ImeTestActivity` fields on the device
+
+Done when: on the emulator, typing "Hi there" plus a sticker into `ImeTestActivity` works, Enter sends in a field with a Send action, and tests pass. The user tries it in Discord on their phone.
+
 ## M4.5: Smaller storage and file types
 Still images:
 - [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)

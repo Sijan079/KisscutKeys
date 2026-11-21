@@ -15,7 +15,7 @@ Stickers saved from the web end up scattered in galleries and downloads. Finding
 1. **Save** stickers: share-sheet "Save to library" from any app, and a picker inside the app. Supports PNG, JPEG, WebP, GIF, animated WebP. From ROADMAP M4.5, still images are stored at most 512px on the longest side as lossless WebP to keep the library small (see IMPORT_EXPORT, Stored format).
 2. **Library:** grid of all stickers, favorites, recents, "Unsorted".
 3. **Collections:** user-made, nestable (depth cap 3). Move stickers between collections. Select mode for bulk move, favorite and delete.
-4. **Keyboard:** custom keyboard with a sticker panel: tabs for Recents, Favorites and collections, a grid, a globe key to switch keyboards. Animated stickers play only while visible.
+4. **Keyboard:** a basic typing keyboard (QWERTY, numbers and symbols; no autocorrect, suggestions or swipe) with a sticker key that swaps to the sticker panel: tabs for Recents, Favorites and collections, a grid, a globe key to switch keyboards. Animated stickers play only while visible. The keyboard never stores, logs or sends what is typed.
 5. **Insert** a sticker into the chat app using commit-content. When the target app doesn't support images, fall back to copying to the clipboard and show a short hint.
 6. **Backup:** export and import `.stickerpack` files (stickers, collections, optional settings). Dedupe on import.
 7. **Share with a friend** by sending a `.stickerpack` file through any app. No accounts.
