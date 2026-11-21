@@ -94,4 +94,4 @@ Native Android Views (RecyclerView), not Compose. Reasons: `InputMethodService` 
 - Final app name and `<APP_ID>` (package). Use `com.example.stickers` until told.
 - Free-tier limits for the $1 unlock.
 - Whether to add Koin.
-- Shrinking animated stickers (GIF, animated WebP): Android has no built-in encoder, so it needs a new library (for example libwebp). Until decided, animated stickers are stored unchanged.
+- Shrinking animated stickers: decided for GIF (own Kotlin encoder, no library, ROADMAP M4.5). Animated WebP would need libwebp; still undecided, stored unchanged.

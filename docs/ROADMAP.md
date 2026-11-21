@@ -56,6 +56,18 @@ Done when: a 3000px PNG saves as a 512px lossless WebP with identical pixels to 
 
 Done when: on the emulator a sticker is inserted into `ImeTestActivity` via the keyboard and tests pass.
 
+## M4.5: Shrink large GIFs
+- [ ] Pure Kotlin GIF reader in `shared:core` commonMain (frames, disposal, transparency, interlace, local palettes), with safety limits for broken or hostile files
+- [ ] Shrink GIFs over 512px on the longest side: composite each frame, scale, re-pick 256 colors per frame without flicker, keep 1-bit transparency clean
+- [ ] GIF writer: real LZW, store only the changed area per frame, keep delays and loop count
+- [ ] Wire into import: only GIFs over 512px, never bigger than the input, one frame at a time in memory, progress for long GIFs
+- [ ] Tests: odd disposal and palette cases, malformed files, timing and loop preserved, "never bigger" rule, a set of real-world GIFs
+- [ ] Before reusing any existing code (for example AnimatedGifEncoder / NeuQuant), check its license with the user
+
+Output stays GIF so every chat app accepts it. Shrunk GIFs are near-lossless, not pixel-identical (GIF allows 256 colors per frame). GIFs at 512px or smaller and animated WebP are stored unchanged. No new library.
+
+Done when: a 1000px GIF saves at 512px as a GIF that plays with the same timing and looks the same on the emulator; small GIFs are unchanged; tests pass.
+
 ## M5: Backup and sharing
 - [ ] `.stickerpack` export (all or one collection) with progress and cancel
 - [ ] Import with all safety limits and rollback (IMPORT_EXPORT)

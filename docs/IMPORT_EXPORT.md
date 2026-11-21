@@ -66,7 +66,7 @@ Still images (PNG, JPEG, still WebP):
 3. **Never store something bigger than the input:** if the input was not scaled down and its original bytes are smaller than the encoded result, keep the original bytes and type (for example a small JPEG or a lossy WebP; re-encoding those losslessly only makes them bigger, never better).
 4. Thumbnail, `hasAlpha` and the cut line come from the stored image, as before.
 
-Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap). Android has no built-in encoder for animated WebP or GIF; shrinking them would need a new library (open decision, ask the user).
+Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap) until ROADMAP M4.5, which shrinks GIFs over 512px with our own Kotlin GIF encoder (output stays GIF; near-lossless, as GIF allows 256 colors per frame). Animated WebP stays unchanged (shrinking it would need libwebp; undecided).
 
 Duplicates: `hash` is the SHA-256 of the **bytes as received**, before conversion, so saving the same file twice is still a no-op. Known gap: a sticker sent from this app and saved back arrives as the converted bytes, so it is not recognised as the same; accepted for v1.
 
