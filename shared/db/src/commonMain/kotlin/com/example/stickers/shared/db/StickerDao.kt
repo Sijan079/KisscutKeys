@@ -16,6 +16,30 @@ interface StickerDao {
     @Query("SELECT * FROM Sticker WHERE collectionId = :id ORDER BY addedAt DESC, id DESC")
     fun observeInCollection(id: Long): Flow<List<Sticker>>
 
+    /** Stickers in [id] and every collection below it. */
+    @Query(
+        """
+        WITH RECURSIVE tree(id) AS (
+          SELECT id FROM StickerCollection WHERE id = :id
+          UNION ALL
+          SELECT c.id FROM StickerCollection c JOIN tree t ON c.parentId = t.id
+        )
+        SELECT * FROM Sticker WHERE collectionId IN (SELECT id FROM tree) ORDER BY addedAt DESC, id DESC
+        """,
+    )
+    fun observeInTree(id: Long): Flow<List<Sticker>>
+
+    /** The newest [limit] stickers of every collection (mini previews on collection rows). */
+    @Query(
+        """
+        SELECT * FROM Sticker s WHERE s.collectionId IS NOT NULL AND s.id IN (
+          SELECT s2.id FROM Sticker s2 WHERE s2.collectionId = s.collectionId
+          ORDER BY s2.addedAt DESC, s2.id DESC LIMIT :limit
+        )
+        """,
+    )
+    fun observePreviews(limit: Int): Flow<List<Sticker>>
+
     @Query("SELECT * FROM Sticker WHERE collectionId IS NULL ORDER BY addedAt DESC, id DESC")
     fun observeUnsorted(): Flow<List<Sticker>>
 

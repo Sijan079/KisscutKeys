@@ -18,6 +18,8 @@ class StickerRepository(
 
     fun observeAll(): Flow<List<Sticker>> = stickers.observeAll()
     fun observeInCollection(collectionId: Long): Flow<List<Sticker>> = stickers.observeInCollection(collectionId)
+    /** Stickers in [collectionId] and every collection below it. */
+    fun observeInTree(collectionId: Long): Flow<List<Sticker>> = stickers.observeInTree(collectionId)
     fun observeUnsorted(): Flow<List<Sticker>> = stickers.observeUnsorted()
     fun observeFavorites(): Flow<List<Sticker>> = stickers.observeFavorites()
     fun observeRecents(limit: Int = DEFAULT_RECENTS): Flow<List<Sticker>> = stickers.observeRecents(limit)

@@ -280,4 +280,22 @@ class CollectionRepositoryTest {
         repo.create("Dogs", parentId = null)
         assertEquals(4, repo.observeAll().first().size)
     }
+
+    // --- observeSummaries (Collections list) --------------------------------------------------
+
+    @Test
+    fun summariesCountDescendantsAndPreviewStickers() = runTest {
+        val stickers = StickerRepository(db, files, TestClock())
+        val cats = repo.create("Cats", parentId = null)
+        val grumpy = repo.create("Grumpy", parentId = cats.id)
+        stickers.add(newSticker("a"), cats.id)
+        stickers.add(newSticker("b"), grumpy.id)
+        stickers.add(newSticker("c"), grumpy.id)
+
+        val s = repo.observeSummaries().first()
+        assertEquals(3, s.getValue(cats.id).totalCount)
+        assertEquals(1, s.getValue(cats.id).childCount)
+        assertEquals(listOf("a", "c", "b"), s.getValue(cats.id).previews.map { it.hash })
+        assertEquals(2, s.getValue(grumpy.id).depth)
+    }
 }

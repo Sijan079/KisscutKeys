@@ -5,6 +5,7 @@ import com.example.stickers.shared.db.StickerCollection
 import com.example.stickers.shared.db.StickerDatabase
 import com.example.stickers.shared.db.inTransaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /** Why a collection change was refused. */
 sealed class CollectionRuleException(message: String) : IllegalArgumentException(message) {
@@ -37,6 +38,15 @@ class CollectionRepository(
 
     /** Every collection at every level (for the nested picker); see [buildCollectionTree]. */
     fun observeAll(): Flow<List<StickerCollection>> = collections.observeAll()
+
+    /**
+     * Every collection with total counts (descendants included), subcollection counts and mini previews,
+     * keyed by id. Updates when collections or stickers change.
+     */
+    fun observeSummaries(): Flow<Map<Long, CollectionSummary>> =
+        combine(collections.observeAllWithCounts(), stickers.observePreviews(PREVIEW_COUNT)) { all, previews ->
+            summarizeCollections(all, previews)
+        }
 
     fun observeById(id: Long): Flow<StickerCollection?> = collections.observeById(id)
 
