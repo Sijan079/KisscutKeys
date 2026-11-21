@@ -123,4 +123,13 @@ class CollectionDetailViewModelTest {
         assertNull(backend.stickers.value.first { it.id == 10L }.collectionId)
         assertEquals(listOf(11L), vm.s.stickers.map { it.id })
     }
+
+    @Test
+    fun titleArtPrefersDieCutStills() = runTest(dispatcher) {
+        seed()
+        val vm = viewModel(CollectionTarget.Collection(2))
+
+        // Memes: 10 (still), 11 (animated), and 12 from Classics (still): the GIF comes last.
+        assertEquals(listOf(10L, 12L, 11L), vm.s.art.map { it.id })
+    }
 }

@@ -92,8 +92,8 @@ class CollectionDetailViewModel(
             collectionDialog = collectionDialog,
         )
         when (target) {
-            is CollectionTarget.Collection -> forCollection(base, target.id, all, summaries)
-            else -> base.copy(totalCount = directList.size, art = directList.take(ART_COUNT))
+            is CollectionTarget.Collection -> forCollection(base, target.id, all, summaries, directList)
+            else -> base.copy(totalCount = directList.size, art = pickArt(directList))
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CollectionDetailUiState())
 
@@ -102,6 +102,7 @@ class CollectionDetailViewModel(
         id: Long,
         all: List<StickerCollection>,
         summaries: Map<Long, CollectionSummary>,
+        directList: List<Sticker>,
     ): CollectionDetailUiState {
         val me = all.firstOrNull { it.id == id } ?: return base.copy(gone = true)
         val summary = summaries[id]
@@ -115,9 +116,13 @@ class CollectionDetailViewModel(
             totalCount = summary?.totalCount ?: base.directCount,
             children = children,
             canAddChild = (summary?.depth ?: CollectionRepository.MAX_DEPTH) < CollectionRepository.MAX_DEPTH,
-            art = summary?.previews.orEmpty(),
+            art = pickArt(directList + summary?.previews.orEmpty()),
         )
     }
+
+    /** Die-cut stills look best scattered next to the title; others only fill in. */
+    private fun pickArt(candidates: List<Sticker>): List<Sticker> =
+        candidates.distinctBy { it.id }.sortedByDescending { it.hasAlpha && !it.isAnimated }.take(ART_COUNT)
 
     fun setKind(k: StickerKind) {
         kind.value = k
