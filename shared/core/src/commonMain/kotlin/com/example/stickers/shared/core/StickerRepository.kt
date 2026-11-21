@@ -57,6 +57,8 @@ class StickerRepository(
         }
     }
 
+    suspend fun findByHash(hash: String): Sticker? = stickers.findByHash(hash)
+
     suspend fun moveTo(ids: List<Long>, collectionId: Long?) = stickers.moveTo(ids, collectionId)
 
     suspend fun setFavorite(ids: List<Long>, value: Boolean) = stickers.setFavorite(ids, value)
