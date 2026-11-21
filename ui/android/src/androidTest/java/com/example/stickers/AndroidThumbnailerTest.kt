@@ -49,6 +49,13 @@ class AndroidThumbnailerTest {
     }
 
     @Test
+    fun transparentWebpIsDecoded() = runTest {
+        val t = assertNotNull(thumb(TestImageFiles.webp(transparent = true)))
+
+        assertTrue(t.hasAlpha)
+    }
+
+    @Test
     fun gifDecodesItsFirstFrame() = runTest {
         val t = assertNotNull(thumb(TestImageFiles.GIF_1X1))
 

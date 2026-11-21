@@ -18,6 +18,15 @@ object TestImageFiles {
         return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
     }
 
+    /** Lossless WebP (API 30+ encoder), same pixels as [png]. */
+    fun webp(width: Int = 64, height: Int = 64, transparent: Boolean = true): ByteArray {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(Color.rgb(155, 140, 255))
+        if (transparent) bitmap.setPixel(0, 0, Color.TRANSPARENT)
+        return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, it) }
+            .toByteArray()
+    }
+
     /** The classic 1x1 transparent GIF89a. */
     val GIF_1X1: ByteArray = byteArrayOf(
         0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80.toByte(), 0x00, 0x00,

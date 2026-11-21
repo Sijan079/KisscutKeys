@@ -21,6 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -48,11 +49,11 @@ class MainActivity : ComponentActivity() {
     private var pending by mutableStateOf<List<String>>(emptyList())
     private var fromShare = false
 
+    /** Bumped on every new Save request, so the same URIs picked again get a fresh ViewModel. */
+    private var session by mutableIntStateOf(0)
+
     private val pickImages = registerForActivityResult(PickMultipleVisualMedia(MAX_PICK)) { uris ->
-        if (uris.isNotEmpty()) {
-            pending = uris.map { it.toString() }
-            fromShare = false
-        }
+        if (uris.isNotEmpty()) openSave(uris.map { it.toString() }, fromShare = false)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
         } else {
             pending = savedInstanceState.getStringArrayList(KEY_PENDING).orEmpty()
             fromShare = savedInstanceState.getBoolean(KEY_FROM_SHARE)
+            session = savedInstanceState.getInt(KEY_SESSION)
         }
         val container = (application as App).container
         setContent {
@@ -71,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 val uris = pending
                 if (uris.isNotEmpty()) {
                     val vm: SaveViewModel = viewModel(
-                        key = "save:" + uris.joinToString("\n"),
+                        key = "save:$session",
                         factory = viewModelFactory {
                             initializer {
                                 SaveViewModel(
@@ -97,14 +99,19 @@ class MainActivity : ComponentActivity() {
         super.onSaveInstanceState(outState)
         outState.putStringArrayList(KEY_PENDING, ArrayList(pending))
         outState.putBoolean(KEY_FROM_SHARE, fromShare)
+        outState.putInt(KEY_SESSION, session)
     }
 
     private fun takeShare(intent: Intent) {
         val uris = intent.sharedImageUris()
-        if (uris.isNotEmpty()) {
-            pending = uris.map { it.toString() }
-            fromShare = true
-        }
+        if (uris.isNotEmpty()) openSave(uris.map { it.toString() }, fromShare = true)
+    }
+
+    /** Opens a new Save sheet for [uris]. Shares finish the activity on Done; picks stay in the app. */
+    internal fun openSave(uris: List<String>, fromShare: Boolean) {
+        session++
+        pending = uris
+        this.fromShare = fromShare
     }
 
     private fun finishSave() {
@@ -116,6 +123,7 @@ class MainActivity : ComponentActivity() {
         const val MAX_PICK = 50
         const val KEY_PENDING = "pending_uris"
         const val KEY_FROM_SHARE = "from_share"
+        const val KEY_SESSION = "save_session"
     }
 }
 
