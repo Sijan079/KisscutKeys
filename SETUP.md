@@ -1,0 +1,228 @@
+# SETUP.md: Android dev and test environment without Android Studio
+
+Audience: Claude Code, running on a Windows 11 machine (PowerShell).
+Goal: build, install, run and test the sticker app on an Android emulator using only command-line tools.
+Do the steps in order. After each step run its **Verify** line. If a verify fails, stop and report the exact error instead of working around it.
+
+Version numbers below (API 35, etc.) are defaults. Run `sdkmanager --list` to confirm what exists before installing.
+
+---
+
+## 0. Preconditions (report, don't fix silently)
+
+1. **Virtualization must be on.** Without it the emulator is unusably slow.
+   - Check: `systeminfo | findstr /i "Hyper-V"` shows "A hypervisor has been detected" or the Hyper-V requirements as Yes.
+   - If not: the user must enable virtualization in BIOS and turn on the "Windows Hypervisor Platform" optional feature (admin PowerShell: `Enable-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform`, then reboot). Tell the user; do not run admin commands without asking.
+2. **Disk:** at least 15 GB free (SDK + system image + AVD + Gradle cache).
+3. **Network:** downloads need access to `dl.google.com`, `maven.google.com`, Maven Central and `services.gradle.org`. If any is blocked, say which.
+
+Verify: report the three results above in one short message before continuing.
+
+---
+
+## 1. JDK
+
+Install a JDK 17 or 21 (Temurin recommended). Gradle and the Android Gradle Plugin need it; no separate Gradle install is needed because the project uses the Gradle wrapper.
+
+```powershell
+winget install EclipseAdoptium.Temurin.17.JDK
+```
+
+Open a new shell, then set `JAVA_HOME` if it is not set automatically.
+
+Verify: `java -version` prints 17 or 21, and `echo $env:JAVA_HOME` is non-empty.
+
+---
+
+## 2. Android SDK command-line tools
+
+1. Download "Command line tools only" for Windows from https://developer.android.com/studio (scroll to "Command line tools only"). Unzip it.
+2. Create the SDK root and place the tools exactly like this. **The `latest` folder name is required**, or `sdkmanager` will fail.
+
+```
+C:\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat
+C:\Android\Sdk\cmdline-tools\latest\lib\...
+```
+
+(The zip unpacks to a `cmdline-tools` folder; move its contents into `latest`.)
+
+3. Set environment variables (user level, then open a new shell):
+
+```powershell
+[Environment]::SetEnvironmentVariable("ANDROID_HOME", "C:\Android\Sdk", "User")
+[Environment]::SetEnvironmentVariable("ANDROID_SDK_ROOT", "C:\Android\Sdk", "User")
+$p = [Environment]::GetEnvironmentVariable("Path", "User")
+$add = "C:\Android\Sdk\cmdline-tools\latest\bin;C:\Android\Sdk\platform-tools;C:\Android\Sdk\emulator"
+[Environment]::SetEnvironmentVariable("Path", "$p;$add", "User")
+```
+
+Verify: in a new shell, `sdkmanager --version` prints a version number.
+
+---
+
+## 3. Install SDK packages and accept licenses
+
+```powershell
+sdkmanager --licenses            # answer y to all
+sdkmanager "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;google_apis;x86_64"
+```
+
+Notes:
+- `google_apis` is enough for this app. Do not use `google_apis_playstore` unless testing Play features.
+- Use `x86_64` images on this machine. ARM images are far slower without Apple silicon.
+- If the NDK is ever needed: `sdkmanager "ndk;<version>"` (not needed now).
+
+Verify: `adb version` and `emulator -version` both print versions; `sdkmanager --list_installed` lists the packages above.
+
+---
+
+## 4. Create the test emulator (AVD)
+
+```powershell
+avdmanager create avd -n stickertest -k "system-images;android-35;google_apis;x86_64" -d pixel_6
+```
+
+If it asks about a custom hardware profile, answer `no`.
+
+Verify: `avdmanager list avd` shows `stickertest`.
+
+Optional tuning: edit `%USERPROFILE%\.android\avd\stickertest.avd\config.ini` and set `hw.ramSize=3072` and `hw.keyboard=yes`.
+
+---
+
+## 5. Boot the emulator
+
+Headless (for Claude Code to run unattended):
+
+```powershell
+Start-Process emulator -ArgumentList "-avd stickertest -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot-save" -WindowStyle Hidden
+```
+
+With a visible window (so the user can watch): drop `-no-window` and use `-gpu auto`.
+
+Wait for boot, with a timeout:
+
+```powershell
+adb wait-for-device
+$t = 0
+while ((adb shell getprop sys.boot_completed 2>$null).Trim() -ne "1") {
+  Start-Sleep 3; $t += 3
+  if ($t -gt 240) { throw "Emulator did not boot in 240s" }
+}
+adb shell input keyevent 82   # unlock
+```
+
+Verify: `adb devices` lists `emulator-5554  device`.
+
+Shut down when done: `adb emu kill`.
+
+---
+
+## 6. Project build and test (Gradle wrapper)
+
+The repo has a Gradle wrapper. Never install Gradle globally.
+
+```powershell
+.\gradlew.bat assembleDebug            # build the APK
+.\gradlew.bat test                     # JVM unit tests (shared core, Room DAOs via in-memory DB where possible)
+.\gradlew.bat connectedAndroidTest     # instrumented tests on the running emulator
+.\gradlew.bat installDebug             # install on the emulator
+```
+
+Rules:
+- Run `test` first; it needs no emulator and is the cheapest signal.
+- Only run `connectedAndroidTest` when `adb devices` shows a booted device.
+- Test reports: `app\build\reports\tests` and `app\build\reports\androidTests`.
+- First build downloads a lot; allow several minutes.
+
+Verify: `assembleDebug` ends with BUILD SUCCESSFUL and an APK exists under `app\build\outputs\apk\debug\`.
+
+---
+
+## 7. Driving the app without an MCP (plain adb)
+
+These are enough for Claude Code to look at and operate the app.
+
+```powershell
+adb exec-out screencap -p > screen.png                 # screenshot (read the PNG)
+adb shell uiautomator dump /sdcard/ui.xml; adb pull /sdcard/ui.xml   # UI tree
+adb shell input tap X Y
+adb shell input swipe X1 Y1 X2 Y2 300
+adb shell input text "hello"
+adb shell monkey -p <package.id> -c android.intent.category.LAUNCHER 1   # launch app
+adb logcat -d -s <TAG>                                  # read logs
+adb logcat -c                                           # clear logs
+```
+
+Prefer the UI tree over screenshots for finding tap targets (cheaper and exact). Use screenshots to judge visuals.
+
+On Windows PowerShell, `>` may re-encode binary output. If `screen.png` is corrupt, use `cmd /c "adb exec-out screencap -p > screen.png"` instead.
+
+---
+
+## 8. Testing the keyboard (IME)
+
+The sticker keyboard is an `InputMethodService`. After `installDebug`:
+
+```powershell
+adb shell ime list -a                                   # find <package>/<service>
+adb shell ime enable <package>/<service>
+adb shell ime set <package>/<service>
+```
+
+Then open any app with a text field (Settings search, or a test activity), tap the field, and confirm the keyboard shows. Check that sticker commits work by watching `adb logcat` and the receiving field.
+
+Reset to the default keyboard afterwards: `adb shell ime reset`.
+
+Known unknown: commit-content (image insertion) depends on the target app supporting it. For automated checks, include a small test activity in the debug build with an `EditText` that declares the MIME types the keyboard sends.
+
+---
+
+## 9. Optional: emulator MCP for Claude Code
+
+Gradle plus plain adb already covers most testing. Add an MCP only if screenshots and UI-tree calls through the shell become awkward.
+
+Candidates (community projects, unaudited): `adb-mcp` (iksnerd/adb-mcp), `AgenTest`, `Android-MCP` (CursorTouch). Before installing one:
+1. Read its README for the exact install and `claude mcp add` command. Do not guess flags.
+2. Skim the source or tool list. An MCP that can run arbitrary shell is as powerful as `adb shell`.
+3. Prefer servers that talk only to `adb` locally and use stdio.
+
+Register it with `claude mcp add` per its README, then run `/mcp` to confirm it connects.
+
+---
+
+## 10. Helper scripts to create
+
+Create these in `scripts/` so later tasks are one command each:
+
+- `scripts/emu-start.ps1`: boots `stickertest` (step 5), waits with timeout, exits non-zero on failure.
+- `scripts/emu-stop.ps1`: `adb emu kill`.
+- `scripts/test-all.ps1`: runs `gradlew test`; if a device is present, also `connectedAndroidTest`; prints a pass/fail summary and the report paths.
+- `scripts/screenshot.ps1 <name>`: saves `artifacts/<name>.png` using the `cmd /c` form from step 7.
+
+Keep artifacts (screenshots, UI dumps) in an `artifacts/` folder that is git-ignored.
+
+---
+
+## 11. Troubleshooting
+
+| Symptom | Likely cause and fix |
+|---|---|
+| `sdkmanager` says it can't find the SDK root or "Could not determine SDK root" | `cmdline-tools` not under `latest`, or `ANDROID_HOME` wrong |
+| Emulator errors about HAXM, WHPX or hypervisor | Virtualization off or Hyper-V/WHPX not enabled (step 0) |
+| Emulator stays offline or never boots | Run once with a window to see errors; delete `%USERPROFILE%\.android\avd\stickertest.avd\*.lock`; retry with `-wipe-data` |
+| `adb devices` shows `unauthorized` or empty | `adb kill-server; adb start-server`; restart emulator |
+| Gradle: "Unsupported class file major version" | JDK too new or too old for the Gradle/AGP in use; switch `JAVA_HOME` to 17 |
+| `INSTALL_FAILED_*` | `adb uninstall <package.id>` then `installDebug` again |
+| Tests hang | Emulator not fully booted; recheck `sys.boot_completed` |
+
+---
+
+## 12. Done criteria
+
+Report back with:
+1. Output of `java -version`, `adb version`, `emulator -version`.
+2. `adb devices` showing the booted emulator.
+3. `assembleDebug` result and APK path.
+4. One screenshot of the app's first screen.
+5. Anything skipped, with the reason.

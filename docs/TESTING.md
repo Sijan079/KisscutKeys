@@ -1,0 +1,73 @@
+# TESTING.md
+
+Goal: Claude Code can verify its own work without a human. Cheapest checks first.
+
+## Layers
+
+| Layer | Where | Runs with | What it covers |
+|---|---|---|---|
+| Unit (JVM) | `shared/*/src/commonTest`, `ui/android/src/test` | `gradlew test` | repositories with fakes, nesting rules, import/export logic, ViewModels |
+| Database | `shared/db/src/androidInstrumentedTest` (or JVM with Room KMP in-memory where supported) | `gradlew test` or `connectedAndroidTest` | DAOs, recursive CTE, FK behavior, migrations |
+| Instrumented UI | `ui/android/src/androidTest` | `gradlew connectedAndroidTest` | Compose screens, navigation, share-sheet intent |
+| Keyboard | same, with `ImeTestActivity` | `connectedAndroidTest` + adb | panel shows, insertion commits, fallback |
+| Visual check | emulator + screenshot | adb | compare against the artifact designs |
+
+## Order of work
+
+1. Write or update unit tests first for logic changes.
+2. Run `.\gradlew.bat test`. Fix before moving on.
+3. For UI or keyboard changes, boot the emulator, run `installDebug`, then the instrumented tests, then take screenshots.
+
+## What must be tested (minimum)
+
+### Database and repositories
+- Insert duplicate hash returns existing sticker, no second row.
+- Delete collection "only": children re-parented, stickers moved up, nothing lost.
+- Delete collection "everything": descendants and stickers gone, files removed.
+- Depth cap 3 enforced on create and move; cycle rejected.
+- `totalStickerCount` counts descendants.
+- Unsorted / favorites / recents queries and ordering.
+- Migration tests for every schema version bump.
+
+### Import / export
+See `docs/IMPORT_EXPORT.md` Tests. Use small fixture files (a few KB) in `src/test/resources`; generate zips in test code rather than committing binaries where possible.
+
+### UI
+- Library shows stickers, filter chips filter, select mode counts selection.
+- Save sheet: nested picker selects the right collection, "New collection" works, multiple images save.
+- Theme: render key screens in dark and light.
+- Font scale 2.0: no clipped text on Library and Save.
+
+### Keyboard
+- IME enabled and selected via adb; `ImeTestActivity` field focused; panel visible.
+- Tap a sticker; field receives the content (listener fires with the right MIME type).
+- Field that does not accept images triggers the clipboard fallback and hint.
+- Password field disables insertion.
+- Switching tabs shows the right stickers.
+
+## Test data
+
+- A debug-only `SeedData` builder (in `androidTest` and debug source set, never release) that creates N collections (nested) and M stickers from generated bitmaps: transparent PNG, opaque PNG, static WebP, GIF (generated frames). Do not download images.
+- Keep fixtures tiny so tests stay fast.
+
+## Driving the emulator
+
+Commands are in `SETUP.md`. For UI inspection prefer `uiautomator dump` over screenshots; use screenshots for visual judgement. Save screenshots under `artifacts/` named `<screen>-<dark|light>.png`.
+
+Useful toggles:
+
+```powershell
+adb shell cmd uimode night yes     # dark
+adb shell cmd uimode night no      # light
+adb shell settings put system font_scale 2.0
+adb shell settings put system font_scale 1.0
+adb shell settings put global animator_duration_scale 0   # speed up UI tests (reset to 1)
+```
+
+## Reporting
+
+When a task finishes, report: tests added, command run, pass/fail counts, screenshots taken (paths), and anything not verified (for example, real chat apps).
+
+## Not testable on the emulator
+
+Real chat app behavior (WhatsApp, Telegram) and Play Store billing. List these as manual checks for the user in the milestone notes.

@@ -1,0 +1,97 @@
+# IMPORT_EXPORT.md
+
+## Goals
+
+- Back up and restore a library, and share sticker packs with a friend, using a plain file. No accounts, no network.
+- Safe by default: a pack file from a stranger must not be able to harm the device or the app.
+
+## File format: `.stickerpack`
+
+A zip file with this layout:
+
+```
+manifest.json
+stickers/<hash>.<ext>
+settings.json        (optional)
+```
+
+### manifest.json
+
+```json
+{
+  "format": "stickerpack",
+  "version": 1,
+  "createdAt": 1767225600000,
+  "appVersion": "1.0.0",
+  "collections": [
+    { "id": 1, "name": "Cats", "parentId": null, "sortOrder": 0 },
+    { "id": 2, "name": "Grumpy", "parentId": 1, "sortOrder": 0 }
+  ],
+  "stickers": [
+    {
+      "file": "stickers/ab12....png",
+      "hash": "ab12...",
+      "mimeType": "image/png",
+      "collectionId": 2,
+      "isFavorite": false
+    }
+  ]
+}
+```
+
+- IDs in the manifest are local to the pack. Map them to new database IDs on import.
+- `useCount`, `lastUsedAt` and `addedAt` are not exported (personal history). Set fresh values on import.
+- `version`: reader rejects versions higher than it knows with a clear message; it must read all lower versions. Use `ignoreUnknownKeys = true`.
+
+### settings.json (optional, user opts in)
+
+`{ "theme": "system", "animateStickers": true }`. Unknown keys ignored.
+
+## Export
+
+1. User picks scope: everything, or one collection (with its descendants).
+2. Write to a temp file in `cacheDir`, stream sticker files into the zip (do not load all into memory).
+3. Offer through the system file picker (`ACTION_CREATE_DOCUMENT`, SAF) or the share sheet (`ACTION_SEND` with a `FileProvider` URI). Delete the temp file afterwards.
+4. Progress as `Flow<Progress>`; cancellable.
+
+## Import
+
+Entry points: Settings "Import pack" (SAF `ACTION_OPEN_DOCUMENT`) and opening a `.stickerpack` from another app (intent filter for the MIME type and the extension).
+
+Steps:
+1. Open the stream, **never extract the zip to disk first**. Read `manifest.json`, validate, then process entries.
+2. For each sticker entry:
+   - Verify the path is exactly under `stickers/` and contains no `..`, absolute path or drive letter (**zip-slip protection**). Reject the whole pack on violation.
+   - Read bytes with a size cap, sniff the real type from magic bytes (PNG, WebP, GIF), ignore the declared `mimeType` if it disagrees, skip anything else.
+   - Compute SHA-256. If the hash already exists, skip the copy and reuse the existing sticker (still apply collection mapping if the user chose to).
+   - Write the file, generate the thumbnail, compute `hasAlpha` and `isAnimated`, insert the row.
+3. Create collections first (parents before children), respecting the depth cap of 3. If an imported tree is deeper, flatten the extra levels into the deepest allowed collection and report it.
+4. Put the pack's top-level collections under a user-chosen parent, or the root.
+5. Show a summary: added, skipped as duplicates, rejected with reasons.
+
+### Limits (constants in one place)
+
+| Limit | Value |
+|---|---|
+| Max pack file size | 200 MB |
+| Max single sticker | 10 MB |
+| Max stickers per pack | 2000 |
+| Max zip entries read | 5000 |
+| Max total uncompressed | 500 MB (guards against zip bombs; abort when exceeded) |
+| Max manifest size | 2 MB |
+
+### Failure behavior
+
+- Wrap the whole import in a logical unit: if it fails midway, remove files written by this import and roll back inserted rows. A half-imported pack must not remain.
+- Never crash on malformed input; show a plain error.
+
+## Sharing (v1)
+
+"Share a pack" is just export plus the system share sheet. The friend opens the file with the app. No direct Wi-Fi, QR or relay in v1 because they would need the INTERNET permission or a server.
+
+## Tests
+
+- Round trip: export then import into an empty DB yields equal collections and stickers.
+- Duplicate import is idempotent.
+- Zip-slip entry, oversized entry, zip bomb, wrong extension with valid PNG bytes, valid extension with garbage bytes, and future version number are each rejected or handled as specified.
+- Nested depth over 3 gets flattened with a report.

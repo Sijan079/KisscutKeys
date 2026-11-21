@@ -1,0 +1,96 @@
+# ARCHITECTURE.md
+
+## Principles
+
+- Kotlin Multiplatform for logic. Native UI per platform. The keyboard is always native.
+- Android only for now, but `shared/` must compile without Android types so iOS can be added later.
+- Keep it boring: few modules, few libraries, no framework magic.
+
+## Modules
+
+```
+/
+  shared/
+    db/        Room database, entities, DAOs        (commonMain + androidMain)
+    core/      repositories, import/export, models   (commonMain + androidMain)
+  ui/
+    android/   Compose app + keyboard package        (Android application)
+  scripts/
+  docs/
+```
+
+- `ui/android` depends on `shared:core` and `shared:db`.
+- `shared:core` depends on `shared:db`.
+- The keyboard lives in `ui/android` under a `keyboard` package, **not** a separate module. It uses the same repositories and database as the app.
+- `ui/ios` does not exist yet.
+
+## expect/actual and interfaces
+
+Use `expect/actual` only for tiny platform facts (file paths, database builder, MIME sniffing). For anything bigger, define an interface in `commonMain` and inject the Android implementation. Reason: interfaces are easier to fake in tests.
+
+Platform pieces needed on Android:
+- Database builder (`Room.databaseBuilder` with `BundledSQLiteDriver`).
+- File storage paths (app-private `files/stickers/` and `files/thumbs/`).
+- Thumbnail generation (Bitmap or ImageDecoder).
+- Image type sniffing (read magic bytes; do not trust file extensions).
+- Zip reading and writing (java.util.zip on Android).
+
+## Layers
+
+```
+UI (Compose screens, keyboard Views)
+  -> ViewModel (screen state, Flow collection)
+    -> Repository (shared:core) : one per aggregate
+      -> DAO (shared:db)
+      -> FileStore (interface; Android impl)
+```
+
+- Repositories are the only thing UI code calls. UI never touches DAOs or files directly.
+- Enforce rules (nesting depth, dedupe, delete semantics) in repositories, not in UI.
+
+## Dependency injection
+
+Start with manual DI: a small `AppContainer` built in `Application.onCreate`, also reachable from the keyboard service via `(applicationContext as App).container`. Add Koin only if the manual version becomes painful. Ask first.
+
+## Libraries (approved list)
+
+| Purpose | Library |
+|---|---|
+| Database | Room (KMP) with KSP and `BundledSQLiteDriver` |
+| Settings | DataStore (preferences) |
+| UI | Jetpack Compose (Material 3), Navigation Compose |
+| Images in Compose | Coil 3, with GIF and animated WebP decoders |
+| Async | kotlinx.coroutines |
+| Serialization | kotlinx.serialization (manifest JSON) |
+| Tests | kotlin.test, JUnit4, Turbine (Flow), AndroidX Test, Compose UI test |
+
+Anything else: ask first.
+
+## Compose Multiplatform constraints (design rules)
+
+The UI is Android-only for now, but designs were made so a Compose Multiplatform port stays possible. So:
+- Standard Material 3 parts only. One font family pair (see UI_SPEC).
+- No blur, shaders or platform-specific effects.
+- Keep screen composables free of Android-only APIs where cheap; isolate those behind small wrappers.
+
+## Keyboard
+
+Native Android Views (RecyclerView), not Compose. Reasons: `InputMethodService` view lifecycle makes Compose awkward and fragile. See `docs/KEYBOARD.md`.
+
+## Files and storage
+
+- Originals: `files/stickers/<hash>.<ext>`
+- Thumbnails (static, small): `files/thumbs/<hash>.webp`
+- The database stores relative paths only.
+- Content URIs for insertion go through a `FileProvider` (authority `<APP_ID>.fileprovider`) granting read access to the target app.
+
+## Threading
+
+- Disk and DB work on `Dispatchers.IO`.
+- Import decodes and thumbnails on a bounded worker pool; report progress as `Flow`.
+
+## Open decisions (ask the user)
+
+- Final app name and `<APP_ID>` (package). Use `com.example.stickers` until told.
+- Free-tier limits for the $1 unlock.
+- Whether to add Koin.
