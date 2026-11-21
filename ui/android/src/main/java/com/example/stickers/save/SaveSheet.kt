@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -55,6 +56,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -107,10 +109,10 @@ fun SaveSheetContent(
     onSave: () -> Unit,
     onDone: () -> Unit,
 ) {
+    // The content scrolls; the button stays pinned below it, so it is visible on short screens too.
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, bottom = 24.dp)
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -118,23 +120,30 @@ fun SaveSheetContent(
         when (val phase = state.phase) {
             is SavePhase.Done -> DoneContent(phase.summary, onDone)
             else -> {
-                Text(
-                    text = pluralStringResource(R.plurals.save_title, state.items.size, state.items.size),
-                    style = SheetTitle,
-                )
-                Previews(state.items)
-                SaveToHeader(state.selectedPath)
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    UnsortedRow(selected = state.selectedId == null, onClick = { onSelect(null) })
-                    state.tree.forEach { row ->
-                        CollectionRow(
-                            row = row,
-                            selected = row.collection.id == state.selectedId,
-                            onClick = { onSelect(row.collection.id) },
-                            onToggle = { onToggle(row.collection.id) },
-                        )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    Text(
+                        text = pluralStringResource(R.plurals.save_title, state.items.size, state.items.size),
+                        style = SheetTitle,
+                    )
+                    Previews(state.items)
+                    SaveToHeader(state.selectedPath)
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        UnsortedRow(selected = state.selectedId == null, onClick = { onSelect(null) })
+                        state.tree.forEach { row ->
+                            CollectionRow(
+                                row = row,
+                                selected = row.collection.id == state.selectedId,
+                                onClick = { onSelect(row.collection.id) },
+                                onToggle = { onToggle(row.collection.id) },
+                            )
+                        }
+                        NewCollectionRow(state.newCollectionParentName, onNewCollection)
                     }
-                    NewCollectionRow(state.newCollectionParentName, onNewCollection)
                 }
                 val saving = state.phase as? SavePhase.Saving
                 PrimaryButton(
@@ -445,6 +454,8 @@ private fun NewCollectionDialog(
 @Composable
 private fun PrimaryButton(text: String, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = StickersTheme.colors
+    val configuration = LocalConfiguration.current
+    val height = saveButtonHeight(configuration.screenWidthDp, configuration.screenHeightDp)
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -457,14 +468,25 @@ private fun PrimaryButton(text: String, enabled: Boolean, onClick: () -> Unit, m
         ),
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = SaveButtonHeight),
+            .heightIn(min = height),
     ) {
         Text(text, style = StickerType.Button.copy(fontSize = 17.sp))
     }
 }
 
-/** The Save design uses a 56dp button (UI_SPEC's generic primary button is 44dp). */
-private val SaveButtonHeight = 56.dp
+/**
+ * Save button height by screen size. Short screens (small phones, landscape) get the 48dp touch
+ * minimum so the sheet keeps room for the picker; regular phones get the design's 56dp; tablets 64dp.
+ * It is a minimum: large font scales still grow the button.
+ */
+internal fun saveButtonHeight(widthDp: Int, heightDp: Int): Dp = when {
+    heightDp < SHORT_SCREEN_DP -> StickerSizes.MinTouchTarget
+    widthDp >= TABLET_WIDTH_DP -> 64.dp
+    else -> 56.dp
+}
+
+private const val SHORT_SCREEN_DP = 700
+private const val TABLET_WIDTH_DP = 600
 
 private val SheetTitle = StickerType.Title.copy(fontSize = 26.sp, letterSpacing = (-0.5).sp)
 

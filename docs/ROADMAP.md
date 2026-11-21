@@ -97,7 +97,7 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M2: Animated PNG (APNG) is stored as a still PNG (`isAnimated = false`); Android decoders only show its first frame. Max image side is 16384px, rejected as too large above that.
 - 2026-11-21, M2: A duplicate import is a pure no-op (no decode, no writes, no move), even when the user picked a different collection. DATA_MODEL allows "optionally moving"; not offered in the UI.
 - 2026-11-21, M2: MainActivity is the share target (single activity). Done after a share calls `finish()` and returns to the sharing app. Only `content:` URIs are read.
-- 2026-11-21, M2: The Save design uses a 56dp Save button and 44px rows; built with a 56dp button and 48dp rows (48dp touch minimum). UI_SPEC's generic primary button is 44dp.
+- 2026-11-21, M2: Save button height follows screen size (user's call): 48dp when the screen is under 700dp tall (small phones, landscape), 56dp on phones (the design), 64dp on tablets (600dp+ wide). The button is pinned below the scrolling content so it is never cut off. Rows are 48dp (touch minimum).
 - 2026-11-21, M2: "New collection" creates inside the selected collection, or beside it when the selected one is at depth 3.
 - 2026-11-21, M2: Checked on the emulator: shared from Google Photos ("Save to library" in the share sheet), saved into a nested collection, then shared again with "1 was already in your library" and still one file. The photo picker path works too. Chrome was not tried.
 - 2026-11-21, M2: Gotcha: `image/*` inside a KDoc comment opens a nested Kotlin comment and breaks the build.

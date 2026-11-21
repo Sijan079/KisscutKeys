@@ -1,5 +1,9 @@
 package com.example.stickers.save
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -9,6 +13,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.compose.ui.unit.dp
+import com.example.stickers.shared.core.CollectionTreeRow
 import com.example.stickers.shared.core.ImportResult
 import com.example.stickers.shared.db.Sticker
 import com.example.stickers.shared.db.StickerCollection
@@ -19,6 +25,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** Save sheet UI with a fake backend (TESTING.md, UI: Save sheet). */
 @RunWith(AndroidJUnit4::class)
@@ -70,6 +77,34 @@ class SaveSheetTest {
     }
 
     @Test
+    fun saveButtonStaysVisibleOnAShortScreenWithALongList() {
+        val rows = (1L..20L).map { id ->
+            CollectionTreeRow(
+                StickerCollection(id, "Collection $id", null, id.toInt(), 0),
+                depth = 1,
+                hasChildren = false,
+                isExpanded = false,
+            )
+        }
+        val state = SaveUiState(items = listOf(SaveItem("content://test/1", ItemPreview.Loading)), tree = rows)
+        compose.setContent {
+            StickersTheme {
+                Box(Modifier.height(ShortScreen).testTag("short_screen")) {
+                    SaveSheetContent(state, onToggle = {}, onSelect = {}, onNewCollection = {}, onSave = {}, onDone = {})
+                }
+            }
+        }
+
+        val screen = compose.onNodeWithTag("short_screen").fetchSemanticsNode().boundsInRoot
+        // positionInRoot + size is unclipped; boundsInRoot would be clipped by the scroll area and hide the bug.
+        val node = compose.onNodeWithTag(SaveTags.SAVE_BUTTON).fetchSemanticsNode()
+        val top = node.positionInRoot.y
+        val bottom = top + node.size.height
+        assertTrue(bottom <= screen.bottom + 0.5f, "button bottom $bottom is below screen $screen")
+        assertTrue(top >= screen.top, "button top $top is above screen $screen")
+    }
+
+    @Test
     fun multipleImagesAllSave() {
         show("content://test/1", "content://test/2", "content://test/3")
 
@@ -81,6 +116,8 @@ class SaveSheetTest {
         compose.onNodeWithText("3 stickers saved").assertIsDisplayed()
     }
 }
+
+private val ShortScreen = 360.dp
 
 private class UiFakeBackend : SaveBackend {
     val collections = MutableStateFlow<List<StickerCollection>>(emptyList())
