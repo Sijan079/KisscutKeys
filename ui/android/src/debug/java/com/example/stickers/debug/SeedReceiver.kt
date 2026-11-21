@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 /**
  * Debug builds only. Fills the library for screenshots:
  * `adb shell am broadcast -n com.example.stickers/.debug.SeedReceiver --ez clear true`
- * Add `--ez seed false` to only clear.
+ * Add `--ez seed false` to only clear. Add `--es import_dir <folder>` to import real images instead (FolderImport).
  */
 class SeedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -21,7 +21,13 @@ class SeedReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (intent.getBooleanExtra("clear", false)) SeedData.clear(container)
-                if (intent.getBooleanExtra("seed", true)) Log.i(TAG, "seeded ${SeedData.seed(container)} stickers")
+                val dir = intent.getStringExtra("import_dir")
+                if (dir != null) {
+                    // Folder must be readable by the app, e.g. /sdcard/Android/data/<package>/files/import
+                    Log.i(TAG, "imported ${FolderImport.run(container, java.io.File(dir))} stickers from $dir")
+                } else if (intent.getBooleanExtra("seed", true)) {
+                    Log.i(TAG, "seeded ${SeedData.seed(container)} stickers")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "seed failed", e)
             } finally {
