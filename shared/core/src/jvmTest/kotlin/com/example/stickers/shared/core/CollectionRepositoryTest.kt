@@ -266,4 +266,18 @@ class CollectionRepositoryTest {
         assertFailsWith<CollectionRuleException.BlankName> { repo.rename(c.id, " ") }
         assertEquals("Kittens", repo.observeById(c.id).first()?.name)
     }
+
+    // --- observeAll (Save sheet picker) -------------------------------------------------------
+
+    @Test
+    fun observeAllReturnsEveryLevelAndUpdates() = runTest {
+        val cats = repo.create("Cats", parentId = null)
+        val grumpy = repo.create("Grumpy", parentId = cats.id)
+        repo.create("Tiny", parentId = grumpy.id)
+
+        assertEquals(setOf("Cats", "Grumpy", "Tiny"), repo.observeAll().first().map { it.name }.toSet())
+
+        repo.create("Dogs", parentId = null)
+        assertEquals(4, repo.observeAll().first().size)
+    }
 }

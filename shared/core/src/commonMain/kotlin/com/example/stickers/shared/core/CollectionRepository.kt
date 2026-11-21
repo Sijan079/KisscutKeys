@@ -35,6 +35,9 @@ class CollectionRepository(
 
     fun observeChildren(parentId: Long?): Flow<List<CollectionWithCount>> = collections.observeChildren(parentId)
 
+    /** Every collection at every level (for the nested picker); see [buildCollectionTree]. */
+    fun observeAll(): Flow<List<StickerCollection>> = collections.observeAll()
+
     fun observeById(id: Long): Flow<StickerCollection?> = collections.observeById(id)
 
     /** Stickers in [id] and all its descendants. */

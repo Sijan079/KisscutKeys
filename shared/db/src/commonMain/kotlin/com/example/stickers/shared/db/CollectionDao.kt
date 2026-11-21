@@ -22,6 +22,10 @@ interface CollectionDao {
     )
     fun observeChildren(parentId: Long?): Flow<List<CollectionWithCount>>
 
+    /** Every collection, all levels. */
+    @Query("SELECT * FROM StickerCollection ORDER BY sortOrder, id")
+    fun observeAll(): Flow<List<StickerCollection>>
+
     @Query("SELECT * FROM StickerCollection WHERE parentId IS :parentId ORDER BY sortOrder, id")
     suspend fun childrenOnce(parentId: Long?): List<StickerCollection>
 
