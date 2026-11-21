@@ -14,12 +14,12 @@ Open decisions block nothing unless stated; use the defaults in `docs/ARCHITECTU
 Done when: `assembleDebug` and `installDebug` succeed and a screenshot of the themed blank screen exists in both modes.
 
 ## M1: Data layer
-- [ ] Entities, DAOs, database with `BundledSQLiteDriver` (DATA_MODEL)
-- [ ] `CollectionRepository` with depth cap, cycle check, both delete modes
-- [ ] `StickerRepository` with dedupe by hash
-- [ ] `FileStore` interface and Android implementation
-- [ ] Schema export committed; first migration test harness
-- [ ] Tests for everything under "Database and repositories" in TESTING
+- [x] Entities, DAOs, database with `BundledSQLiteDriver` (DATA_MODEL)
+- [x] `CollectionRepository` with depth cap, cycle check, both delete modes
+- [x] `StickerRepository` with dedupe by hash
+- [x] `FileStore` interface and Android implementation
+- [x] Schema export committed; first migration test harness
+- [x] Tests for everything under "Database and repositories" in TESTING
 
 Done when: all those tests pass.
 
@@ -84,3 +84,10 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M0: KMP modules have no `test` task, so each registers one that runs `allTests`; `gradlew test` now covers all three modules.
 - 2026-11-21, M0: The spec's "Ink" is two colors (dark background #0F0E15, light text #14131C); Theme.kt keeps them as separate tokens.
 - 2026-11-21, M0: APK path is `ui/android/build/outputs/apk/debug/android-debug.apk` (not `app/...` as SETUP.md assumes).
+- 2026-11-21, M1: Added a `jvm()` target to `shared:db` and `shared:core` (reverses M0's Android-only choice). DAO, repository and migration tests run on the host with Room in-memory + BundledSQLiteDriver; it also makes "no Android imports in commonMain" compiler-enforced.
+- 2026-11-21, M1: Versions: Room 2.8.5, KSP 2.3.14, sqlite-bundled 2.6.2 (matches Room's sqlite), coroutines 1.11.0, Turbine 1.2.1, room-testing, AndroidX Test runner 1.7.0 / ext-junit 1.3.0.
+- 2026-11-21, M1: Ordering decided: All, Unsorted, Favorites and in-collection lists are newest first (addedAt, then id). Recents exclude never-used stickers. Re-parented children go to the end of the new parent's children.
+- 2026-11-21, M1: `parentId` has a real self FK with CASCADE as a safety net; the repository re-parents children / deletes stickers before deleting rows (tests cover the order).
+- 2026-11-21, M1: File delete failures are returned as `FileDeleteReport.failed`, not logged yet; callers log them. The startup orphan-file sweep (DATA_MODEL) is not built yet. DataStore settings are not in M1.
+- 2026-11-21, M1: `AndroidFileStore` only accepts plain file names `[A-Za-z0-9._-]{1,128}`; import (M2) must name files by hash.
+- 2026-11-21, M1: `DataLayerSmokeTest` (ui:android androidTest) checks the real Android database builder, bundled SQLite and file store on the emulator.
