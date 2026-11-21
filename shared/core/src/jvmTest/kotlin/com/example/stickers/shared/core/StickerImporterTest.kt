@@ -1,6 +1,12 @@
 package com.example.stickers.shared.core
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import java.io.IOException
 import kotlin.test.AfterTest
@@ -177,6 +183,20 @@ class StickerImporterTest {
         assertNothingStored()
     }
 
+    @Test
+    fun cancelledImportStillRemovesItsFiles() = runTest {
+        val store = SuspendingFileStore()
+        val cancellable = StickerImporter(stickers, store, thumbnailer)
+
+        val job = launch { cancellable.import(source(TestImages.png()), null) }
+        store.thumbWriteStarted.await()
+        assertEquals(1, store.files.size, "original written, thumb write hanging")
+        job.cancelAndJoin()
+
+        assertEquals(emptyMap(), store.files.toMap())
+        assertEquals(emptyList(), stickers.allOnce())
+    }
+
     private suspend fun assertNothingStored() {
         assertEquals(emptyMap(), files.files.toMap())
         assertEquals(emptyList(), stickers.allOnce())
@@ -199,6 +219,28 @@ class RecordingFileStore : FileStore {
     override suspend fun exists(area: FileArea, relativePath: String) = inner.exists(area, relativePath)
 
     override suspend fun delete(area: FileArea, relativePath: String) = inner.delete(area, relativePath)
+}
+
+/** Thumb writes hang; deletes check cancellation first, like AndroidFileStore's withContext. */
+class SuspendingFileStore : FileStore {
+    private val inner = FakeFileStore()
+    val files get() = inner.files
+    val thumbWriteStarted = CompletableDeferred<Unit>()
+
+    override suspend fun write(area: FileArea, relativePath: String, bytes: ByteArray) {
+        if (area == FileArea.THUMBS) {
+            thumbWriteStarted.complete(Unit)
+            awaitCancellation()
+        }
+        inner.write(area, relativePath, bytes)
+    }
+
+    override suspend fun exists(area: FileArea, relativePath: String) = inner.exists(area, relativePath)
+
+    override suspend fun delete(area: FileArea, relativePath: String): Boolean {
+        currentCoroutineContext().ensureActive()
+        return inner.delete(area, relativePath)
+    }
 }
 
 class FakeThumbnailer : Thumbnailer {

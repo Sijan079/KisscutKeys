@@ -1,6 +1,8 @@
 package com.example.stickers.shared.core
 
 import com.example.stickers.shared.db.Sticker
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -82,11 +84,14 @@ class StickerImporter(
             )
             if (result.isNew) ImportResult.Added(result.sticker) else ImportResult.Duplicate(result.sticker)
         } catch (e: Exception) {
-            // Another import of the same bytes may have won the race; its files are ours too then.
-            val owner = runCatching { stickers.findByHash(hash) }.getOrNull()
-            if (owner == null) {
-                runCatching { files.delete(FileArea.STICKERS, filePath) }
-                runCatching { files.delete(FileArea.THUMBS, thumbPath) }
+            // NonCancellable: a cancelled import (sheet closed mid-save) must still clean up.
+            withContext(NonCancellable) {
+                // Another import of the same bytes may have won the race; its files are ours too then.
+                val owner = runCatching { stickers.findByHash(hash) }.getOrNull()
+                if (owner == null) {
+                    runCatching { files.delete(FileArea.STICKERS, filePath) }
+                    runCatching { files.delete(FileArea.THUMBS, thumbPath) }
+                }
             }
             if (e is CancellationException) throw e
             ImportResult.Rejected(RejectReason.FAILED)
