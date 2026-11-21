@@ -176,7 +176,28 @@
     <string name="kb_hint_type_rejected">This app does not take animated stickers. Copied, paste to try.</string>
     <string name="kb_hint_failed">Could not send this sticker.</string>
 
+    <!-- Keyboard setup -->
+    <string name="setup_title">Every sticker, one tap away</string>
+    <string name="setup_body">Turn the keyboard on once, then use it in any chat.</string>
+    <string name="setup_step1_title">Turn on Sticker keyboard</string>
+    <string name="setup_step1_body">Open keyboard settings and switch it on.</string>
+    <string name="setup_step2_title">Choose it as your keyboard</string>
+    <string name="setup_step2_body">Pick it from the keyboard list, or tap the globe key in any chat.</string>
+    <string name="setup_step3_title">Add your first stickers</string>
+    <string name="setup_step3_body">Share an image to the app to save it.</string>
+    <string name="setup_privacy">Android will warn that keyboards can read what you type. This one only inserts stickers and does not read your typing.</string>
+    <string name="setup_open_settings">Open keyboard settings</string>
+    <string name="setup_pick_keyboard">Choose Sticker keyboard</string>
+    <string name="setup_add_stickers">Add stickers</string>
+    <string name="setup_done">Done</string>
+    <string name="setup_skip">Skip for now</string>
+    <string name="setup_state_done">Done</string>
+    <string name="setup_state_current">Next step</string>
+    <string name="setup_state_later">Not yet</string>
+    <string name="settings_keyboard_title">Sticker keyboard</string>
+    <string name="settings_keyboard_body">Turn it on, choose it, check its setup.</string>
+
     <!-- Settings (placeholder until M5) -->
     <string name="settings_title">Settings</string>
-    <string name="settings_soon">Theme, backup and keyboard settings arrive in a later update.</string>
+    <string name="settings_soon">Theme and backup settings arrive in a later update.</string>
 </resources>

@@ -8,7 +8,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +29,11 @@ import com.example.stickers.nav.AppNav
 import com.example.stickers.save.AppSaveBackend
 import com.example.stickers.save.SaveSheet
 import com.example.stickers.save.SaveViewModel
+import com.example.stickers.setup.KeyboardSetupScreen
+import com.example.stickers.setup.KeyboardSetupViewModel
+import com.example.stickers.setup.SetupAction
 import com.example.stickers.share.sharedImageUris
+import kotlinx.coroutines.flow.map
 import com.example.stickers.ui.theme.StickersTheme
 
 /**
@@ -32,6 +44,7 @@ class MainActivity : ComponentActivity() {
     /** URIs waiting in the Save sheet; empty = no sheet. */
     private var pending by mutableStateOf<List<String>>(emptyList())
     private var fromShare = false
+    private var launchedByShare = false
 
     /** Bumped on every new Save request, so the same URIs picked again get a fresh ViewModel. */
     private var session by mutableIntStateOf(0)
@@ -45,6 +58,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) {
             takeShare(intent)
+            launchedByShare = pending.isNotEmpty()
         } else {
             pending = savedInstanceState.getStringArrayList(KEY_PENDING).orEmpty()
             fromShare = savedInstanceState.getBoolean(KEY_FROM_SHARE)
@@ -53,11 +67,23 @@ class MainActivity : ComponentActivity() {
         val container = (application as App).container
         setContent {
             StickersTheme {
-                CompositionLocalProvider(LocalThumbnails provides container::thumbnailOf) {
-                    AppNav(
-                        backend = container.libraryBackend,
-                        onAdd = { pickImages.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
-                    )
+                val addStickers = { pickImages.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }
+                // Keyboard setup opens first until it is finished or skipped, except when a share started us.
+                val dismissed by container.setupStore.dismissed.collectAsState(initial = null)
+                var startAtSetup by rememberSaveable { mutableStateOf<Boolean?>(null) }
+                if (startAtSetup == null) dismissed?.let { startAtSetup = !it && !launchedByShare }
+                val start = startAtSetup
+                if (start == null) {
+                    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+                } else {
+                    CompositionLocalProvider(LocalThumbnails provides container::thumbnailOf) {
+                        AppNav(
+                            backend = container.libraryBackend,
+                            onAdd = addStickers,
+                            startAtSetup = start,
+                            setupScreen = { leave -> Setup(container, addStickers, leave) },
+                        )
+                    }
                 }
                 val uris = pending
                 if (uris.isNotEmpty()) {
@@ -101,6 +127,33 @@ class MainActivity : ComponentActivity() {
         session++
         pending = uris
         this.fromShare = fromShare
+    }
+
+    @Composable
+    private fun Setup(container: AppContainer, addStickers: () -> Unit, leave: () -> Unit) {
+        val vm: KeyboardSetupViewModel = viewModel(
+            factory = viewModelFactory {
+                initializer {
+                    KeyboardSetupViewModel(
+                        container.keyboardStatus,
+                        container.stickers.observeAll().map { it.size },
+                        container.setupStore,
+                    )
+                }
+            },
+        )
+        KeyboardSetupScreen(
+            vm,
+            onAction = { action ->
+                when (action) {
+                    SetupAction.OPEN_SETTINGS -> container.keyboardStatus.openSettings()
+                    SetupAction.PICK_KEYBOARD -> container.keyboardStatus.showPicker()
+                    SetupAction.ADD_STICKERS -> addStickers()
+                    SetupAction.DONE -> leave()
+                }
+            },
+            onLeave = leave,
+        )
     }
 
     private fun finishSave() {

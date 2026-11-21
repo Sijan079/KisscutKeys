@@ -8,6 +8,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.VisibleForTesting
+import androidx.core.view.WindowCompat
 import com.example.stickers.App
 import com.example.stickers.MainActivity
 import com.example.stickers.R
@@ -48,8 +49,11 @@ class StickerImeService : InputMethodService() {
         val container = (application as App).container
         val model = KeyboardModel(container.libraryBackend, scope).also { this.model = it }
         inserter = StickerInserter(this, container::originalOf, container.stickers::markUsed)
-        val panel = StickerPanelView(this, KeyboardPalette.of(this), container::thumbnailOf, Actions(model))
+        val palette = KeyboardPalette.of(this)
+        val panel = StickerPanelView(this, palette, container::thumbnailOf, Actions(model))
         this.panel = panel
+        // Dark system buttons under a light panel, light ones under a dark panel.
+        window?.window?.let { WindowCompat.getInsetsController(it, panel).isAppearanceLightNavigationBars = !palette.dark }
         scope.launch { model.state.collect { panel.render(it, password) } }
         return panel
     }

@@ -6,6 +6,9 @@ import androidx.annotation.VisibleForTesting
 import java.io.File
 import com.example.stickers.common.AppLibraryBackend
 import com.example.stickers.common.LibraryBackend
+import com.example.stickers.setup.AndroidKeyboardStatus
+import com.example.stickers.setup.DataStoreSetupStore
+import com.example.stickers.setup.SetupStore
 import com.example.stickers.shared.core.AndroidFileStore
 import com.example.stickers.shared.core.FileArea
 import com.example.stickers.shared.core.AndroidThumbnailer
@@ -49,6 +52,8 @@ class AppContainer(
     val stickers: StickerRepository by lazy { StickerRepository(database, fileStore, clock) }
     val importer: StickerImporter by lazy { StickerImporter(stickers, fileStore, AndroidThumbnailer()) }
     val libraryBackend: LibraryBackend by lazy { AppLibraryBackend(stickers, collections) }
+    val keyboardStatus: AndroidKeyboardStatus by lazy { AndroidKeyboardStatus(appContext) }
+    val setupStore: SetupStore by lazy { DataStoreSetupStore(appContext) }
 
     /** Thumbnail file of [sticker] for Coil; null when the stored name is not a safe file name. */
     fun thumbnailOf(sticker: Sticker): File? =

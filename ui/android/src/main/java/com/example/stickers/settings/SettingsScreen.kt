@@ -1,6 +1,16 @@
 package com.example.stickers.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Keyboard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,9 +30,13 @@ import com.example.stickers.common.TopLevel
 import com.example.stickers.ui.theme.StickerType
 import com.example.stickers.ui.theme.StickersTheme
 
-/** Placeholder: the real Settings screen (theme, backup, keyboard) is milestone M5. */
+object SettingsTags {
+    const val KEYBOARD = "settings:keyboard"
+}
+
+/** Placeholder: the real Settings screen (theme, backup) is milestone M5. Only the keyboard card for now. */
 @Composable
-fun SettingsScreen(onNavigate: (TopLevel) -> Unit, onAdd: () -> Unit) {
+fun SettingsScreen(onNavigate: (TopLevel) -> Unit, onAdd: () -> Unit, onKeyboardSetup: () -> Unit = {}) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("settings")) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -33,8 +47,38 @@ fun SettingsScreen(onNavigate: (TopLevel) -> Unit, onAdd: () -> Unit) {
                 style = StickerType.Title,
                 color = MaterialTheme.colorScheme.onBackground,
             )
+            KeyboardCard(onKeyboardSetup)
             Text(stringResource(R.string.settings_soon), style = StickerType.Body, color = StickersTheme.colors.muted)
         }
         FloatingNav(TopLevel.SETTINGS, onNavigate, onAdd)
+    }
+}
+
+/** Keyboard status card (Settings board): lime tint, opens Keyboard setup. */
+@Composable
+private fun KeyboardCard(onClick: () -> Unit) {
+    val colors = StickersTheme.colors
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(22.dp),
+        color = colors.limeTint,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag(SettingsTags.KEYBOARD),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Icon(Icons.Outlined.Keyboard, contentDescription = null, tint = colors.accentText)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.settings_keyboard_title),
+                    style = StickerType.Heading,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(stringResource(R.string.settings_keyboard_body), style = StickerType.Body, color = colors.muted)
+            }
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = colors.muted)
+        }
     }
 }

@@ -74,6 +74,11 @@ internal object DieCutShared {
     val Heart = Color(0xFFFF6FB5)
 }
 
+/** Face colors of the decorative stickers on the Keyboard setup board (sky, coral, violet, lime, yellow). */
+val SetupFaceColors = listOf(
+    Color(0xFF5CC8FF), Color(0xFFFF7A59), DieCutShared.Violet, DieCutShared.Lime, Color(0xFFFFD23F),
+)
+
 // ---------------------------------------------------------------------------------------------
 // Extras: tokens Material 3 has no role for. Read via StickersTheme.colors.
 // ---------------------------------------------------------------------------------------------
@@ -115,6 +120,8 @@ data class StickerColors(
     val badgeText: Color,
     /** Keyboard panel background (Keyboard board): #14131C dark, white light. */
     val keyboardPanel: Color,
+    /** Lime-tinted card fill (Settings keyboard card). */
+    val limeTint: Color,
 )
 
 internal val DarkStickerColors = StickerColors(
@@ -139,6 +146,7 @@ internal val DarkStickerColors = StickerColors(
     badgeFill = DieCutDark.Ink,
     badgeText = DieCutDark.Text,
     keyboardPanel = DieCutShared.StickerInk,
+    limeTint = DieCutShared.Lime.copy(alpha = 0.14f),
 )
 
 internal val LightStickerColors = StickerColors(
@@ -163,6 +171,7 @@ internal val LightStickerColors = StickerColors(
     badgeFill = DieCutLight.Ink,
     badgeText = DieCutDark.Text,
     keyboardPanel = DieCutLight.Surface,
+    limeTint = DieCutShared.Lime.copy(alpha = 0.30f),
 )
 
 // ---------------------------------------------------------------------------------------------

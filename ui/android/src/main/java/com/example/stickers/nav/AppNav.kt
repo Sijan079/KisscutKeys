@@ -26,6 +26,7 @@ object Routes {
     const val FAVORITES = "favorites"
     const val UNSORTED = "unsorted"
     const val COLLECTION = "collection/{id}"
+    const val SETUP = "setup"
 
     fun of(top: TopLevel) = when (top) {
         TopLevel.LIBRARY -> LIBRARY
@@ -40,9 +41,18 @@ object Routes {
     }
 }
 
-/** Single-activity navigation (UI_SPEC): Library, Collections, Settings, plus Inside a collection. */
+/**
+ * Single-activity navigation (UI_SPEC): Library, Collections, Settings, Inside a collection, and Keyboard
+ * setup. [setupScreen] draws the setup screen and calls its argument to leave; [startAtSetup] opens it first.
+ */
 @Composable
-fun AppNav(backend: LibraryBackend, onAdd: () -> Unit, nav: NavHostController = rememberNavController()) {
+fun AppNav(
+    backend: LibraryBackend,
+    onAdd: () -> Unit,
+    nav: NavHostController = rememberNavController(),
+    startAtSetup: Boolean = false,
+    setupScreen: @Composable (onLeave: () -> Unit) -> Unit = {},
+) {
     fun go(top: TopLevel) = nav.navigate(Routes.of(top)) {
         popUpTo(Routes.LIBRARY) { saveState = true }
         launchSingleTop = true
@@ -75,7 +85,7 @@ fun AppNav(backend: LibraryBackend, onAdd: () -> Unit, nav: NavHostController = 
         )
     }
 
-    NavHost(nav, startDestination = Routes.LIBRARY) {
+    NavHost(nav, startDestination = if (startAtSetup) Routes.SETUP else Routes.LIBRARY) {
         composable(Routes.LIBRARY) {
             LibraryScreen(viewModel { LibraryViewModel(backend) }, onNavigate = ::go, onAdd = onAdd)
         }
@@ -87,7 +97,19 @@ fun AppNav(backend: LibraryBackend, onAdd: () -> Unit, nav: NavHostController = 
                 onAdd = onAdd,
             )
         }
-        composable(Routes.SETTINGS) { SettingsScreen(onNavigate = ::go, onAdd = onAdd) }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onNavigate = ::go, onAdd = onAdd, onKeyboardSetup = { nav.navigate(Routes.SETUP) })
+        }
+        composable(Routes.SETUP) {
+            setupScreen {
+                // Leaving goes to the Library, whether setup was the start screen or opened from Settings.
+                if (nav.previousBackStackEntry != null) {
+                    nav.popBackStack()
+                } else {
+                    nav.navigate(Routes.LIBRARY) { popUpTo(Routes.SETUP) { inclusive = true } }
+                }
+            }
+        }
         composable(Routes.FAVORITES) { Detail(CollectionTarget.Favorites) }
         composable(Routes.UNSORTED) { Detail(CollectionTarget.Unsorted) }
         composable(Routes.COLLECTION, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->

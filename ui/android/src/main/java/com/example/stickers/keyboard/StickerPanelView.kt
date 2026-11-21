@@ -106,6 +106,7 @@ class StickerPanelView(
     private var shownTabs: List<KeyboardTab>? = null
     private var shownTab: KeyboardTab? = null
     private var shownChips: Pair<List<Pair<Long, String>>, Long?>? = null
+    private var shownView: Triple<KeyboardTab, Long?, StickerKind>? = null
 
     init {
         orientation = VERTICAL
@@ -159,7 +160,10 @@ class StickerPanelView(
 
         adapter.collectionNames = state.collectionNames
         adapter.enabled = !password
-        adapter.submitList(state.stickers)
+        val view = Triple(state.tab, state.chip, state.kind)
+        val switched = view != shownView
+        shownView = view
+        adapter.submitList(state.stickers) { if (switched) grid.scrollToPosition(0) }
 
         val (title, body, showOpen) = when {
             !state.loaded -> Triple(null, null, false)
@@ -231,9 +235,8 @@ class StickerPanelView(
         setImageResource(icon)
         contentDescription = context.getString(label)
         imageTintList = ColorStateList.valueOf(if (on) palette.onLime else palette.muted)
-        background = pill(if (on) palette.lime else Color.TRANSPARENT, visualHeight = 40)
         minimumWidth = dp(48)
-        setPadding(dp(12), 0, dp(12), 0)
+        setBackgroundKeepPadding(pill(if (on) palette.lime else Color.TRANSPARENT, visualHeight = 40), dp(12))
         scaleType = android.widget.ImageView.ScaleType.CENTER
     }
 
@@ -245,8 +248,7 @@ class StickerPanelView(
             maxWidth = dp(180)
             gravity = Gravity.CENTER
             minWidth = dp(48)
-            setPadding(dp(16), 0, dp(16), 0)
-            background = pill(if (on) palette.lime else Color.TRANSPARENT, visualHeight = 40)
+            setBackgroundKeepPadding(pill(if (on) palette.lime else Color.TRANSPARENT, visualHeight = 40), dp(16))
             isClickable = true
             isFocusable = true
         }
@@ -264,11 +266,13 @@ class StickerPanelView(
                 maxWidth = dp(160)
                 gravity = Gravity.CENTER
                 minWidth = dp(48)
-                setPadding(dp(14), 0, dp(14), 0)
-                background = pill(
-                    fill = if (on) palette.inverse else Color.TRANSPARENT,
-                    visualHeight = 32,
-                    stroke = if (on) palette.inverse else palette.line,
+                setBackgroundKeepPadding(
+                    pill(
+                        fill = if (on) palette.inverse else Color.TRANSPARENT,
+                        visualHeight = 32,
+                        stroke = if (on) palette.inverse else palette.line,
+                    ),
+                    dp(14),
                 )
                 isSelected = on
                 isClickable = true
@@ -340,7 +344,16 @@ class StickerPanelView(
     private fun styleSegment(button: TextView, on: Boolean) {
         button.isSelected = on
         button.setTextColor(if (on) palette.onInverse else palette.muted)
-        button.background = if (on) InsetDrawable(rounded(palette.inverse, dp(11f)), 0, dp(2), 0, dp(2)) else null
+        button.setBackgroundKeepPadding(
+            if (on) InsetDrawable(rounded(palette.inverse, dp(11f)), 0, dp(2), 0, dp(2)) else null,
+            dp(14),
+        )
+    }
+
+    /** Setting a background replaces padding with the drawable's insets; put the side padding back. */
+    private fun View.setBackgroundKeepPadding(drawable: Drawable?, side: Int) {
+        background = drawable
+        setPadding(side, 0, side, 0)
     }
 
     /** A pill drawn [visualHeight] dp tall, centered in a 48dp touch area. */
