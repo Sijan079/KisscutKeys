@@ -1,10 +1,13 @@
 package com.example.stickers.library
 
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -14,6 +17,8 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.stickers.TestLibrary
 import com.example.stickers.common.DialogTags
@@ -181,4 +186,50 @@ class LibraryUiTest {
     }
 
     private fun isSelected(value: Boolean) = SemanticsMatcher.expectValue(SemanticsProperties.Selected, value)
+
+    private fun waitForInside(tag: String) = compose.waitUntil(10_000) {
+        compose.onAllNodes(hasTestTag(tag), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+    }
+
+    private fun bounds(tag: String): Rect =
+        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
+            .let { Rect(it.positionInRoot, it.size.toSize()) }
+
+    @Test
+    fun heroGifBadgeIsNotCoveredByTheHeroLabel() {
+        val g = runBlocking {
+            repeat(4) { lib.face(it + 1) }
+            lib.gif().also { lib.stickers.markUsed(it.id) } // the most-used sticker is the hero
+        }
+        show()
+        waitForInside(TileTags.HERO_BADGE)
+        val gif = bounds(TileTags.gifBadge(g.id))
+        val label = bounds(TileTags.HERO_BADGE)
+        assertFalse(gif.overlaps(label), "GIF badge $gif is under the hero label $label")
+    }
+
+    @Test
+    fun railLabelIsNotClippedByTheButtonCorners() {
+        // "Atelier Ryza" is nearly as wide as the button, so its first letter reaches the bottom-left corner.
+        val c = runBlocking { lib.collections.create("Atelier Ryza", null).also { lib.face(1, it.id) } }
+        val f = LibraryFilter.InCollection(c.id)
+        show()
+        waitForInside(LibraryTags.railLabel(f))
+        compose.waitForIdle()
+        val button = bounds(LibraryTags.rail(f))
+        val label = bounds(LibraryTags.railLabel(f))
+        val img = compose.onNodeWithTag(LibraryTags.rail(f)).captureToImage().toPixelMap()
+        val r = with(compose.density) { 16.dp.toPx() } // corner radius a rounded clip would use
+        val background = img[1, 1]
+        // Pixels of the label that lie outside a 16dp rounded corner: a clip would leave them all background.
+        val corner = (0 until r.toInt()).flatMap { x ->
+            ((img.height - r.toInt()) until img.height).map { y -> x to y }
+        }.filter { (x, y) ->
+            val dx = r - x
+            val dy = y - (img.height - r)
+            // 2px past the arc, so the clip's own anti-aliased edge does not count as letter pixels.
+            dx * dx + dy * dy > (r + 2) * (r + 2) && y >= label.top - button.top
+        }
+        assertTrue(corner.any { (x, y) -> img[x, y] != background }, "the label's first letter was clipped")
+    }
 }

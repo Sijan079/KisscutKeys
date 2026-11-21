@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -30,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -61,6 +64,8 @@ fun tileTint(id: Long): Color {
 /** Test tags and semantics helpers for sticker tiles. */
 object TileTags {
     fun sticker(id: Long) = "sticker:$id"
+    fun gifBadge(id: Long) = "badge:gif:$id"
+    const val HERO_BADGE = "badge:hero"
 }
 
 /**
@@ -123,13 +128,23 @@ fun StickerTile(
             inset = if (hero != null) 0.14f else 0.12f,
             shadowOffset = if (hero != null) 6.dp else 3.dp,
         )
-        if (sticker.isAnimated) Badge(stringResource(R.string.save_badge_gif), Alignment.BottomStart, 8.dp)
+        val gif = stringResource(R.string.save_badge_gif)
         if (hero != null) {
             val label = when (hero) {
                 HeroReason.MOST_USED -> stringResource(R.string.hero_most_used)
                 HeroReason.NEWEST -> stringResource(R.string.hero_newest)
             }
-            Badge(label, Alignment.BottomStart, 12.dp, textColor = colors.lime, big = true)
+            // Side by side: both sit bottom-left, so stacking them would hide the GIF badge.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp),
+            ) {
+                Badge(label, textColor = colors.lime, big = true, tag = TileTags.HERO_BADGE)
+                if (sticker.isAnimated) Badge(gif, tag = TileTags.gifBadge(sticker.id))
+            }
+        } else if (sticker.isAnimated) {
+            Badge(gif, Modifier.align(Alignment.BottomStart).padding(8.dp), tag = TileTags.gifBadge(sticker.id))
         }
         if (sticker.isFavorite && selected == null) {
             Icon(
@@ -184,12 +199,12 @@ fun BoxScope.StickerImage(sticker: Sticker, inset: Float = 0.12f, shadowOffset: 
 }
 
 @Composable
-private fun BoxScope.Badge(
+private fun Badge(
     text: String,
-    alignment: Alignment,
-    margin: Dp,
+    modifier: Modifier = Modifier,
     textColor: Color? = null,
     big: Boolean = false,
+    tag: String? = null,
 ) {
     val colors = StickersTheme.colors
     Text(
@@ -199,11 +214,10 @@ private fun BoxScope.Badge(
         fontWeight = FontWeight(800),
         fontSize = if (big) 11.sp else 10.sp,
         letterSpacing = if (big) 0.6.sp else 0.5.sp,
-        modifier = Modifier
-            .align(alignment)
-            .padding(margin)
+        modifier = modifier
             .background(colors.badgeFill, RoundedCornerShape(if (big) 12.dp else 8.dp))
-            .padding(horizontal = if (big) 11.dp else 7.dp, vertical = if (big) 5.dp else 2.dp),
+            .padding(horizontal = if (big) 11.dp else 7.dp, vertical = if (big) 5.dp else 2.dp)
+            .then(if (tag != null) Modifier.testTag(tag) else Modifier),
     )
 }
 

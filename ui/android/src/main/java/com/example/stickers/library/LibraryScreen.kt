@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -81,6 +82,7 @@ object LibraryTags {
     const val VIEW_EMPTY = "library:view-empty"
     const val ADD = "add_stickers"
     const val HERO = "library:hero"
+    fun railLabel(f: LibraryFilter) = rail(f) + ":label"
     fun rail(f: LibraryFilter) = "rail:" + when (f) {
         LibraryFilter.All -> "all"
         LibraryFilter.Favorites -> "favorites"
@@ -268,8 +270,13 @@ private fun RailButton(item: RailItem, selected: Boolean, onClick: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .width(68.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(role = Role.Tab, onClick = onClick)
+            // No rounded clip here: it shaved the corners of long labels. The ripple is a circle instead.
+            .clickable(
+                interactionSource = null,
+                indication = ripple(bounded = false, radius = 40.dp),
+                role = Role.Tab,
+                onClick = onClick,
+            )
             .semantics { this.selected = selected }
             .testTag(LibraryTags.rail(item.filter)),
     ) {
@@ -302,6 +309,7 @@ private fun RailButton(item: RailItem, selected: Boolean, onClick: () -> Unit) {
             color = if (selected) colors.accentText else colors.muted,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.testTag(LibraryTags.railLabel(item.filter)),
         )
     }
 }
