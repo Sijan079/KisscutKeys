@@ -117,6 +117,7 @@ Done when: signed release bundle builds and the manual checklist exists.
 - Search
 - iOS port (SwiftUI or Compose Multiplatform; keyboard cannot insert images directly there, clipboard only)
 - Direct sharing without a file (needs a network decision)
+- Smaller-looking stickers in chats (user's request, parked 2026-11-22). Chat apps show what a keyboard sends as a photo attachment, stretched to their preview box; only their own sticker formats render small and frameless. Tried on the user's phone: smaller pixels (128-256px) look the same size, just blurrier; transparent padding shrinks the sticker but Discord and Facebook Lite draw a gray box behind attachments, showing the image edges. Paths left: native sticker formats per app (WhatsApp `image/webp.wasticker`, see M4.5), nothing known for Discord.
 
 ## Notes log
 
@@ -176,3 +177,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-22, M4.5: Stress check with a dithered GIF (Pillow, 1000x1000, 30 frames, photo-like gradients, Floyd-Steinberg): saved in 21 s on the emulator (about 0.7 s a frame), 2.6 MB to 1.2 MB, mean channel error about 1. Dithering changes nearly every pixel every frame, so each frame is a full redraw and a full quantize. No real-world GIF over 512px was on the emulator; real ones from the user's phone still need a check. Speed-ups (faster quantizer, near-match "keep") are a decision for the user, not done.
 - 2026-11-22, Brand (pulled ahead of M6 at the user's request): renamed to Kisscut Keys, package `com.example.stickers` -> `app.kisscut.keys` (Room schema folder renamed with it), keycap launcher icon from BRAND.md. It installs as a new app: the library in the old `com.example.stickers` app (on the user's phone) does not carry over, and export is not built yet (M5). Play icon PNG and listing still open.
 - 2026-11-22: Device tests no longer uninstall the app: `android.injected.androidTest.leaveApksInstalledAfterRun=true` in `gradle.properties`. Checked on the emulator: 32 seeded stickers before and after a full `connectedAndroidTest` (61/61 passed, also covering the package rename).
+- 2026-11-22: Send-size tests in Discord and Facebook Lite (phone): image size does not change how big a sticker looks, and padding shows the app's gray attachment box. Parked under Later.
