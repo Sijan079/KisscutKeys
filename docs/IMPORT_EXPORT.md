@@ -56,17 +56,18 @@ settings.json        (optional)
 
 ## Stored format (every import: share sheet, picker, pack)
 
-Built in ROADMAP M4.5. Until then stickers are stored as received (PNG, WebP, GIF; JPEG is rejected).
+Still images: built in ROADMAP M4.5 (`StickerImporter` with `AndroidStillConverter`). Large GIFs: not built yet, stored as received.
 
 Goal: a library of thousands of stickers stays in the hundreds of MB, with no visible quality loss on a phone.
 
 Accepted input, sniffed from magic bytes: PNG, JPEG, WebP (still or animated), GIF. Anything else is rejected.
 
 Still images (PNG, JPEG, still WebP):
-1. Decode. If the longest side is over **512px**, scale down to 512 (keep aspect ratio, high-quality filtering). Never scale up.
+1. Decode (at most about 4x the target, via `inSampleSize`, so huge images stay within memory). Apply the EXIF orientation, since Android's decoder ignores it. If the longest side is over **512px**, scale down to 512 (keep aspect ratio; halve with filtering, then one final filtered step). Never scale up.
 2. Encode as **lossless WebP** (`WEBP_LOSSLESS` on API 30+, `WEBP` at quality 100 on API 29, which Android encodes lossless). On API 26 to 28 Android has no lossless WebP encoder, so encode **PNG** instead.
-3. **Never store something bigger than the input:** if the input was not scaled down and its original bytes are smaller than the encoded result, keep the original bytes and type (for example a small JPEG or a lossy WebP; re-encoding those losslessly only makes them bigger, never better).
+3. **Never store something bigger than the input:** if the input was not scaled down or rotated and its original bytes are not bigger than the encoded result, keep the original bytes and type (for example a small JPEG or a lossy WebP; re-encoding those losslessly only makes them bigger, never better).
 4. Thumbnail, `hasAlpha` and the cut line come from the stored image, as before.
+5. A still GIF (one frame) is never turned into WebP; GIFs follow the animated rules below.
 
 Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap) until ROADMAP M4.5 shrinks GIFs over 512px with our own Kotlin GIF encoder (output stays GIF; near-lossless, as GIF allows 256 colors per frame). Animated WebP stays unchanged (shrinking it would need libwebp; undecided).
 

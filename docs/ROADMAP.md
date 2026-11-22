@@ -66,7 +66,7 @@ First, check the send rule (send the stored type if the field accepts it, else a
 
 Still images:
 - [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
-- [ ] Hash the bytes as received so duplicates still match; existing stickers untouched
+- [x] Hash the bytes as received so duplicates still match; existing stickers untouched
 - [ ] Keyboard clipboard fallback copies still stickers as a PNG copy (same pixels, `cache/send/`), like the direct send; GIFs stay GIF (KEYBOARD, Inserting a sticker)
 
 Large GIFs (output stays GIF so every chat app accepts it; near-lossless, as GIF allows 256 colors per frame; no new library):
@@ -75,6 +75,10 @@ Large GIFs (output stays GIF so every chat app accepts it; near-lossless, as GIF
 - [ ] GIF writer: real LZW, store only the changed area per frame, keep delays and loop count
 - [ ] Wire into import: only GIFs over 512px, never bigger than the input, one frame at a time in memory, progress for long GIFs
 - [ ] Before reusing any existing code (for example AnimatedGifEncoder / NeuQuant), check its license with the user
+
+WhatsApp stickers (last, after the still and GIF parts; the user asked for it):
+- [ ] Probe first on the user's phone: send one 512x512 WebP as `image/webp.wasticker`; does WhatsApp show it as a sticker? If not, drop this and keep the PNG copy
+- [ ] If yes: when a field lists `image/webp.wasticker`, send a still sticker as a 512x512 WebP copy (transparent padding to square, at most 100 KB, the stored file unchanged); animated WebP only if it already fits (512x512, at most 500 KB)
 
 Tests per TESTING (Import / export, Stored format), plus GIF cases: odd disposal and palettes, malformed files, timing and loop preserved, "never bigger", a set of real-world GIFs. GIFs at 512px or smaller and animated WebP are stored unchanged.
 
@@ -154,3 +158,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M4.2: Gotchas: in strings.xml `?123` must be written `\?123` (a leading `?` is a theme reference) and the backslash in `=\<` doubled; a MATCH_PARENT child of a wrap-content FrameLayout in an IME window takes the whole screen, so the frame is measured to the sticker panel's height. With a phone plugged in, `installDebug` and `connectedAndroidTest` hit both devices: set `ANDROID_SERIAL=emulator-5554` for tests.
 - 2026-11-21, M4.2: Not built: key preview popups, long-press for accents or digits, other layouts and languages. No board exists for the letters; screenshots in artifacts/ (typing-dark, typing-light).
 - 2026-11-22, M4.5: Logged the accepted types in 7 apps on the user's phone (KEYBOARD, Real-app checks). The send rule fits: Discord, Telegram, Viber, FB Lite and Google Messages take WebP; WhatsApp and Instagram don't, so they get the PNG copy. WhatsApp lists `image/webp.wasticker`, its own sticker type; not used yet. The release build has a no-op `FieldTypesLog` in `src/release`.
+- 2026-11-22, M4.5: Still-image code written (JPEG sniffing, `AndroidStillConverter`, clipboard PNG copy); JVM tests pass, device tests written but not run yet at the user's request, so those boxes stay open. Additions not in the plan: EXIF orientation is applied (BitmapFactory ignores it) and a rotated image is always converted; a one-frame GIF is never turned into WebP; the clipboard copy is named `clip-<hash>.png` so the next send doesn't delete it.
