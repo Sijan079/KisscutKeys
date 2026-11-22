@@ -56,7 +56,7 @@ settings.json        (optional)
 
 ## Stored format (every import: share sheet, picker, pack)
 
-Still images: built in ROADMAP M4.5 (`StickerImporter` with `AndroidStillConverter`). Large GIFs: not built yet, stored as received; the reader and the shrinking are done (`shared:core` package `gif`: `GifReader`, `GifCanvas`, `GifShrinker`), the writer and the import wiring are not.
+Still images: built in ROADMAP M4.5 (`StickerImporter` with `AndroidStillConverter`). Large GIFs: not built yet, stored as received; the reader, shrinking and writer are done (`shared:core` package `gif`: `GifReader`, `GifCanvas`, `GifShrinker`, `GifWriter`), the import wiring is not.
 
 Goal: a library of thousands of stickers stays in the hundreds of MB, with no visible quality loss on a phone.
 
