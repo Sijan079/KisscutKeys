@@ -1,6 +1,6 @@
 package app.kisscut.keys.shared.core
 
-/** Import safety limits, in one place (docs/IMPORT_EXPORT.md). Pack limits arrive with M5. */
+/** Import safety limits for single stickers (docs/IMPORT_EXPORT.md). Pack limits: [app.kisscut.keys.shared.core.pack.PackLimits]. */
 object ImportLimits {
     /** Max bytes of a single sticker file. */
     const val MAX_STICKER_BYTES: Int = 10 * 1024 * 1024

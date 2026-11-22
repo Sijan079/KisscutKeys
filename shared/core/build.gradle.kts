@@ -1,6 +1,10 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -15,10 +19,23 @@ kotlin {
     // JVM target: repository tests run against a real in-memory Room database.
     jvm()
 
+    // jvmSharedMain: java.util.zip code (.stickerpack reading and writing), shared by Android and JVM.
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+        common {
+            group("jvmShared") {
+                withJvm()
+                withCompilations { it.platformType == KotlinPlatformType.androidJvm }
+            }
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(project(":shared:db"))
+            implementation(libs.kotlinx.serialization.json)
         }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
