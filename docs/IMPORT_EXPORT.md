@@ -56,7 +56,7 @@ settings.json        (optional)
 
 ## Stored format (every import: share sheet, picker, pack)
 
-Still images: built in ROADMAP M4.5 (`StickerImporter` with `AndroidStillConverter`). Large GIFs: not built yet, stored as received.
+Still images: built in ROADMAP M4.5 (`StickerImporter` with `AndroidStillConverter`). Large GIFs: not built yet, stored as received; the reader is done (`shared:core` package `gif`: `GifReader`, `GifCanvas`), the shrinking and the writer are not.
 
 Goal: a library of thousands of stickers stays in the hundreds of MB, with no visible quality loss on a phone.
 
@@ -97,6 +97,9 @@ Steps:
 | Max pack file size | 200 MB |
 | Max single sticker (input) | 10 MB |
 | Max stored side (still images) | 512 px |
+| Max GIF canvas decoded | 2048 x 2048 px (4,194,304 px) |
+| Max GIF frames | 5000 |
+| Max GIF decode work | 1,000,000,000 px (canvas plus frame area, summed over frames) |
 | Max stickers per pack | 2000 |
 | Max zip entries read | 5000 |
 | Max total uncompressed | 500 MB (guards against zip bombs; abort when exceeded) |
