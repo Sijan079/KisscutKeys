@@ -84,6 +84,15 @@ Tests per TESTING (Import / export, Stored format), plus GIF cases: odd disposal
 
 Done when: a 3000px PNG saves as a 512px lossless WebP with identical pixels to a 512px scale of the source; a JPEG saves; a 1000px GIF saves at 512px as a GIF that plays with the same timing and looks the same on the emulator; small GIFs and animated WebP are unchanged; tests pass.
 
+## M4.6: Library sections
+Added at the user's request (UI_SPEC, Library sections). Speed was the worry behind it; the grid is lazy, so the full grid stays below the sections.
+- [x] `librarySections` rule in `shared:core` (Most used 3, New 6, Least used 6 random per session, no repeats)
+- [x] Library shows the sections above "All stickers" on the All view; hero tile kept as the first Most used
+- [x] Tests: rules on the JVM, ViewModel, device test for repeated tiles
+- [ ] Device tests run and screenshots (library-sections-dark/light) on a device
+
+Done when: on a device the Stickers page shows the four headings in order with a 20+ sticker library, and tests pass.
+
 ## M5: Backup and sharing
 - [ ] `.stickerpack` export (all or one collection) with progress and cancel
 - [ ] Import with all safety limits and rollback (IMPORT_EXPORT)

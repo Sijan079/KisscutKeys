@@ -7,8 +7,11 @@ import app.kisscut.keys.common.SelectionUi
 import app.kisscut.keys.common.StickerDialog
 import app.kisscut.keys.common.StickerSelection
 import app.kisscut.keys.shared.core.Hero
+import app.kisscut.keys.shared.core.HeroReason
+import app.kisscut.keys.shared.core.LibrarySections
 import app.kisscut.keys.shared.core.StickerKind
 import app.kisscut.keys.shared.core.filterKind
+import app.kisscut.keys.shared.core.librarySections
 import app.kisscut.keys.shared.core.pickHero
 import app.kisscut.keys.shared.db.Sticker
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlin.random.Random
 
 sealed interface LibraryFilter {
     data object All : LibraryFilter
@@ -38,8 +42,13 @@ data class LibraryUiState(
     val rail: List<RailItem> = SYSTEM_RAIL,
     val filter: LibraryFilter = LibraryFilter.All,
     val kind: StickerKind = StickerKind.ALL,
-    /** The big tile; not part of [stickers]. Hidden in select mode and in short lists. */
+    /**
+     * The big tile; not part of [stickers]. Hidden in select mode and in short lists. With [sections] it is
+     * the first Most used sticker and [stickers] keeps every sticker (the "All stickers" grid).
+     */
     val hero: Hero? = null,
+    /** Most used, New and Least used above "All stickers": only the All filter, outside select mode. */
+    val sections: LibrarySections? = null,
     val stickers: List<Sticker> = emptyList(),
     val collectionNames: Map<Long, String> = emptyMap(),
     val selection: SelectionUi = SelectionUi(),
@@ -48,8 +57,8 @@ data class LibraryUiState(
     val isLibraryEmpty: Boolean get() = loaded && totalCount == 0
     val isViewEmpty: Boolean get() = loaded && hero == null && stickers.isEmpty()
 
-    /** Everything shown, hero first. */
-    val shown: List<Sticker> get() = listOfNotNull(hero?.sticker) + stickers
+    /** Every sticker on screen once, hero first. Sections only repeat stickers from the grid. */
+    val shown: List<Sticker> get() = if (sections != null) stickers else listOfNotNull(hero?.sticker) + stickers
 
     companion object {
         val SYSTEM_RAIL = listOf(
@@ -63,9 +72,15 @@ data class LibraryUiState(
     }
 }
 
-/** Library: filter rail, Static/Animated chips, grid with hero tile, select mode. */
+/**
+ * Library: filter rail, Static/Animated chips, sections or grid with hero tile, select mode.
+ * [seed] picks the Least used stickers; one per screen instance, so the pick holds while the app is open.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
-class LibraryViewModel(private val backend: LibraryBackend) : ViewModel() {
+class LibraryViewModel(
+    private val backend: LibraryBackend,
+    private val seed: Long = Random.nextLong(),
+) : ViewModel() {
     private val filter = MutableStateFlow<LibraryFilter>(LibraryFilter.All)
     private val kind = MutableStateFlow(StickerKind.ALL)
     val selection = StickerSelection(viewModelScope, backend)
@@ -97,7 +112,12 @@ class LibraryViewModel(private val backend: LibraryBackend) : ViewModel() {
         selection.state,
         selection.dialog,
     ) { (total, rail, names), (f, k, list), sel, dialog ->
-        val hero = if (!sel.active && list.size >= LibraryUiState.HERO_MIN) pickHero(list) else null
+        val sections = if (f == LibraryFilter.All && !sel.active) librarySections(list, seed) else null
+        val hero = when {
+            sections != null -> sections.mostUsed.firstOrNull()?.let { Hero(it, HeroReason.MOST_USED) }
+            !sel.active && list.size >= LibraryUiState.HERO_MIN -> pickHero(list)
+            else -> null
+        }
         LibraryUiState(
             loaded = true,
             totalCount = total,
@@ -105,7 +125,8 @@ class LibraryViewModel(private val backend: LibraryBackend) : ViewModel() {
             filter = f,
             kind = k,
             hero = hero,
-            stickers = if (hero == null) list else list.filter { it.id != hero.sticker.id },
+            sections = sections,
+            stickers = if (hero == null || sections != null) list else list.filter { it.id != hero.sticker.id },
             collectionNames = names,
             selection = sel,
             dialog = dialog,

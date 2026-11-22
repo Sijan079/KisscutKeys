@@ -76,6 +76,10 @@
     <string name="kind_animated">Animated</string>
     <string name="hero_most_used">MOST USED</string>
     <string name="hero_newest">NEWEST</string>
+    <string name="section_most_used">Most used</string>
+    <string name="section_new">New</string>
+    <string name="section_least_used">Least used</string>
+    <string name="section_all">All stickers</string>
     <string name="view_empty">Nothing here yet</string>
     <string name="recents_empty">Stickers you send from the keyboard show up here.</string>
     <string name="cd_sticker">Sticker</string>

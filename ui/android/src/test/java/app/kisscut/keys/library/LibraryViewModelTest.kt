@@ -157,6 +157,66 @@ class LibraryViewModelTest {
         assertEquals(listOf(1L), vm.s.shown.map { it.id })
     }
 
+    // --- sections ------------------------------------------------------------------------------
+
+    /** 20 stickers; 7, 3 and 12 used (most to least). */
+    private fun addSectionLibrary() {
+        val uses = mapOf(7L to 5, 3L to 4, 12L to 2)
+        for (i in 1L..20L) backend.addSticker(i, useCount = uses[i] ?: 0, lastUsedAt = uses[i]?.let { i })
+    }
+
+    @Test
+    fun allViewShowsSectionsWithTheMostUsedAsTheHeroAndEveryStickerBelow() = runTest(dispatcher) {
+        addSectionLibrary()
+        val vm = LibraryViewModel(backend, seed = 5).also { advanceUntilIdle() }
+
+        val sections = vm.s.sections!!
+        assertEquals(listOf(7L, 3L, 12L), sections.mostUsed.map { it.id })
+        assertEquals(7L, vm.s.hero?.sticker?.id)
+        assertEquals(HeroReason.MOST_USED, vm.s.hero?.reason)
+        assertEquals((20L downTo 1L).toList(), vm.s.stickers.map { it.id }, "All stickers keeps every sticker")
+        assertEquals(20, vm.s.shown.size)
+        assertEquals(6, sections.new.size)
+        assertEquals(6, sections.leastUsed.size)
+    }
+
+    @Test
+    fun theSameSeedPicksTheSameLeastUsed() = runTest(dispatcher) {
+        addSectionLibrary()
+        val a = LibraryViewModel(backend, seed = 9).also { advanceUntilIdle() }
+        val b = LibraryViewModel(backend, seed = 9).also { advanceUntilIdle() }
+        assertEquals(a.s.sections!!.leastUsed, b.s.sections!!.leastUsed)
+    }
+
+    @Test
+    fun otherFiltersAndSmallLibrariesHaveNoSections() = runTest(dispatcher) {
+        addSectionLibrary()
+        val vm = viewModel()
+        vm.setFilter(LibraryFilter.Recents)
+        advanceUntilIdle()
+        assertNull(vm.s.sections)
+
+        vm.setFilter(LibraryFilter.All)
+        vm.setKind(StickerKind.ANIMATED) // none animated: too few for sections
+        advanceUntilIdle()
+        assertNull(vm.s.sections)
+    }
+
+    @Test
+    fun selectModeHidesSectionsAndSelectAllTakesEveryStickerOnce() = runTest(dispatcher) {
+        addSectionLibrary()
+        val vm = viewModel()
+
+        vm.selection.start(7)
+        advanceUntilIdle()
+        assertNull(vm.s.sections)
+        assertNull(vm.s.hero)
+
+        vm.selection.selectAll()
+        advanceUntilIdle()
+        assertEquals(20, vm.s.selection.count)
+    }
+
     // --- select mode ---------------------------------------------------------------------------
 
     @Test

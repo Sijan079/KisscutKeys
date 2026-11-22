@@ -124,4 +124,82 @@ class LibraryRulesTest {
         // Into its current parent: nothing to do.
         assertFalse(canMoveCollection(all, id = 3, newParentId = 2))
     }
+
+    // Sections: 20 stickers, ids 1..20, newest = highest id.
+    private fun library(n: Int = 20, uses: Map<Long, Int> = emptyMap()) =
+        (1L..n).map { sticker(it, useCount = uses[it] ?: 0, lastUsedAt = uses[it]?.let { _ -> it }) }
+
+    private fun ids(list: List<Sticker>) = list.map { it.id }
+
+    @Test
+    fun smallLibrariesHaveNoSections() {
+        assertNull(librarySections(library(LibrarySections.MIN_STICKERS - 1), seed = 1))
+        assertTrue(librarySections(library(LibrarySections.MIN_STICKERS), seed = 1) != null)
+    }
+
+    @Test
+    fun mostUsedIsTopThreeByUsesAndStartsWithTheHero() {
+        val list = library(uses = mapOf(4L to 9, 7L to 2, 2L to 5, 11L to 1))
+        val s = librarySections(list, seed = 1)!!
+        assertEquals(listOf(4L, 2L, 7L), ids(s.mostUsed))
+        assertEquals(pickHero(list)!!.sticker, s.mostUsed.first())
+    }
+
+    @Test
+    fun mostUsedOnlyHoldsUsedStickers() {
+        assertEquals(emptyList(), librarySections(library(), seed = 1)!!.mostUsed)
+        assertEquals(listOf(5L), ids(librarySections(library(uses = mapOf(5L to 1)), seed = 1)!!.mostUsed))
+    }
+
+    @Test
+    fun newIsTheSixNewestNotAlreadyInMostUsed() {
+        val s = librarySections(library(uses = mapOf(20L to 3)), seed = 1)!!
+        assertEquals(listOf(19L, 18L, 17L, 16L, 15L, 14L), ids(s.new))
+    }
+
+    @Test
+    fun noStickerIsInTwoSections() {
+        val list = library(uses = mapOf(20L to 3, 1L to 1, 2L to 1))
+        for (seed in 0L..50L) {
+            val s = librarySections(list, seed)!!
+            val all = ids(s.mostUsed) + ids(s.new) + ids(s.leastUsed)
+            assertEquals(all.size, all.toSet().size, "seed $seed: $all")
+            assertEquals(LibrarySections.LEAST_USED_COUNT, s.leastUsed.size)
+        }
+    }
+
+    @Test
+    fun leastUsedComesFromTheFewestUses() {
+        // 1..8 used 10 times each: 8, 7, 6 go to Most used (ties: used more recently), 20..15 to New.
+        // Left: 1..5 (used) and 9..14 (never used); the six never-used ones are exactly the pick.
+        val uses = (1L..8L).associateWith { 10 }
+        val s = librarySections(library(uses = uses), seed = 7)!!
+        assertEquals(listOf(8L, 7L, 6L), ids(s.mostUsed))
+        assertEquals((9L..14L).toSet(), ids(s.leastUsed).toSet())
+    }
+
+    @Test
+    fun leastUsedIncludesEveryStickerTiedAtTheCutoff() {
+        // After Most used (none) and New (15..20), 14 stickers left, all unused: any of them may be picked.
+        val picked = (0L..200L).flatMap { ids(librarySections(library(), it)!!.leastUsed) }.toSet()
+        assertEquals((1L..14L).toSet(), picked)
+    }
+
+    @Test
+    fun leastUsedIsStableForOneSeedAndChangesWithAnother() {
+        val list = library()
+        assertEquals(ids(librarySections(list, 42)!!.leastUsed), ids(librarySections(list, 42)!!.leastUsed))
+        val picks = (0L..20L).map { ids(librarySections(list, it)!!.leastUsed) }.toSet()
+        assertTrue(picks.size > 1, "every seed gave the same pick")
+    }
+
+    @Test
+    fun usingOneStickerMovesAtMostOneLeastUsedTile() {
+        val before = librarySections(library(), seed = 3)!!
+        val usedId = before.leastUsed.first().id
+        val after = librarySections(library(uses = mapOf(usedId to 1)), seed = 3)!!
+        // It jumps to Most used; the other five stay where they were.
+        assertEquals(listOf(usedId), ids(after.mostUsed))
+        assertEquals(ids(before.leastUsed).drop(1), ids(after.leastUsed).take(5))
+    }
 }

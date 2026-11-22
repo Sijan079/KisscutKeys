@@ -55,15 +55,70 @@ enum class HeroReason { MOST_USED, NEWEST }
 
 data class Hero(val sticker: Sticker, val reason: HeroReason)
 
+/** Most used first: more uses, then used more recently, then higher id. */
+private val MOST_USED_FIRST =
+    compareByDescending<Sticker> { it.useCount }.thenByDescending { it.lastUsedAt ?: 0 }.thenByDescending { it.id }
+
 /** The big Library tile: the most used sticker, or the newest when none has been used yet. */
 fun pickHero(stickers: List<Sticker>): Hero? {
-    val used = stickers.filter { it.useCount > 0 }
-    if (used.isNotEmpty()) {
-        val top = used.maxWith(compareBy<Sticker> { it.useCount }.thenBy { it.lastUsedAt ?: 0 }.thenBy { it.id })
-        return Hero(top, HeroReason.MOST_USED)
-    }
+    val top = stickers.filter { it.useCount > 0 }.minWithOrNull(MOST_USED_FIRST)
+    if (top != null) return Hero(top, HeroReason.MOST_USED)
     val newest = stickers.maxWithOrNull(compareBy<Sticker> { it.addedAt }.thenBy { it.id }) ?: return null
     return Hero(newest, HeroReason.NEWEST)
+}
+
+/**
+ * The Library's All view (docs/UI_SPEC.md, Library sections). A sticker is in at most one section; the
+ * "All stickers" grid below still shows every sticker.
+ */
+data class LibrarySections(
+    /** First is the big tile (same as [pickHero]); the rest sit beside it. Empty until something is used. */
+    val mostUsed: List<Sticker>,
+    /** Newest first. */
+    val new: List<Sticker>,
+    /** A random pick from the stickers with the fewest uses (never used ones first in practice). */
+    val leastUsed: List<Sticker>,
+) {
+    companion object {
+        const val MOST_USED_COUNT = 3
+        const val NEW_COUNT = 6
+        const val LEAST_USED_COUNT = 6
+
+        /** Below this many stickers the sections would mostly repeat the grid, so they are not shown. */
+        const val MIN_STICKERS = MOST_USED_COUNT + NEW_COUNT + LEAST_USED_COUNT + 1
+    }
+}
+
+/**
+ * Splits [stickers] into sections, or null when there are fewer than [LibrarySections.MIN_STICKERS].
+ *
+ * Least used: the pool is every sticker left whose use count is at most the count of the
+ * [LibrarySections.LEAST_USED_COUNT]-th least used one, ordered by a hash of [seed] and the id. One
+ * [seed] per app session keeps the pick stable while stickers are used or added (only the tile that
+ * changed moves), and a new session shows a new pick.
+ */
+fun librarySections(stickers: List<Sticker>, seed: Long): LibrarySections? {
+    if (stickers.size < LibrarySections.MIN_STICKERS) return null
+    val mostUsed = stickers.filter { it.useCount > 0 }.sortedWith(MOST_USED_FIRST).take(LibrarySections.MOST_USED_COUNT)
+    val taken = mostUsed.mapTo(HashSet()) { it.id }
+    val new = stickers.filter { it.id !in taken }
+        .sortedWith(compareByDescending<Sticker> { it.addedAt }.thenByDescending { it.id })
+        .take(LibrarySections.NEW_COUNT)
+    new.mapTo(taken) { it.id }
+    val rest = stickers.filter { it.id !in taken }
+    val cutoff = rest.map { it.useCount }.sorted().let { it.getOrNull(LibrarySections.LEAST_USED_COUNT - 1) ?: it.lastOrNull() }
+    val leastUsed = rest.filter { cutoff != null && it.useCount <= cutoff }
+        .sortedWith(compareBy<Sticker> { mix(it.id xor seed) }.thenBy { it.id })
+        .take(LibrarySections.LEAST_USED_COUNT)
+    return LibrarySections(mostUsed, new, leastUsed)
+}
+
+/** SplitMix64 finalizer: spreads ids so neighbouring ids land far apart in the order. */
+private fun mix(x: Long): Long {
+    var z = x + -0x61c8864680b583ebL
+    z = (z xor (z ushr 30)) * -0x40a7b892e31b1a47L
+    z = (z xor (z ushr 27)) * -0x6b2fb644ecceee15L
+    return z xor (z ushr 31)
 }
 
 enum class StickerKind { ALL, STATIC, ANIMATED }

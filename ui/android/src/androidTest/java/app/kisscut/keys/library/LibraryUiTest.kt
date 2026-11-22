@@ -24,6 +24,7 @@ import app.kisscut.keys.TestLibrary
 import app.kisscut.keys.common.DialogTags
 import app.kisscut.keys.common.PartTags
 import app.kisscut.keys.common.TileTags
+import app.kisscut.keys.shared.core.LibrarySections
 import app.kisscut.keys.shared.core.StickerKind
 import app.kisscut.keys.shared.db.Sticker
 import kotlinx.coroutines.runBlocking
@@ -98,6 +99,25 @@ class LibraryUiTest {
         compose.waitUntil(5_000) { !exists(tile(other)) }
         compose.onNodeWithTag(LibraryTags.rail(LibraryFilter.Favorites)).assertIsSelected()
         assertTrue(exists(tile(fav)))
+    }
+
+    @Test
+    fun sectionsShowAboveAllStickersAndRepeatTilesWithoutCrashing() {
+        val newest = runBlocking {
+            val all = (1..LibrarySections.MIN_STICKERS + 4).map { lib.face(it) }
+            lib.stickers.markUsed(all.first().id)
+            all.last()
+        }
+        show()
+        waitFor(LibraryTags.section(Section.MOST_USED))
+        waitFor(LibraryTags.HERO)
+        waitFor(LibraryTags.section(Section.NEW))
+        // The newest sticker is in New and again in All stickers: two tiles, separate grid keys.
+        val grid = compose.onNodeWithTag(LibraryTags.GRID)
+        grid.performScrollToNode(hasTestTag(LibraryTags.section(Section.LEAST_USED)))
+        grid.performScrollToNode(hasTestTag(LibraryTags.section(Section.ALL)))
+        grid.performScrollToNode(hasTestTag(tile(newest)))
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag(tile(newest))).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test

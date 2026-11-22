@@ -1,6 +1,7 @@
 package app.kisscut.keys.library
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,6 +49,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -82,6 +84,7 @@ object LibraryTags {
     const val VIEW_EMPTY = "library:view-empty"
     const val ADD = "add_stickers"
     const val HERO = "library:hero"
+    internal fun section(s: Section) = "library:section:" + s.name.lowercase()
     fun railLabel(f: LibraryFilter) = rail(f) + ":label"
     fun rail(f: LibraryFilter) = "rail:" + when (f) {
         LibraryFilter.All -> "all"
@@ -139,10 +142,12 @@ fun LibraryScreen(vm: LibraryViewModel, onNavigate: (TopLevel) -> Unit, onAdd: (
                 }
             }
             val hero = state.hero
+            val sections = state.sections
             var rest = state.stickers
+            if (sections != null && hero != null) sectionHeader(Section.MOST_USED)
             if (hero != null) {
-                val side = rest.take(2 * (cols - 2))
-                rest = rest.drop(side.size)
+                val side = if (sections != null) sections.mostUsed.drop(1) else rest.take(2 * (cols - 2))
+                if (sections == null) rest = rest.drop(side.size)
                 fullLine("hero") {
                     Row(horizontalArrangement = Arrangement.spacedBy(Gap)) {
                         StickerTile(
@@ -161,6 +166,14 @@ fun LibraryScreen(vm: LibraryViewModel, onNavigate: (TopLevel) -> Unit, onAdd: (
                         }
                     }
                 }
+            }
+            if (sections != null) {
+                // Section tiles repeat stickers from the grid below, so their keys carry the section name.
+                if (sections.new.isNotEmpty()) sectionHeader(Section.NEW)
+                items(sections.new, key = { "new:${it.id}" }) { s -> Tile(s, state, vm, Modifier) }
+                if (sections.leastUsed.isNotEmpty()) sectionHeader(Section.LEAST_USED)
+                items(sections.leastUsed, key = { "least:${it.id}" }) { s -> Tile(s, state, vm, Modifier) }
+                sectionHeader(Section.ALL)
             }
             items(rest, key = { it.id }) { s -> Tile(s, state, vm, Modifier) }
         }
@@ -183,6 +196,27 @@ fun LibraryScreen(vm: LibraryViewModel, onNavigate: (TopLevel) -> Unit, onAdd: (
 
 private fun LazyGridScope.fullLine(key: String, content: @Composable () -> Unit) =
     item(key = key, span = { GridItemSpan(maxLineSpan) }) { content() }
+
+/** Library sections on the All view (docs/UI_SPEC.md, Library sections), in screen order. */
+internal enum class Section(@param:StringRes val title: Int) {
+    MOST_USED(R.string.section_most_used),
+    NEW(R.string.section_new),
+    LEAST_USED(R.string.section_least_used),
+    ALL(R.string.section_all),
+}
+
+private fun LazyGridScope.sectionHeader(section: Section) = fullLine("section:${section.name}") {
+    Text(
+        stringResource(section.title),
+        style = StickerType.Heading,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .semantics { heading() }
+            .testTag(LibraryTags.section(section)),
+    )
+}
 
 private fun LazyGridScope.header(state: LibraryUiState, vm: LibraryViewModel) {
     if (state.selection.active) {
