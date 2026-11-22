@@ -129,6 +129,20 @@ class SaveSheetTest {
     }
 
     @Test
+    fun shrinkingGifShowsItsPercentOnTheButton() {
+        val state = SaveUiState(
+            items = listOf("content://test/1", "content://test/2").map { SaveItem(it, ItemPreview.Loading) },
+            phase = SavePhase.Saving(done = 1, total = 2, percent = 40),
+        )
+        compose.setContent {
+            StickersTheme {
+                SaveSheetContent(state, onToggle = {}, onSelect = {}, onNewCollection = {}, onSave = {}, onDone = {})
+            }
+        }
+        compose.onNodeWithText("Saving 2 of 2, 40%").assertIsDisplayed()
+    }
+
+    @Test
     fun multipleImagesAllSave() {
         show("content://test/1", "content://test/2", "content://test/3")
 
@@ -161,7 +175,7 @@ private class UiFakeBackend : SaveBackend {
 
     override suspend fun describe(uri: String): ItemDetails? = details
 
-    override suspend fun import(uri: String, collectionId: Long?): ImportResult {
+    override suspend fun import(uri: String, collectionId: Long?, onProgress: (Float) -> Unit): ImportResult {
         imported += uri to collectionId
         val n = imported.size.toLong()
         val sticker = Sticker(n, "$n.png", "$n.webp", "image/png", false, true, "h$n", collectionId, addedAt = 0)

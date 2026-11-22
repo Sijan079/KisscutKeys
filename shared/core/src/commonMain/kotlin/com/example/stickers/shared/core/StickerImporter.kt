@@ -1,6 +1,7 @@
 package com.example.stickers.shared.core
 
 import com.example.stickers.shared.db.Sticker
+import com.example.stickers.shared.core.gif.shrinkGif
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -39,8 +40,8 @@ sealed interface ImportResult {
 
 /**
  * Imports one image: size cap, type from magic bytes, SHA-256 dedupe of the received bytes, stored format
- * (still images at most 512px, lossless; see docs/IMPORT_EXPORT.md), files named by hash, thumbnail, row.
- * A failure after writing removes this import's files, so nothing half-saved stays.
+ * (still images at most 512px, lossless; GIFs over 512px shrunk; see docs/IMPORT_EXPORT.md), files named
+ * by hash, thumbnail, row. A failure after writing removes this import's files, so nothing half-saved stays.
  */
 class StickerImporter(
     private val stickers: StickerRepository,
@@ -48,7 +49,8 @@ class StickerImporter(
     private val thumbnailer: Thumbnailer,
     private val converter: StillConverter,
 ) {
-    suspend fun import(source: ByteSource, collectionId: Long?): ImportResult {
+    /** [onProgress] reports 0 to 1 while a large GIF is shrunk (the only slow step); nothing otherwise. */
+    suspend fun import(source: ByteSource, collectionId: Long?, onProgress: (Float) -> Unit = {}): ImportResult {
         val bytes = try {
             source.readAtMost(ImportLimits.MAX_STICKER_BYTES)
         } catch (e: CancellationException) {
@@ -67,7 +69,8 @@ class StickerImporter(
         // Duplicate share is a no-op: no decode, no writes, no move.
         stickers.findByHash(hash)?.let { return ImportResult.Duplicate(it) }
 
-        val (storedBytes, storedInfo) = storedForm(bytes, info) ?: return ImportResult.Rejected(RejectReason.UNREADABLE)
+        val (storedBytes, storedInfo) = storedForm(bytes, info, onProgress)
+            ?: return ImportResult.Rejected(RejectReason.UNREADABLE)
 
         val thumb = guarded { thumbnailer.thumbnail(storedBytes, storedInfo) }
             ?: return ImportResult.Rejected(RejectReason.UNREADABLE)
@@ -97,13 +100,34 @@ class StickerImporter(
         }
     }
 
-    /** The bytes to keep and what they are: converted for still images, as received otherwise. */
-    private suspend fun storedForm(bytes: ByteArray, info: ImageInfo): Pair<ByteArray, ImageInfo>? {
+    /** The bytes to keep and what they are: converted stills, shrunk large GIFs, the rest as received. */
+    private suspend fun storedForm(
+        bytes: ByteArray,
+        info: ImageInfo,
+        onProgress: (Float) -> Unit,
+    ): Pair<ByteArray, ImageInfo>? {
+        if (info.type == ImageType.GIF) return storedGif(bytes, info, onProgress)
         if (!isConvertibleStill(info)) return bytes to info
         val converted = guarded { converter.convert(bytes, info) } ?: return null
         if (keepsOriginal(bytes.size, converted)) return bytes to info
         val convertedInfo = ImageInfo(converted.type, converted.width, converted.height, false, info.mayHaveAlpha)
         return converted.bytes to convertedInfo
+    }
+
+    /**
+     * GIFs over the stored size are shrunk and stay GIF. The received bytes are kept when the GIF is small
+     * enough already, cannot be shrunk (broken, over the GIF limits) or would not get smaller.
+     */
+    private suspend fun storedGif(
+        bytes: ByteArray,
+        info: ImageInfo,
+        onProgress: (Float) -> Unit,
+    ): Pair<ByteArray, ImageInfo> {
+        if (maxOf(info.width, info.height) <= ImportLimits.STORED_MAX_SIDE) return bytes to info
+        val shrunk = guarded { shrinkGif(bytes, ImportLimits.STORED_MAX_SIDE, onProgress) }
+        if (shrunk == null || shrunk.bytes.size >= bytes.size) return bytes to info
+        val shrunkInfo = ImageInfo(ImageType.GIF, shrunk.width, shrunk.height, info.isAnimated, mayHaveAlpha = true)
+        return shrunk.bytes to shrunkInfo
     }
 
     /** Decoder failures (anything but cancellation) count as "unreadable". */

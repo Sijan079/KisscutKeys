@@ -25,7 +25,8 @@ data class SaveSummary(val added: Int, val duplicates: Int, val rejected: Int)
 
 sealed interface SavePhase {
     data object Picking : SavePhase
-    data class Saving(val done: Int, val total: Int) : SavePhase
+    /** [percent] is set while the current item is a large GIF being shrunk. */
+    data class Saving(val done: Int, val total: Int, val percent: Int? = null) : SavePhase
     data class Done(val summary: SaveSummary) : SavePhase
 }
 

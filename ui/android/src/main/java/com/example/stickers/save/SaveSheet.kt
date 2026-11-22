@@ -147,7 +147,9 @@ fun SaveSheetContent(
                 }
                 val saving = state.phase as? SavePhase.Saving
                 PrimaryButton(
-                    text = if (saving != null) {
+                    text = if (saving?.percent != null) {
+                        stringResource(R.string.save_progress_percent, saving.done + 1, saving.total, saving.percent)
+                    } else if (saving != null) {
                         stringResource(R.string.save_progress, saving.done, saving.total)
                     } else {
                         stringResource(

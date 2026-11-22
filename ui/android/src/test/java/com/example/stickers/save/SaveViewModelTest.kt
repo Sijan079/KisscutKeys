@@ -211,6 +211,21 @@ class SaveViewModelTest {
     }
 
     @Test
+    fun slowImportShowsItsPercentThenTheNextItemStartsWithout() = runTest(dispatcher) {
+        val vm = viewModel("content://a", "content://b")
+        val seen = mutableListOf<SavePhase>()
+        backend.progress = listOf(0.004f, 0.4f, 0.401f, 1f)
+        backend.afterProgress = { seen += vm.state.value.phase }
+
+        vm.save()
+        advanceUntilIdle()
+
+        val first = listOf(SavePhase.Saving(0, 2, 0), SavePhase.Saving(0, 2, 40), SavePhase.Saving(0, 2, 40))
+        assertEquals(first + SavePhase.Saving(0, 2, 100), seen.take(4))
+        assertEquals(SavePhase.Saving(1, 2, 0), seen[4], "the next item starts without the old percent")
+    }
+
+    @Test
     fun saveTwiceDoesNotImportTwice() = runTest(dispatcher) {
         val vm = viewModel("content://a")
 
@@ -239,6 +254,9 @@ class FakeSaveBackend : SaveBackend {
     val details = mutableMapOf<String, ItemDetails>()
     val results = mutableMapOf<String, ImportResult>()
     val imported = mutableListOf<Pair<String, Long?>>()
+    /** Progress each import reports, and a hook run after each report. */
+    var progress: List<Float> = emptyList()
+    var afterProgress: () -> Unit = {}
     private var nextId = 100L
 
     fun add(id: Long, name: String, parentId: Long?) {
@@ -256,8 +274,12 @@ class FakeSaveBackend : SaveBackend {
 
     override suspend fun describe(uri: String): ItemDetails? = details[uri]
 
-    override suspend fun import(uri: String, collectionId: Long?): ImportResult {
+    override suspend fun import(uri: String, collectionId: Long?, onProgress: (Float) -> Unit): ImportResult {
         imported += uri to collectionId
+        progress.forEach {
+            onProgress(it)
+            afterProgress()
+        }
         return results[uri] ?: ImportResult.Added(sticker(imported.size.toLong()))
     }
 }

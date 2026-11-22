@@ -34,8 +34,8 @@ class AppSaveBackend(
         return ItemDetails(info, bytes.size.toLong())
     }
 
-    override suspend fun import(uri: String, collectionId: Long?): ImportResult =
-        importer.import(source(uri), collectionId)
+    override suspend fun import(uri: String, collectionId: Long?, onProgress: (Float) -> Unit): ImportResult =
+        importer.import(source(uri), collectionId, onProgress)
 
     private fun source(uri: String) = ByteSource { max ->
         withContext(Dispatchers.IO) {

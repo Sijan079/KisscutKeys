@@ -56,7 +56,7 @@ settings.json        (optional)
 
 ## Stored format (every import: share sheet, picker, pack)
 
-Still images: built in ROADMAP M4.5 (`StickerImporter` with `AndroidStillConverter`). Large GIFs: not built yet, stored as received; the reader, shrinking and writer are done (`shared:core` package `gif`: `GifReader`, `GifCanvas`, `GifShrinker`, `GifWriter`), the import wiring is not.
+Built in ROADMAP M4.5: still images in `StickerImporter` with `AndroidStillConverter`; GIFs in pure Kotlin (`shared:core` package `gif`: `GifReader`, `GifCanvas`, `GifShrinker`, `GifWriter`, called through `shrinkGif`).
 
 Goal: a library of thousands of stickers stays in the hundreds of MB, with no visible quality loss on a phone.
 
@@ -69,7 +69,12 @@ Still images (PNG, JPEG, still WebP):
 4. Thumbnail, `hasAlpha` and the cut line come from the stored image, as before.
 5. A still GIF (one frame) is never turned into WebP; GIFs follow the animated rules below.
 
-Animated images (GIF, animated WebP): stored **unchanged** (still under the 10 MB cap) until ROADMAP M4.5 shrinks GIFs over 512px with our own Kotlin GIF encoder (output stays GIF; near-lossless, as GIF allows 256 colors per frame). Animated WebP stays unchanged (shrinking it would need libwebp; undecided).
+GIFs (still or animated):
+1. At most 512px on the longest side: stored unchanged.
+2. Over 512px: decoded one frame at a time, each composited frame scaled to 512 (exact area average, edges without dark halos, transparency stays on/off), and written again as a **GIF** that keeps every frame, delay and the loop count. Each frame redraws only the pixels that changed and gets its own palette of up to 255 colors (exact when they fit; near-lossless otherwise, no dithering). The Save sheet shows the percentage while this runs; closing the sheet cancels it and stores nothing.
+3. **Never bigger:** the received bytes are kept when the result is not smaller than the input, or when the GIF cannot be shrunk (broken, or over the GIF limits in Limits below; it is still stored as received if it passes the usual checks).
+
+Animated WebP: stored **unchanged** (shrinking it would need libwebp; undecided).
 
 Duplicates: `hash` is the SHA-256 of the **bytes as received**, before conversion, so saving the same file twice is still a no-op. Known gap: a sticker sent from this app and saved back arrives as the converted bytes, so it is not recognised as the same; accepted for v1.
 

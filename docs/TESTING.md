@@ -32,7 +32,8 @@ Goal: Claude Code can verify its own work without a human. Cheapest checks first
 ### Import / export
 - Stored format: a large still image is stored at 512px on the longest side as lossless WebP (PNG on API 26-28), and its decoded pixels equal the source scaled to 512 (lossless check, not "looks close"; semi-transparent pixels may differ by the premultiplied-alpha rounding, about 255/alpha per channel).
 - Small images are never scaled up; a small JPEG or lossy WebP whose original is smaller is kept as-is.
-- JPEG is accepted (opaque tile, no cut line); a JPEG with an EXIF rotation is stored upright; animated GIF and animated WebP are stored unchanged.
+- JPEG is accepted (opaque tile, no cut line); a JPEG with an EXIF rotation is stored upright; animated WebP and GIFs at 512px or smaller are stored unchanged.
+- GIFs over 512px are stored as a 512px GIF with the same frames, delays and loop count; replaying it matches the scaled source; kept as received when shrinking would not make it smaller or the GIF is broken or over the limits; progress is reported per frame and cancelling stores nothing. The `gif` package is tested against hand-built GIFs (LZW edge cases, disposal, interlace, damaged and hostile files) and against ImageIO in both directions.
 - Saving the same file twice is a no-op (hash of received bytes); restoring an exported pack into the same library adds no duplicates.
 See `docs/IMPORT_EXPORT.md` Tests. Use small fixture files (a few KB) in `src/test/resources`; generate zips in test code rather than committing binaries where possible.
 

@@ -22,7 +22,8 @@ interface SaveBackend {
 
     /** Header facts for the preview, or null when the file cannot be saved. */
     suspend fun describe(uri: String): ItemDetails?
-    suspend fun import(uri: String, collectionId: Long?): ImportResult
+    /** [onProgress] gets 0 to 1 while a slow step (shrinking a large GIF) runs. */
+    suspend fun import(uri: String, collectionId: Long?, onProgress: (Float) -> Unit): ImportResult
 }
 
 /** Save sheet: preview, nested collection picker, "New collection", Save. One per incoming share. */
@@ -101,7 +102,18 @@ class SaveViewModel(
             var rejected = 0
             _state.update { it.copy(phase = SavePhase.Saving(0, uris.size)) }
             uris.forEachIndexed { index, uri ->
-                when (backend.import(uri, target)) {
+                val result = backend.import(uri, target) { fraction ->
+                    val percent = (fraction * 100).toInt().coerceIn(0, 100)
+                    _state.update { s ->
+                        val phase = s.phase
+                        if (phase is SavePhase.Saving && phase.percent != percent) {
+                            s.copy(phase = phase.copy(percent = percent))
+                        } else {
+                            s
+                        }
+                    }
+                }
+                when (result) {
                     is ImportResult.Added -> added++
                     is ImportResult.Duplicate -> duplicates++
                     is ImportResult.Rejected -> rejected++
