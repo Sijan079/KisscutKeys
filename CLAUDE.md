@@ -48,7 +48,7 @@ Windows PowerShell. Details in `SETUP.md`.
 .\scripts\emu-stop.ps1
 ```
 
-With a phone plugged in, Gradle installs and tests on every device, and device tests uninstall the app afterwards. Before tests run `$env:ANDROID_SERIAL = 'emulator-5554'`.
+With a phone plugged in, Gradle installs and tests on every device. Device tests leave the app and its library installed (`gradle.properties`), but still switch keyboards. Before tests run `$env:ANDROID_SERIAL = 'emulator-5554'`.
 
 ## Conventions
 

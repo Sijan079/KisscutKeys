@@ -55,7 +55,7 @@ See `docs/IMPORT_EXPORT.md` Tests. Use small fixture files (a few KB) in `src/te
 How the keyboard tests run (`KeyboardTest`):
 - They swap `App.container` for an in-memory database and `files/ime-test/`, so the real library is never touched, and select the IME once per class (switching per test races with the old keyboard).
 - The emulator gives tests a blanked-out text clip, so the clipboard test checks what the inserter copied (`lastCopied`), not the system clipboard. Real clipboard behavior is checked by hand on a phone.
-- With a phone plugged in, Gradle runs device tests on every device and uninstalls the app afterwards. Set `$env:ANDROID_SERIAL = 'emulator-5554'` first.
+- With a phone plugged in, Gradle runs device tests on every device. The app and its library stay installed afterwards (`gradle.properties`, `leaveApksInstalledAfterRun`). Set `$env:ANDROID_SERIAL = 'emulator-5554'` first.
 
 ## Test data
 

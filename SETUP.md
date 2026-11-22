@@ -175,7 +175,7 @@ Tap a field in `ImeTestActivity`; the keyboard opens on letters (or on stickers 
 Reset to the default keyboard afterwards: `adb shell ime reset`.
 
 Things that bite:
-- `connectedAndroidTest` uninstalls the app at the end: the library is wiped and the keyboard is switched off. Reseed and re-enable after a test run.
+- `connectedAndroidTest` leaves the app and its library installed, because `gradle.properties` sets `android.injected.androidTest.leaveApksInstalledAfterRun=true` (AGP uninstalls by default). The test helper `app.kisscut.keys.test` stays installed too.
 - Force-stopping the app makes Android fall back to the previous keyboard.
 - The emulator is slow on its first cold start: thumbnails and the keyboard can take a few seconds. Tap the field again if the keyboard does not appear.
 - Which apps accept stickers directly is checked on a real phone (KEYBOARD.md, Known unknowns).
@@ -191,7 +191,7 @@ Things that bite:
 adb -s <phone-serial> install -r ui/android/build/outputs/apk/debug/android-debug.apk
 ```
 
-`install -r` keeps the phone's library and settings. Do not run `connectedAndroidTest` with the phone plugged in unless `ANDROID_SERIAL` points at the emulator: the test run uninstalls the app and wipes the phone's library.
+`install -r` keeps the phone's library and settings. Do not run `connectedAndroidTest` with the phone plugged in unless `ANDROID_SERIAL` points at the emulator: the library survives, but the tests install a test helper app and switch the phone's keyboard. Uninstalling the app (`adb uninstall`, or from the phone) always wipes the library.
 
 ---
 
@@ -230,7 +230,7 @@ Keep artifacts (screenshots, UI dumps) in an `artifacts/` folder that is git-ign
 | Emulator stays offline or never boots | Run once with a window to see errors; delete `%USERPROFILE%\.android\avd\stickertest.avd\*.lock`; retry with `-wipe-data` |
 | `adb devices` shows `unauthorized` or empty | `adb kill-server; adb start-server`; restart emulator |
 | Gradle: "Unsupported class file major version" | JDK too new or too old for the Gradle/AGP in use; switch `JAVA_HOME` to 17 |
-| `INSTALL_FAILED_*` | `adb uninstall <package.id>` then `installDebug` again |
+| `INSTALL_FAILED_*` | `adb uninstall <package.id>` then `installDebug` again (wipes that device's library) |
 | Tests hang | Emulator not fully booted; recheck `sys.boot_completed` |
 
 ---
