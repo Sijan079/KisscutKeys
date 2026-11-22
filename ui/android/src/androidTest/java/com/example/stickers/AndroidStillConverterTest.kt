@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.ByteArrayOutputStream
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -43,11 +42,28 @@ class AndroidStillConverterTest {
         assertFalse(c.rotated)
         assertEquals(ImportLimits.STORED_MAX_SIDE, c.width)
         assertEquals(ImportLimits.STORED_MAX_SIDE / 2, c.height)
-        // Reference: the same scale of the decoded source, through a lossless PNG round trip (both sides go
-        // through the same premultiplied-alpha decode, so any difference is a lossy encode or a wrong scale).
-        val reference = decode(png(converter.scaleToStore(decode(source))))
-        assertContentEquals(pixels(reference), pixels(decode(c.bytes)), "lossless: identical pixels")
+        // Reference: the same scale of the decoded source, through a lossless PNG round trip.
+        val reference = pixels(decode(png(converter.scaleToStore(decode(source)))))
+        val stored = pixels(decode(c.bytes))
+        assertEquals(reference.size, stored.size)
+        for (i in reference.indices) assertSamePixel(reference[i], stored[i], i)
         assertEquals(Color.TRANSPARENT, decode(c.bytes).getPixel(2, 2), "transparency kept")
+    }
+
+    /**
+     * Opaque and fully transparent pixels must be identical, and alpha always is. Android keeps bitmaps
+     * premultiplied, so a semi-transparent pixel's colour is only known to about 255 / alpha steps, and the
+     * WebP and PNG encoders round it differently; allow that, and nothing more.
+     */
+    private fun assertSamePixel(expected: Int, actual: Int, index: Int) {
+        val a = Color.alpha(expected)
+        assertEquals(a, Color.alpha(actual), "alpha at $index")
+        if (a == 0) return
+        val slack = if (a == 255) 0 else 255 / a + 1
+        for (shift in intArrayOf(16, 8, 0)) {
+            val d = kotlin.math.abs(((expected shr shift) and 0xFF) - ((actual shr shift) and 0xFF))
+            assertTrue(d <= slack, "pixel $index: ${Integer.toHexString(expected)} vs ${Integer.toHexString(actual)}")
+        }
     }
 
     @Test

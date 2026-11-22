@@ -65,9 +65,9 @@ First, check the send rule (send the stored type if the field accepts it, else a
 - [x] The user taps the text box in WhatsApp, Discord, Messenger, Google Messages, Telegram on their phone; record each list in KEYBOARD's app table and check the rule fits before changing the stored format
 
 Still images:
-- [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
+- [x] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
 - [x] Hash the bytes as received so duplicates still match; existing stickers untouched
-- [ ] Keyboard clipboard fallback copies still stickers as a PNG copy (same pixels, `cache/send/`), like the direct send; GIFs stay GIF (KEYBOARD, Inserting a sticker)
+- [x] Keyboard clipboard fallback copies still stickers as a PNG copy (same pixels, `cache/send/`), like the direct send; GIFs stay GIF (KEYBOARD, Inserting a sticker)
 
 Large GIFs (output stays GIF so every chat app accepts it; near-lossless, as GIF allows 256 colors per frame; no new library):
 - [ ] Pure Kotlin GIF reader in `shared:core` commonMain (frames, disposal, transparency, interlace, local palettes), with safety limits for broken or hostile files
@@ -159,3 +159,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M4.2: Not built: key preview popups, long-press for accents or digits, other layouts and languages. No board exists for the letters; screenshots in artifacts/ (typing-dark, typing-light).
 - 2026-11-22, M4.5: Logged the accepted types in 7 apps on the user's phone (KEYBOARD, Real-app checks). The send rule fits: Discord, Telegram, Viber, FB Lite and Google Messages take WebP; WhatsApp and Instagram don't, so they get the PNG copy. WhatsApp lists `image/webp.wasticker`, its own sticker type; not used yet. The release build has a no-op `FieldTypesLog` in `src/release`.
 - 2026-11-22, M4.5: Still-image code written (JPEG sniffing, `AndroidStillConverter`, clipboard PNG copy); JVM tests pass, device tests written but not run yet at the user's request, so those boxes stay open. Additions not in the plan: EXIF orientation is applied (BitmapFactory ignores it) and a rotated image is always converted; a one-frame GIF is never turned into WebP; the clipboard copy is named `clip-<hash>.png` so the next send doesn't delete it.
+- 2026-11-22, M4.5: Device tests 60/60 on the emulator. "Identical pixels" holds for opaque and fully transparent pixels; semi-transparent edge pixels can differ by about 255/alpha per channel, because Android bitmaps are premultiplied and the WebP and PNG encoders round differently. The test allows exactly that. `RepickTest` failed once in a full run (the keyboard setup screen's "Done" was also on screen) and passed alone and in a rerun: flaky, not fixed.
