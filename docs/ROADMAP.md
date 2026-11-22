@@ -94,16 +94,20 @@ Added at the user's request (UI_SPEC, Library sections). Speed was the worry beh
 Done when: on a device the Stickers page shows the four headings in order with a 20+ sticker library, and tests pass.
 
 ## M5: Backup and sharing
-- [ ] `.stickerpack` export (all or one collection) with progress and cancel
-- [ ] Import with all safety limits and rollback (IMPORT_EXPORT)
-- [ ] Open `.stickerpack` from other apps
-- [ ] Settings screen: theme, animation, export, import, keyboard help
-- [ ] Import/export tests including malicious fixtures
+Plan agreed 2026-11-22; one commit per step.
+1. [ ] Pack format and checks in `shared:core`: manifest model (kotlinx.serialization), limits, validation, ID mapping, depth flattening in commonMain; zip streaming in a JVM + Android source set. Malicious-file tests on the JVM
+2. [ ] Export engine (all or one collection), progress and cancel; round-trip test; exports never exceed the import limits
+3. [ ] Import engine: dedupe, same-name merge, flattening, rollback on failure and cancel, free-space check, summary
+4. [ ] Settings screen: theme (app and keyboard), export all, export a collection, import, keyboard card
+5. [ ] Open `.stickerpack` from other apps, checked on the user's phone
+
+Decisions: pack limits 1 GB and 10,000 stickers (IMPORT_EXPORT, Limits); no usage history in packs; same-name collections merge; existing stickers are not moved; the animation toggle moves to M6.
 
 Done when: round-trip test and all rejection tests pass.
 
 ## M6: Polish and release prep
 - [ ] Performance pass: scrolling with 2000 stickers, animated items only when visible, memory check
+- [ ] Animated sticker playback (app and keyboard) and the Settings animation toggle (`animateStickers`), moved from M5
 - [ ] Release build config: minify, shrink, signing config read from user-provided properties (never commit secrets)
 - [ ] App icon, name, Play listing assets (final: see `docs/BRAND.md`)
 - [ ] Privacy statement text for the listing (draft for the user to review)
