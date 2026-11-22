@@ -60,6 +60,10 @@ Added after M4 at the user's request: the keyboard must also type (KEYBOARD, Typ
 Done when: on the emulator, typing "Hi there" plus a sticker into `ImeTestActivity` works, Enter sends in a field with a Send action, and tests pass. The user tries it in Discord on their phone.
 
 ## M4.5: Smaller storage and file types
+First, check the send rule (send the stored type if the field accepts it, else a PNG copy, else the clipboard):
+- [ ] Debug-only log in the keyboard of the MIME types each field accepts (`src/debug`, nothing in release)
+- [ ] The user taps the text box in WhatsApp, Discord, Messenger, Google Messages, Telegram on their phone; record each list in KEYBOARD's app table and check the rule fits before changing the stored format
+
 Still images:
 - [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
 - [ ] Hash the bytes as received so duplicates still match; existing stickers untouched
