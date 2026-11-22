@@ -66,6 +66,9 @@ sealed interface PackProblem {
     /** An entry path tries to leave `stickers/` (zip-slip) or is not a plain file name. */
     data class UnsafePath(val path: String) : PackProblem
 
+    /** Less free space than the pack size plus [PackLimits.freeSpaceMargin]. */
+    data object NotEnoughSpace : PackProblem
+
     /** Over a [PackLimits] value: pack size, sticker count, entry count, manifest size or unpacked bytes. */
     data class OverLimit(val what: String) : PackProblem
 }

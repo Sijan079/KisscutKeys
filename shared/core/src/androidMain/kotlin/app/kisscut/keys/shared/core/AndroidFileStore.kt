@@ -37,6 +37,11 @@ class AndroidFileStore(private val filesDir: File) : FileStore {
         return withContext(Dispatchers.IO) { file.isFile }
     }
 
+    override suspend fun read(area: FileArea, relativePath: String): ByteArray? {
+        val file = resolve(area, relativePath)
+        return withContext(Dispatchers.IO) { if (file.isFile) file.readBytes() else null }
+    }
+
     override suspend fun delete(area: FileArea, relativePath: String): Boolean {
         val file = resolve(area, relativePath)
         return withContext(Dispatchers.IO) { !file.exists() || file.delete() }

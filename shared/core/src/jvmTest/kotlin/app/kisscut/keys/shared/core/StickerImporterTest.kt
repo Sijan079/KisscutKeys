@@ -304,6 +304,8 @@ class RecordingFileStore : FileStore {
 
     override suspend fun exists(area: FileArea, relativePath: String) = inner.exists(area, relativePath)
 
+    override suspend fun read(area: FileArea, relativePath: String) = inner.read(area, relativePath)
+
     override suspend fun delete(area: FileArea, relativePath: String) = inner.delete(area, relativePath)
 }
 
@@ -322,6 +324,8 @@ class SuspendingFileStore : FileStore {
     }
 
     override suspend fun exists(area: FileArea, relativePath: String) = inner.exists(area, relativePath)
+
+    override suspend fun read(area: FileArea, relativePath: String) = inner.read(area, relativePath)
 
     override suspend fun delete(area: FileArea, relativePath: String): Boolean {
         currentCoroutineContext().ensureActive()

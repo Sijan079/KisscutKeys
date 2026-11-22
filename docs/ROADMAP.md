@@ -96,8 +96,8 @@ Done when: on a device the Stickers page shows the four headings in order with a
 ## M5: Backup and sharing
 Plan agreed 2026-11-22; one commit per step.
 1. [x] Pack format and checks in `shared:core`: manifest model (kotlinx.serialization), limits, validation, ID mapping, depth flattening in commonMain; zip streaming in a JVM + Android source set. Malicious-file tests on the JVM
-2. [ ] Export engine (all or one collection), progress and cancel; round-trip test; exports never exceed the import limits
-3. [ ] Import engine: dedupe, same-name merge, flattening, rollback on failure and cancel, free-space check, summary
+2. [x] Export engine (all or one collection), progress and cancel; round-trip test; exports never exceed the import limits
+3. [x] Import engine: dedupe, same-name merge, flattening, rollback on failure and cancel, free-space check, summary
 4. [ ] Settings screen: theme (app and keyboard), export all, export a collection, import, keyboard card
 5. [ ] Open `.stickerpack` from other apps, checked on the user's phone
 
@@ -185,3 +185,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-22: Send-size tests in Discord and Facebook Lite (phone): image size does not change how big a sticker looks, and padding shows the app's gray attachment box. Parked under Later.
 - 2026-11-22, M4.5: WhatsApp shows a "send as sticker" prompt for the PNG copy our keyboard sends; picked as sticker it looks like a native sticker. The `wasticker` send is not needed, moved to Later. M4.5 done.
 - 2026-11-22, M5.1: kotlinx.serialization 1.11.0 with the Kotlin serialization plugin. The JVM + Android source set is `jvmSharedMain`, declared through `applyDefaultHierarchyTemplate` (opt-in experimental API); a manual `dependsOn` turned the default hierarchy off and warned. Collection repair is linear and the flattening loop iterative, so a hostile manifest with a 50,000-deep chain plans quickly. A manifest is found anywhere in the zip (two passes over the source).
+- 2026-11-23, M5.2-3: `StickerImporter` split into `prepare` (checks, convert, write files) and the row; single imports behave as before. A pack row keeps the manifest hash (the original bytes' hash), so a restored backup of converted stickers still dedupes. Packs go to the library root (no parent picker in v1). A streaming reader does not need the zip's index, so a pack cut only there still imports fully.

@@ -95,8 +95,10 @@ Steps:
    - Compute SHA-256 of the entry bytes. If that hash or the manifest `hash` already exists, skip it: the existing sticker stays where it is (not moved, favorite unchanged). A pack exported from this app carries the original hash, so restoring a backup into the same library adds no duplicates.
    - Convert per "Stored format" (already-converted stickers pass through unchanged), write the file, generate the thumbnail, compute `hasAlpha` and `isAnimated`, insert the row with the manifest `hash` when present and valid hex, else the computed one.
 3. Create collections first (parents before children), respecting the depth cap of 3. If an imported tree is deeper, flatten the extra levels into the deepest allowed collection and report it. A collection whose name already exists under the same parent (ignoring case and outer spaces) is **merged** into it, so restoring a backup does not duplicate collections (user's call).
-4. Put the pack's top-level collections under a user-chosen parent, or the root.
-5. Show a summary: added, skipped as duplicates, rejected with reasons.
+4. Put the pack's top-level collections at the root of the library (v1; choosing a parent is not offered).
+5. Show a summary: added, skipped as duplicates, rejected with reasons, collections created, merged and flattened.
+
+Code: `PackExporter` and `PackImporter` in `shared:core` (`pack` package) over `PackSink` and `PackSource`; `PackZipWriter` and `PackZipReader` implement them with `java.util.zip`. Pack imports use `StickerImporter.prepare` (files only) and add every row at the end.
 
 ### Limits (constants in one place)
 

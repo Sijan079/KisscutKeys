@@ -19,6 +19,8 @@ class FakeFileStore(private val failDeletes: Set<String> = emptySet()) : FileSto
 
     override suspend fun exists(area: FileArea, relativePath: String) = has(area, relativePath)
 
+    override suspend fun read(area: FileArea, relativePath: String) = files[area to relativePath]
+
     override suspend fun delete(area: FileArea, relativePath: String): Boolean {
         if (relativePath in failDeletes) return false
         files.remove(area to relativePath)

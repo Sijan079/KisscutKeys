@@ -12,6 +12,9 @@ interface FileStore {
 
     suspend fun exists(area: FileArea, relativePath: String): Boolean
 
+    /** The file's bytes, or null when it does not exist. Used by export. */
+    suspend fun read(area: FileArea, relativePath: String): ByteArray?
+
     /** Deletes the file. Returns false only when a file exists and could not be removed. */
     suspend fun delete(area: FileArea, relativePath: String): Boolean
 }

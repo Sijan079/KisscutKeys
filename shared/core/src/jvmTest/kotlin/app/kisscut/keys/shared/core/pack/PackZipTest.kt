@@ -47,7 +47,7 @@ class PackZipTest {
         val out = ByteArrayOutputStream()
         PackZipWriter(out).use { w ->
             w.putManifest(manifest)
-            w.putSticker("stickers/a.png") { it.write(byteArrayOf(1, 2, 3)) }
+            w.putSticker("stickers/a.png", byteArrayOf(1, 2, 3))
             w.putSettings(PackSettings(theme = "dark"))
         }
         val r = reader(out.toByteArray())

@@ -23,10 +23,13 @@ import java.util.zip.ZipOutputStream
  * Every limit counts bytes actually read, never the sizes a zip header claims. Breaking one throws
  * [PackException], as does an entry path that tries to leave `stickers/`.
  */
-class PackZipReader(private val open: () -> InputStream, private val limits: PackLimits = PackLimits()) {
+class PackZipReader(
+    private val open: () -> InputStream,
+    private val limits: PackLimits = PackLimits(),
+) : PackSource {
 
     /** First pass: finds, reads and checks `manifest.json`. */
-    fun readManifest(): PackManifest {
+    override fun readManifest(): PackManifest {
         scan { name, read ->
             if (name == PackFormat.MANIFEST) {
                 val bytes = read(limits.maxManifestBytes)
@@ -42,7 +45,7 @@ class PackZipReader(private val open: () -> InputStream, private val limits: Pac
      * [PackLimits.maxStickerBytes] (that sticker is skipped, not the pack). Returns the bytes of
      * `settings.json` when the pack has one.
      */
-    suspend fun readEntries(onSticker: suspend (path: String, bytes: ByteArray?) -> Unit): ByteArray? {
+    override suspend fun readEntries(onSticker: suspend (path: String, bytes: ByteArray?) -> Unit): ByteArray? {
         var settings: ByteArray? = null
         scan { name, read ->
             currentCoroutineContext().ensureActive()
@@ -145,21 +148,21 @@ private class PackSizeGuard(input: InputStream, private val max: Long) : FilterI
 }
 
 /** Writes a `.stickerpack`: the manifest first, then stickers stored without recompression. */
-class PackZipWriter(out: OutputStream) : Closeable {
+class PackZipWriter(out: OutputStream) : PackSink, Closeable {
     private val zip = ZipOutputStream(BufferedOutputStream(out))
 
-    fun putManifest(manifest: PackManifest) = putEntry(PackFormat.MANIFEST, Deflater.DEFAULT_COMPRESSION) {
+    override fun putManifest(manifest: PackManifest) = putEntry(PackFormat.MANIFEST, Deflater.DEFAULT_COMPRESSION) {
         it.write(encodeManifest(manifest))
     }
 
-    fun putSettings(settings: PackSettings) = putEntry(PackFormat.SETTINGS, Deflater.DEFAULT_COMPRESSION) {
+    override fun putSettings(settings: PackSettings) = putEntry(PackFormat.SETTINGS, Deflater.DEFAULT_COMPRESSION) {
         it.write(PackFormat.json.encodeToString(PackSettings.serializer(), settings).encodeToByteArray())
     }
 
     /** [path] must pass [isSafeStickerPath]. Images are already compressed, so they are not deflated again. */
-    fun putSticker(path: String, write: (OutputStream) -> Unit) {
+    override fun putSticker(path: String, bytes: ByteArray) {
         require(isSafeStickerPath(path)) { "unsafe sticker path $path" }
-        putEntry(path, Deflater.NO_COMPRESSION, write)
+        putEntry(path, Deflater.NO_COMPRESSION) { it.write(bytes) }
     }
 
     private fun putEntry(name: String, level: Int, write: (OutputStream) -> Unit) {
