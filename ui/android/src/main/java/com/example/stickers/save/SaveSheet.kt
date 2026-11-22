@@ -419,7 +419,12 @@ private fun DoneContent(summary: SaveSummary, onDone: () -> Unit) {
             Text(pluralStringResource(res, n, n), style = StickerType.Body, color = StickersTheme.colors.muted)
         }
     }
-    PrimaryButton(text = stringResource(R.string.save_done_button), enabled = true, onClick = onDone)
+    PrimaryButton(
+        text = stringResource(R.string.save_done_button),
+        enabled = true,
+        onClick = onDone,
+        modifier = Modifier.testTag(SaveTags.DONE_BUTTON),
+    )
 }
 
 @Composable
@@ -499,5 +504,6 @@ object SaveTags {
     const val NEW_COLLECTION = "save_new_collection"
     const val NEW_COLLECTION_NAME = "save_new_collection_name"
     const val SUMMARY = "save_summary"
+    const val DONE_BUTTON = "save_done_button"
     const val GIF_BADGE = "save_gif_badge"
 }

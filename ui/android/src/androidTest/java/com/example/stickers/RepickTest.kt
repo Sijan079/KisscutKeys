@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -44,7 +43,7 @@ class RepickTest {
             compose.waitUntil(10_000) { exists(SaveTags.SAVE_BUTTON) }
             compose.onNodeWithTag(SaveTags.SAVE_BUTTON).performClick()
             compose.waitUntil(10_000) { exists(SaveTags.SUMMARY) }
-            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithTag(SaveTags.DONE_BUTTON).performClick()
             compose.waitUntil(5_000) { !exists(SaveTags.SUMMARY) }
 
             scenario.onActivity { it.openSave(listOf(uri.toString()), fromShare = false) }

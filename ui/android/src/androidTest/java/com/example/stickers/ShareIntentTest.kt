@@ -56,7 +56,7 @@ class ShareIntentTest {
             compose.onNodeWithTag(SaveTags.SAVE_BUTTON).performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTagExists(SaveTags.SUMMARY) }
             compose.onNodeWithText(expectedSummary).assertExists()
-            compose.onNodeWithText("Done").performClick()
+            compose.onNodeWithTag(SaveTags.DONE_BUTTON).performClick()
         }
     }
 
