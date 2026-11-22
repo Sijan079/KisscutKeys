@@ -3,6 +3,7 @@ package app.kisscut.keys.keyboard
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.toArgb
+import app.kisscut.keys.settings.ThemeMode
 import app.kisscut.keys.ui.theme.stickerColorScheme
 import app.kisscut.keys.ui.theme.stickerColors
 
@@ -51,10 +52,10 @@ data class KeyboardPalette(
             )
         }
 
-        /** Follows the system dark setting, like the app (a forced theme arrives with Settings in M5). */
-        fun of(context: Context): KeyboardPalette {
+        /** Follows the Settings theme like the app; System means the system dark setting. */
+        fun of(context: Context, theme: ThemeMode): KeyboardPalette {
             val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-            return of(night == Configuration.UI_MODE_NIGHT_YES)
+            return of(theme.isDark(systemDark = night == Configuration.UI_MODE_NIGHT_YES))
         }
     }
 }

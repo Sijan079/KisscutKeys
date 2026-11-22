@@ -4,8 +4,13 @@ import android.app.Application
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import java.io.File
+import app.kisscut.keys.backup.AndroidPackBackend
+import app.kisscut.keys.backup.PackBackend
 import app.kisscut.keys.common.AppLibraryBackend
 import app.kisscut.keys.common.LibraryBackend
+import app.kisscut.keys.settings.DataStoreThemeStore
+import app.kisscut.keys.settings.ThemeMode
+import app.kisscut.keys.settings.ThemeStore
 import app.kisscut.keys.setup.AndroidKeyboardStatus
 import app.kisscut.keys.setup.DataStoreSetupStore
 import app.kisscut.keys.setup.SetupStore
@@ -17,9 +22,18 @@ import app.kisscut.keys.shared.core.CollectionRepository
 import app.kisscut.keys.shared.core.FileStore
 import app.kisscut.keys.shared.core.StickerImporter
 import app.kisscut.keys.shared.core.StickerRepository
+import app.kisscut.keys.shared.core.pack.PackExporter
+import app.kisscut.keys.shared.core.pack.PackImporter
 import app.kisscut.keys.shared.db.Sticker
 import app.kisscut.keys.shared.db.StickerDatabase
 import app.kisscut.keys.shared.db.createStickerDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 
 class App : Application() {
     /** Replaced only by keyboard tests, to point the keyboard at an isolated library. */
@@ -40,10 +54,11 @@ class AppContainer(
     context: Context,
     /** Tests only: an in-memory database and a separate files folder instead of the real library. */
     databaseOverride: StickerDatabase? = null,
-    filesDir: File = context.applicationContext.filesDir,
+    private val filesDir: File = context.applicationContext.filesDir,
 ) {
     private val appContext = context.applicationContext
     private val clock: () -> Long = { System.currentTimeMillis() }
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /** The one database shared by the app and the keyboard. */
     val database: StickerDatabase by lazy { databaseOverride ?: createStickerDatabase(appContext) }
@@ -57,6 +72,32 @@ class AppContainer(
     val libraryBackend: LibraryBackend by lazy { AppLibraryBackend(stickers, collections) }
     val keyboardStatus: AndroidKeyboardStatus by lazy { AndroidKeyboardStatus(appContext) }
     val setupStore: SetupStore by lazy { DataStoreSetupStore(appContext) }
+    val themeStore: ThemeStore by lazy { DataStoreThemeStore(appContext) }
+
+    /** The theme setting as last read, for the keyboard (which builds its views synchronously). */
+    val theme: StateFlow<ThemeMode> by lazy {
+        themeStore.theme.stateIn(scope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
+    }
+
+    val appVersion: String by lazy {
+        runCatching { appContext.packageManager.getPackageInfo(appContext.packageName, 0).versionName }
+            .getOrNull().orEmpty()
+    }
+    val packBackend: PackBackend by lazy {
+        AndroidPackBackend(
+            appContext,
+            PackExporter(database, fileStore, clock, appVersion),
+            PackImporter(database, importer, clock),
+            filesDir,
+        )
+    }
+
+    /** Bytes of stored stickers and thumbnails (the Settings storage row). */
+    suspend fun storageBytes(): Long = withContext(Dispatchers.IO) {
+        listOf("stickers", "thumbs").sumOf { dir ->
+            File(filesDir, dir).listFiles().orEmpty().sumOf { it.length() }
+        }
+    }
 
     /** Thumbnail file of [sticker] for Coil; null when the stored name is not a safe file name. */
     fun thumbnailOf(sticker: Sticker): File? =

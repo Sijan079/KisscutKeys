@@ -17,7 +17,9 @@ import app.kisscut.keys.common.LibraryBackend
 import app.kisscut.keys.common.TopLevel
 import app.kisscut.keys.library.LibraryScreen
 import app.kisscut.keys.library.LibraryViewModel
+import app.kisscut.keys.settings.SettingsActions
 import app.kisscut.keys.settings.SettingsScreen
+import app.kisscut.keys.settings.SettingsUiState
 
 object Routes {
     const val LIBRARY = "library"
@@ -52,6 +54,8 @@ fun AppNav(
     nav: NavHostController = rememberNavController(),
     startAtSetup: Boolean = false,
     setupScreen: @Composable (onLeave: () -> Unit) -> Unit = {},
+    /** The real Settings screen with its view models; tests may leave it out for a plain one. */
+    settingsScreen: (@Composable (onNavigate: (TopLevel) -> Unit, onKeyboardSetup: () -> Unit) -> Unit)? = null,
 ) {
     fun go(top: TopLevel) = nav.navigate(Routes.of(top)) {
         popUpTo(Routes.LIBRARY) { saveState = true }
@@ -98,7 +102,12 @@ fun AppNav(
             )
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen(onNavigate = ::go, onAdd = onAdd, onKeyboardSetup = { nav.navigate(Routes.SETUP) })
+            val openSetup = { nav.navigate(Routes.SETUP) }
+            if (settingsScreen != null) {
+                settingsScreen(::go, openSetup)
+            } else {
+                SettingsScreen(SettingsUiState(), SettingsActions(onKeyboardSetup = openSetup), ::go, onAdd)
+            }
         }
         composable(Routes.SETUP) {
             setupScreen {

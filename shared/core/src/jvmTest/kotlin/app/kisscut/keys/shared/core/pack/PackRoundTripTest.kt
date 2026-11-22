@@ -219,8 +219,9 @@ class PackRoundTripTest {
         a.fill()
         val whole = a.export()
         // Cut inside the last sticker's data (the zip's index at the end is not needed to stream it).
-        val lastEntry = (whole.size - 4 downTo 0).first {
-            whole[it] == 0x50.toByte() && whole[it + 1] == 0x4B.toByte() && whole[it + 2] == 3.toByte() && whole[it + 3] == 4.toByte()
+        val localHeader = byteArrayOf(0x50, 0x4B, 3, 4) // "PK\u0003\u0004"
+        val lastEntry = (whole.size - 4 downTo 0).first { at ->
+            localHeader.indices.all { whole[at + it] == localHeader[it] }
         }
         val cut = whole.copyOf(lastEntry + 40)
 
@@ -264,7 +265,9 @@ class PackRoundTripTest {
         val limits = PackLimits()
         assertEquals(
             PackProblem.NotEnoughSpace,
-            assertFailsWith<PackException> { b.packs.import(source, packSize = 100, freeSpace = limits.freeSpaceMargin) }.problem,
+            assertFailsWith<PackException> {
+                b.packs.import(source, packSize = 100, freeSpace = limits.freeSpaceMargin)
+            }.problem,
         )
         assertIs<PackProblem.OverLimit>(
             assertFailsWith<PackException> { b.packs.import(source, packSize = limits.maxPackBytes + 1) }.problem,

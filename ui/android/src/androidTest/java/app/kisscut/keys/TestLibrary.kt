@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import app.kisscut.keys.backup.AndroidPackBackend
 import app.kisscut.keys.common.AppLibraryBackend
 import app.kisscut.keys.common.LocalThumbnails
 import app.kisscut.keys.debug.SeedData
@@ -17,6 +18,8 @@ import app.kisscut.keys.shared.core.FileArea
 import app.kisscut.keys.shared.core.ImportResult
 import app.kisscut.keys.shared.core.StickerImporter
 import app.kisscut.keys.shared.core.StickerRepository
+import app.kisscut.keys.shared.core.pack.PackExporter
+import app.kisscut.keys.shared.core.pack.PackImporter
 import app.kisscut.keys.shared.db.Sticker
 import app.kisscut.keys.shared.db.StickerDatabase
 import app.kisscut.keys.shared.db.buildStickerDatabase
@@ -49,6 +52,14 @@ class TestLibrary : AutoCloseable {
     suspend fun photo(seed: Int, collectionId: Long? = null) = add(SeedData.photo(seed, 160, 120), collectionId)
 
     fun fileExists(s: Sticker) = files.file(FileArea.STICKERS, s.filePath).exists()
+
+    /** Backup, share and import over this library, with the real zip code and converters. */
+    fun packBackend() = AndroidPackBackend(
+        context,
+        PackExporter(db, files, clock, "test"),
+        PackImporter(db, importer, clock),
+        dir,
+    )
 
     @Composable
     fun App(dark: Boolean = true) {

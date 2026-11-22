@@ -131,7 +131,8 @@ class PackImporter(
                 } else {
                     counts.created++
                     val order = (collections.maxSortOrder(parent) ?: -1) + 1
-                    collections.insert(StickerCollection(name = c.name, parentId = parent, sortOrder = order, createdAt = now()))
+                    val row = StickerCollection(name = c.name, parentId = parent, sortOrder = order, createdAt = now())
+                    collections.insert(row)
                 }
             }
             for ((prepared, entry) in ready) {

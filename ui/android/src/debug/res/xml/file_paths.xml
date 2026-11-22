@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Debug builds: the main paths plus the isolated library used by keyboard tests. -->
+<!-- Debug builds: the main paths (keep in sync with main/res/xml) plus the keyboard tests' isolated library. -->
 <paths>
     <files-path name="stickers" path="stickers/" />
     <cache-path name="send" path="send/" />
+    <cache-path name="export" path="export/" />
     <files-path name="ime_test" path="ime-test/" />
 </paths>

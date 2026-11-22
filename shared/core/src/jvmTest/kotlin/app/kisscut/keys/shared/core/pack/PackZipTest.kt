@@ -55,7 +55,8 @@ class PackZipTest {
         val got = mutableMapOf<String, ByteArray?>()
         val settings = r.readEntries { path, bytes -> got[path] = bytes }
         assertContentEquals(byteArrayOf(1, 2, 3), got["stickers/a.png"])
-        assertEquals("dark", PackFormat.json.decodeFromString(PackSettings.serializer(), settings!!.decodeToString()).theme)
+        val parsed = PackFormat.json.decodeFromString(PackSettings.serializer(), settings!!.decodeToString())
+        assertEquals("dark", parsed.theme)
     }
 
     @Test
@@ -108,7 +109,8 @@ class PackZipTest {
             PackProblem.OverLimit("entries"),
             assertFailsWith<PackException> { reader(many, PackLimits(maxEntries = 10)).stickers() }.problem,
         )
-        val big = zip("manifest.json" to manifestJson.encodeToByteArray(), "stickers/a.png" to Random(1).nextBytes(50_000)) // does not compress
+        val noise = Random(1).nextBytes(50_000) // does not compress
+        val big = zip("manifest.json" to manifestJson.encodeToByteArray(), "stickers/a.png" to noise)
         assertEquals(
             PackProblem.OverLimit("pack size"),
             assertFailsWith<PackException> { reader(big, PackLimits(maxPackBytes = 10_000)).stickers() }.problem,
@@ -117,7 +119,8 @@ class PackZipTest {
 
     @Test
     fun aTruncatedPackIsMalformed() = runTest {
-        val whole = zip("manifest.json" to manifestJson.encodeToByteArray(), "stickers/a.png" to ByteArray(5_000) { it.toByte() })
+        val data = ByteArray(5_000) { it.toByte() }
+        val whole = zip("manifest.json" to manifestJson.encodeToByteArray(), "stickers/a.png" to data)
         val cut = whole.copyOf(whole.size / 2)
         val problem = assertFailsWith<PackException> { reader(cut).stickers() }.problem
         assertEquals(PackProblem.Malformed, problem)
@@ -126,6 +129,7 @@ class PackZipTest {
     @Test
     fun aManifestOverItsLimitIsRefused() {
         val bytes = zip("manifest.json" to manifestJson.encodeToByteArray())
-        assertEquals(PackProblem.OverLimit("manifest"), problemOf { reader(bytes, PackLimits(maxManifestBytes = 10)).readManifest() })
+        val problem = problemOf { reader(bytes, PackLimits(maxManifestBytes = 10)).readManifest() }
+        assertEquals(PackProblem.OverLimit("manifest"), problem)
     }
 }

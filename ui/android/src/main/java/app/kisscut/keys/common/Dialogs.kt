@@ -162,7 +162,7 @@ private fun SheetRow(icon: ImageVector, label: String, tag: String, tint: Color?
 /** A picker of [targets] (depth-indented); a null id is shown as [noneLabel]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TargetSheet(
+internal fun TargetSheet(
     title: String,
     targets: List<MoveTarget>,
     noneLabel: String,

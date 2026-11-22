@@ -36,6 +36,9 @@ class StickerImeService : InputMethodService() {
     private var inserter: StickerInserter? = null
     private var password = false
 
+    /** Whether the views were built dark; rebuilt when the Settings theme changed since. */
+    private var builtDark: Boolean? = null
+
     /** Letters or stickers; kept while the keyboard runs, so it reopens on the view used last. */
     private var view = KeyboardView.LETTERS
 
@@ -55,7 +58,8 @@ class StickerImeService : InputMethodService() {
         val container = (application as App).container
         val model = KeyboardModel(container.libraryBackend, scope).also { this.model = it }
         inserter = StickerInserter(this, container::originalOf, container.stickers::markUsed)
-        val palette = KeyboardPalette.of(this)
+        val palette = KeyboardPalette.of(this, container.theme.value)
+        builtDark = palette.dark
         val panel = StickerPanelView(this, palette, container::thumbnailOf, Actions(model))
         val typing = TypingView(this, palette, Keys())
         this.panel = panel
@@ -74,6 +78,8 @@ class StickerImeService : InputMethodService() {
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        val theme = (application as App).container.theme.value
+        if (builtDark != null && KeyboardPalette.of(this, theme).dark != builtDark) setInputView(onCreateInputView())
         info?.let(FieldTypesLog::log)
         password = info != null && isPasswordField(info.inputType)
         val start = fieldStart(info?.inputType ?: 0, view)

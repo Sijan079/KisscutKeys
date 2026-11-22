@@ -93,4 +93,4 @@ Deleting stickers always removes the files from disk in the same operation. If a
 
 ## Settings (not in Room)
 
-DataStore (file `settings`) keys: `keyboard_setup_dismissed` (bool, since M4: setup was finished or skipped). Planned for M5: `theme` (system, dark, light). `animateStickers` (bool) comes in M6 with playback. Exported inside the backup only if the user ticks "include settings"; `keyboard_setup_dismissed` is never exported.
+DataStore (file `settings`) keys: `keyboard_setup_dismissed` (bool, since M4: setup was finished or skipped). `theme` (string: system, dark, light; since M5). `animateStickers` (bool) comes in M6 with playback. "Back up everything" always includes the theme (user's own backup); shared collections never include settings; `keyboard_setup_dismissed` is never exported. Importing a pack with a theme applies it. All keys live in one DataStore file through one delegate (`setup/AndroidKeyboardSetup.kt`); a second delegate on the same file would crash.

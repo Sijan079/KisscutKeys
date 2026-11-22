@@ -5,7 +5,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class CollectionPlanTest {
-    private fun c(id: Long, parent: Long?, name: String = "c$id", sort: Int = 0) = PackCollection(id, name, parent, sort)
+    private fun c(id: Long, parent: Long?, name: String = "c$id", sort: Int = 0) =
+        PackCollection(id, name, parent, sort)
 
     private fun CollectionPlan.ids() = ordered.map { it.packId }
 

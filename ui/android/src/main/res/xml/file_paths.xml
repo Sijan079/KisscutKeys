@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- What the keyboard may share with chat apps: stored stickers and one-off PNG copies. -->
+<!-- What the app may share: stored stickers and one-off PNG copies (keyboard), packs from Settings.
+     Debug builds replace this file (src/debug/res/xml): keep both in sync. -->
 <paths>
     <files-path name="stickers" path="stickers/" />
     <cache-path name="send" path="send/" />
+    <cache-path name="export" path="export/" />
 </paths>

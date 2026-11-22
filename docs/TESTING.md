@@ -30,6 +30,7 @@ Goal: Claude Code can verify its own work without a human. Cheapest checks first
 - Migration tests for every schema version bump.
 
 ### Import / export
+- Packs (`.stickerpack`): JVM tests in `shared/core` `pack` (hostile zips, manifest rules, collection planning, round trip, rollback on failure and cancel, limits); device tests in `AndroidPackBackendTest` (real zip, converters and content uris) and `SettingsUiTest` (screen and dialogs).
 - Stored format: a large still image is stored at 512px on the longest side as lossless WebP (PNG on API 26-28), and its decoded pixels equal the source scaled to 512 (lossless check, not "looks close"; semi-transparent pixels may differ by the premultiplied-alpha rounding, about 255/alpha per channel).
 - Small images are never scaled up; a small JPEG or lossy WebP whose original is smaller is kept as-is.
 - JPEG is accepted (opaque tile, no cut line); a JPEG with an EXIF rotation is stored upright; animated WebP and GIFs at 512px or smaller are stored unchanged.

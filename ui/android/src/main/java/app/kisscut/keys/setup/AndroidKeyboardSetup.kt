@@ -70,9 +70,10 @@ class AndroidKeyboardStatus(context: Context) : KeyboardStatusSource {
     fun showPicker() = context.getSystemService(InputMethodManager::class.java).showInputMethodPicker()
 }
 
-private val Context.settingsStore by preferencesDataStore(name = "settings")
+/** The one DataStore file (`settings`) for every setting; a second delegate on the same file would crash. */
+internal val Context.settingsStore by preferencesDataStore(name = "settings")
 
-/** Settings in DataStore (docs/ARCHITECTURE.md). For now only the setup flag; Settings (M5) adds more. */
+/** The setup flag in DataStore (docs/DATA_MODEL.md, Settings). */
 class DataStoreSetupStore(context: Context) : SetupStore {
     private val store = context.applicationContext.settingsStore
 

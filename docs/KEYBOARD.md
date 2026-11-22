@@ -77,7 +77,7 @@ Animated stickers (GIF, animated WebP) are sent in their stored format. If the t
 - Tab with zero items: empty text.
 - Password fields: open on letters, the sticker key is off (dimmed). If the sticker panel is somehow shown, it says stickers are off.
 - Fields that take no images: stickers go to the clipboard with "Copied. Paste to send."
-- Dark and light: follow the app theme; the panel reads the same tokens (see UI_SPEC).
+- Dark and light: follow the Settings theme (System, Dark, Light), not only the system; the panel reads the same tokens (see UI_SPEC). A theme changed while the keyboard is alive rebuilds the views at the next field.
 - Landscape and split screen: panel adapts column count.
 
 ## Testing

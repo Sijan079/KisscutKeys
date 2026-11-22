@@ -44,7 +44,7 @@ settings.json        (optional)
 - `hash`: accepted only as 64 lowercase hex characters (it becomes the file name); otherwise the computed hash is used. The same hash twice in one pack is imported once.
 - `version`: reader rejects versions higher than it knows with a clear message; it must read all lower versions. Use `ignoreUnknownKeys = true`.
 
-### settings.json (optional, user opts in)
+### settings.json (optional: in "Back up everything", never in a shared collection)
 
 `{ "theme": "system" }`. Unknown keys ignored. `animateStickers` joins in M6 with playback. `keyboard_setup_dismissed` is never exported.
 

@@ -1,19 +1,25 @@
 package app.kisscut.keys
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
+import androidx.activity.result.contract.ActivityResultContracts.OpenDocument
+import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -21,19 +27,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import app.kisscut.keys.backup.AndroidPackBackend
+import app.kisscut.keys.backup.BackupDialogs
+import app.kisscut.keys.backup.BackupViewModel
 import app.kisscut.keys.common.LocalThumbnails
+import app.kisscut.keys.common.TopLevel
 import app.kisscut.keys.nav.AppNav
 import app.kisscut.keys.save.AppSaveBackend
 import app.kisscut.keys.save.SaveSheet
 import app.kisscut.keys.save.SaveViewModel
+import app.kisscut.keys.settings.SettingsActions
+import app.kisscut.keys.settings.SettingsScreen
+import app.kisscut.keys.settings.SettingsViewModel
+import app.kisscut.keys.settings.ThemeMode
 import app.kisscut.keys.setup.KeyboardSetupScreen
 import app.kisscut.keys.setup.KeyboardSetupViewModel
 import app.kisscut.keys.setup.SetupAction
 import app.kisscut.keys.share.sharedImageUris
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import app.kisscut.keys.ui.theme.StickersTheme
 
 /**
@@ -53,27 +75,58 @@ class MainActivity : ComponentActivity() {
         if (uris.isNotEmpty()) openSave(uris.map { it.toString() }, fromShare = false)
     }
 
+    private val backups: BackupViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                val c = (application as App).container
+                BackupViewModel(c.packBackend, c.themeStore, c.collections.observeAll())
+            }
+        }
+    }
+
+    /** Settings "Back up everything": the user picks where the backup file goes. */
+    private val createBackup = registerForActivityResult(CreateDocument(PACK_MIME)) { uri ->
+        uri?.let { backups.backUp(it.toString()) }
+    }
+
+    /** Settings "Import a pack". Any file type: packs arrive typed as zip, octet-stream or nothing. */
+    private val openPack = registerForActivityResult(OpenDocument()) { uri ->
+        uri?.let { backups.import(it.toString()) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) {
             takeShare(intent)
-            launchedByShare = pending.isNotEmpty()
+            launchedByShare = pending.isNotEmpty() || takePack(intent)
         } else {
             pending = savedInstanceState.getStringArrayList(KEY_PENDING).orEmpty()
             fromShare = savedInstanceState.getBoolean(KEY_FROM_SHARE)
             session = savedInstanceState.getInt(KEY_SESSION)
         }
         val container = (application as App).container
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) { backups.shareRequests.collect(::sharePack) }
+        }
         setContent {
-            StickersTheme {
+            val theme by container.themeStore.theme.collectAsState(initial = null)
+            val dark = (theme ?: ThemeMode.SYSTEM).isDark(isSystemInDarkTheme())
+            // Status and navigation bar icons follow the app theme, not the system one.
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
+            StickersTheme(dark = dark) {
                 val addStickers = { pickImages.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }
                 // Keyboard setup opens first until it is finished or skipped, except when a share started us.
                 val dismissed by container.setupStore.dismissed.collectAsState(initial = null)
                 var startAtSetup by rememberSaveable { mutableStateOf<Boolean?>(null) }
                 if (startAtSetup == null) dismissed?.let { startAtSetup = !it && !launchedByShare }
                 val start = startAtSetup
-                if (start == null) {
+                if (start == null || theme == null) {
                     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
                 } else {
                     CompositionLocalProvider(LocalThumbnails provides container::thumbnailOf) {
@@ -82,6 +135,7 @@ class MainActivity : ComponentActivity() {
                             onAdd = addStickers,
                             startAtSetup = start,
                             setupScreen = { leave -> Setup(container, addStickers, leave) },
+                            settingsScreen = { go, openSetup -> Settings(container, go, openSetup, addStickers) },
                         )
                     }
                 }
@@ -100,6 +154,7 @@ class MainActivity : ComponentActivity() {
                     )
                     SaveSheet(vm, onFinished = ::finishSave)
                 }
+                BackupDialogs(backups)
             }
         }
     }
@@ -108,6 +163,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         takeShare(intent)
+        takePack(intent)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -120,6 +176,55 @@ class MainActivity : ComponentActivity() {
     private fun takeShare(intent: Intent) {
         val uris = intent.sharedImageUris()
         if (uris.isNotEmpty()) openSave(uris.map { it.toString() }, fromShare = true)
+    }
+
+    /** A sticker pack opened from another app (Files, a chat): import it. True when there was one. */
+    private fun takePack(intent: Intent): Boolean {
+        val uri = intent.data?.takeIf { intent.action == Intent.ACTION_VIEW } ?: return false
+        backups.import(uri.toString())
+        return true
+    }
+
+    private fun sharePack(uri: String) {
+        val send = Intent(Intent.ACTION_SEND)
+            .setType(PACK_MIME)
+            .putExtra(Intent.EXTRA_STREAM, Uri.parse(uri))
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        startActivity(Intent.createChooser(send, null))
+    }
+
+    @Composable
+    private fun Settings(
+        container: AppContainer,
+        onNavigate: (TopLevel) -> Unit,
+        openSetup: () -> Unit,
+        addStickers: () -> Unit,
+    ) {
+        val vm: SettingsViewModel = viewModel(
+            factory = viewModelFactory {
+                initializer {
+                    SettingsViewModel(
+                        container.themeStore,
+                        container.stickers.observeAll().map { it.size },
+                        container::storageBytes,
+                    )
+                }
+            },
+        )
+        val state by vm.state.collectAsState()
+        SettingsScreen(
+            state,
+            SettingsActions(
+                onTheme = vm::setTheme,
+                onKeyboardSetup = openSetup,
+                onBackUp = { createBackup.launch(backupFileName()) },
+                onShare = backups::chooseCollectionToShare,
+                onImport = { openPack.launch(arrayOf("*/*")) },
+            ),
+            onNavigate = onNavigate,
+            onAdd = addStickers,
+            version = container.appVersion,
+        )
     }
 
     /** Opens a new Save sheet for [uris]. Shares finish the activity on Done; picks stay in the app. */
@@ -163,6 +268,13 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val MAX_PICK = 50
+
+        /** Packs have no registered type; other apps see a generic file. */
+        const val PACK_MIME = "application/octet-stream"
+
+        fun backupFileName(): String =
+            "kisscut-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) +
+                AndroidPackBackend.EXTENSION
         const val KEY_PENDING = "pending_uris"
         const val KEY_FROM_SHARE = "from_share"
         const val KEY_SESSION = "save_session"
