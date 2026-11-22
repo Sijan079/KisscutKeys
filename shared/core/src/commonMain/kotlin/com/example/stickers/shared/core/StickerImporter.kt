@@ -38,13 +38,15 @@ sealed interface ImportResult {
 }
 
 /**
- * Imports one image: size cap, type from magic bytes, SHA-256 dedupe, files named by hash,
- * thumbnail, row. A failure after writing removes this import's files, so nothing half-saved stays.
+ * Imports one image: size cap, type from magic bytes, SHA-256 dedupe of the received bytes, stored format
+ * (still images at most 512px, lossless; see docs/IMPORT_EXPORT.md), files named by hash, thumbnail, row.
+ * A failure after writing removes this import's files, so nothing half-saved stays.
  */
 class StickerImporter(
     private val stickers: StickerRepository,
     private val files: FileStore,
     private val thumbnailer: Thumbnailer,
+    private val converter: StillConverter,
 ) {
     suspend fun import(source: ByteSource, collectionId: Long?): ImportResult {
         val bytes = try {
@@ -65,21 +67,18 @@ class StickerImporter(
         // Duplicate share is a no-op: no decode, no writes, no move.
         stickers.findByHash(hash)?.let { return ImportResult.Duplicate(it) }
 
-        val thumb = try {
-            thumbnailer.thumbnail(bytes, info)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            null
-        } ?: return ImportResult.Rejected(RejectReason.UNREADABLE)
+        val (storedBytes, storedInfo) = storedForm(bytes, info) ?: return ImportResult.Rejected(RejectReason.UNREADABLE)
 
-        val filePath = "$hash.${info.type.extension}"
+        val thumb = guarded { thumbnailer.thumbnail(storedBytes, storedInfo) }
+            ?: return ImportResult.Rejected(RejectReason.UNREADABLE)
+
+        val filePath = "$hash.${storedInfo.type.extension}"
         val thumbPath = "$hash.webp"
         return try {
-            files.write(FileArea.STICKERS, filePath, bytes)
+            files.write(FileArea.STICKERS, filePath, storedBytes)
             files.write(FileArea.THUMBS, thumbPath, thumb.webpBytes)
             val result = stickers.add(
-                NewSticker(filePath, thumbPath, info.type.mimeType, info.isAnimated, thumb.hasAlpha, hash),
+                NewSticker(filePath, thumbPath, storedInfo.type.mimeType, info.isAnimated, thumb.hasAlpha, hash),
                 collectionId,
             )
             if (result.isNew) ImportResult.Added(result.sticker) else ImportResult.Duplicate(result.sticker)
@@ -96,5 +95,23 @@ class StickerImporter(
             if (e is CancellationException) throw e
             ImportResult.Rejected(RejectReason.FAILED)
         }
+    }
+
+    /** The bytes to keep and what they are: converted for still images, as received otherwise. */
+    private suspend fun storedForm(bytes: ByteArray, info: ImageInfo): Pair<ByteArray, ImageInfo>? {
+        if (!isConvertibleStill(info)) return bytes to info
+        val converted = guarded { converter.convert(bytes, info) } ?: return null
+        if (keepsOriginal(bytes.size, converted)) return bytes to info
+        val convertedInfo = ImageInfo(converted.type, converted.width, converted.height, false, info.mayHaveAlpha)
+        return converted.bytes to convertedInfo
+    }
+
+    /** Decoder failures (anything but cancellation) count as "unreadable". */
+    private suspend fun <T : Any> guarded(block: suspend () -> T?): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
     }
 }

@@ -11,6 +11,7 @@ import com.example.stickers.setup.DataStoreSetupStore
 import com.example.stickers.setup.SetupStore
 import com.example.stickers.shared.core.AndroidFileStore
 import com.example.stickers.shared.core.FileArea
+import com.example.stickers.shared.core.AndroidStillConverter
 import com.example.stickers.shared.core.AndroidThumbnailer
 import com.example.stickers.shared.core.CollectionRepository
 import com.example.stickers.shared.core.FileStore
@@ -50,7 +51,9 @@ class AppContainer(
     val fileStore: FileStore get() = androidFileStore
     val collections: CollectionRepository by lazy { CollectionRepository(database, fileStore, clock) }
     val stickers: StickerRepository by lazy { StickerRepository(database, fileStore, clock) }
-    val importer: StickerImporter by lazy { StickerImporter(stickers, fileStore, AndroidThumbnailer()) }
+    val importer: StickerImporter by lazy {
+        StickerImporter(stickers, fileStore, AndroidThumbnailer(), AndroidStillConverter())
+    }
     val libraryBackend: LibraryBackend by lazy { AppLibraryBackend(stickers, collections) }
     val keyboardStatus: AndroidKeyboardStatus by lazy { AndroidKeyboardStatus(appContext) }
     val setupStore: SetupStore by lazy { DataStoreSetupStore(appContext) }

@@ -9,6 +9,7 @@ import com.example.stickers.common.LocalThumbnails
 import com.example.stickers.debug.SeedData
 import com.example.stickers.nav.AppNav
 import com.example.stickers.shared.core.AndroidFileStore
+import com.example.stickers.shared.core.AndroidStillConverter
 import com.example.stickers.shared.core.AndroidThumbnailer
 import com.example.stickers.shared.core.ByteSource
 import com.example.stickers.shared.core.CollectionRepository
@@ -35,7 +36,7 @@ class TestLibrary : AutoCloseable {
     private val clock = { t += 1_000; t }
     val collections = CollectionRepository(db, files, clock)
     val stickers = StickerRepository(db, files, clock)
-    private val importer = StickerImporter(stickers, files, AndroidThumbnailer())
+    private val importer = StickerImporter(stickers, files, AndroidThumbnailer(), AndroidStillConverter())
     val backend = AppLibraryBackend(stickers, collections)
     var addTaps = 0
         private set

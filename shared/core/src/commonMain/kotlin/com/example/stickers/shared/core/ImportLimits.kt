@@ -8,6 +8,9 @@ object ImportLimits {
     /** Max width or height in pixels. Guards decoding against images that claim huge sizes. */
     const val MAX_DIMENSION: Int = 16_384
 
+    /** Longest side of a stored still image, in pixels. Larger ones are scaled down at import. */
+    const val STORED_MAX_SIDE: Int = 512
+
     /** Longest side of a generated thumbnail, in pixels. */
     const val THUMB_MAX_SIDE: Int = 384
 }

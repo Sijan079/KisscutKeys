@@ -24,6 +24,7 @@
     <string name="save_item_unsupported">Not a PNG, JPEG, WebP or GIF, or too large</string>
     <string name="save_count_images">%1$d images</string>
     <string name="save_type_png">PNG sticker</string>
+    <string name="save_type_jpeg">JPEG sticker</string>
     <string name="save_type_webp">WebP sticker</string>
     <string name="save_type_webp_animated">Animated WebP</string>
     <string name="save_type_gif">GIF</string>

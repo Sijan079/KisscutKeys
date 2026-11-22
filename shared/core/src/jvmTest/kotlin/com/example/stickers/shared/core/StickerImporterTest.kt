@@ -12,6 +12,7 @@ import java.io.IOException
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -19,9 +20,10 @@ class StickerImporterTest {
     private val db = inMemoryStickerDatabase()
     private val files = RecordingFileStore()
     private val thumbnailer = FakeThumbnailer()
+    private val converter = FakeStillConverter()
     private val stickers = StickerRepository(db, files, TestClock())
     private val collections = CollectionRepository(db, files, TestClock())
-    private val importer = StickerImporter(stickers, files, thumbnailer)
+    private val importer = StickerImporter(stickers, files, thumbnailer, converter)
 
     @AfterTest
     fun close() = db.close()
@@ -87,6 +89,90 @@ class StickerImporterTest {
         var asked = -1
         importer.import(ByteSource { max -> asked = max; TestImages.png() }, null)
         assertEquals(ImportLimits.MAX_STICKER_BYTES, asked)
+    }
+
+    // --- stored format -------------------------------------------------------------------------
+
+    @Test
+    fun largeStillIsStoredConvertedButHashedAsReceived() = runTest {
+        val bytes = TestImages.png(width = 3000, height = 1500)
+        val hash = sha256Hex(bytes)
+        converter.next = { FakeStillConverter.webp(scaled = true, size = bytes.size + 50) }
+
+        val result = assertIs<ImportResult.Added>(importer.import(source(bytes), null))
+
+        with(result.sticker) {
+            assertEquals("$hash.webp", filePath)
+            assertEquals("image/webp", mimeType)
+            assertEquals(hash, this.hash, "hash of the received bytes, so the same share is still a duplicate")
+        }
+        val stored = files.files.getValue(FileArea.STICKERS to "$hash.webp")
+        assertTrue(converter.last!!.bytes.contentEquals(stored), "scaled down, so kept even though bigger")
+        assertTrue(stored.contentEquals(thumbnailer.lastBytes), "thumbnail made from the stored image")
+        assertIs<ImportResult.Duplicate>(importer.import(source(bytes), null))
+    }
+
+    @Test
+    fun smallStillIsConvertedWhenThatIsSmaller() = runTest {
+        val bytes = TestImages.png() + ByteArray(500)
+        converter.next = { FakeStillConverter.webp(scaled = false, size = 100) }
+
+        val result = assertIs<ImportResult.Added>(importer.import(source(bytes), null))
+
+        assertEquals("image/webp", result.sticker.mimeType)
+        assertTrue(result.sticker.filePath.endsWith(".webp"))
+    }
+
+    @Test
+    fun stillIsKeptAsReceivedWhenConvertingWouldNotShrinkIt() = runTest {
+        val jpeg = TestImages.jpeg()
+        converter.next = { FakeStillConverter.webp(scaled = false, size = jpeg.size + 1) }
+
+        val result = assertIs<ImportResult.Added>(importer.import(source(jpeg), null))
+
+        assertEquals("image/jpeg", result.sticker.mimeType)
+        assertTrue(result.sticker.filePath.endsWith(".jpg"))
+        assertTrue(jpeg.contentEquals(files.files.getValue(FileArea.STICKERS to result.sticker.filePath)))
+    }
+
+    @Test
+    fun rotatedStillIsConvertedEvenWhenBigger() = runTest {
+        val jpeg = TestImages.jpeg()
+        converter.next = { FakeStillConverter.webp(scaled = false, rotated = true, size = jpeg.size + 1) }
+
+        val result = assertIs<ImportResult.Added>(importer.import(source(jpeg), null))
+
+        assertEquals("image/webp", result.sticker.mimeType, "the stored file must be upright")
+    }
+
+    @Test
+    fun gifsAndAnimatedWebpAreNeverConverted() = runTest {
+        importer.import(source(TestImages.gif(frames = 1)), null)
+        importer.import(source(TestImages.gif(frames = 2)), null)
+        importer.import(source(TestImages.webpExtended(alpha = true, animated = true)), null)
+
+        assertEquals(0, converter.calls)
+        assertEquals(setOf("image/gif", "image/webp"), stickers.allOnce().map { it.mimeType }.toSet())
+    }
+
+    @Test
+    fun undecodableStillIsUnreadable() = runTest {
+        converter.next = { null }
+
+        assertEquals(ImportResult.Rejected(RejectReason.UNREADABLE), importer.import(source(TestImages.png()), null))
+        assertNothingStored()
+    }
+
+    @Test
+    fun keepsOriginalOnlyWhenNotScaledNotRotatedAndNotSmaller() {
+        fun c(size: Int, scaled: Boolean = false, rotated: Boolean = false) =
+            FakeStillConverter.webp(scaled = scaled, rotated = rotated, size = size)
+
+        assertTrue(keepsOriginal(100, c(100)))
+        assertTrue(keepsOriginal(100, c(150)))
+        assertFalse(keepsOriginal(100, c(99)))
+        assertFalse(keepsOriginal(100, c(150, scaled = true)))
+        assertFalse(keepsOriginal(100, c(150, rotated = true)))
     }
 
     // --- duplicates ----------------------------------------------------------------------------
@@ -186,7 +272,7 @@ class StickerImporterTest {
     @Test
     fun cancelledImportStillRemovesItsFiles() = runTest {
         val store = SuspendingFileStore()
-        val cancellable = StickerImporter(stickers, store, thumbnailer)
+        val cancellable = StickerImporter(stickers, store, thumbnailer, converter)
 
         val job = launch { cancellable.import(source(TestImages.png()), null) }
         store.thumbWriteStarted.await()
@@ -247,13 +333,32 @@ class FakeThumbnailer : Thumbnailer {
     var hasAlpha = true
     var fail = false
     var calls = 0
+    var lastBytes: ByteArray? = null
 
     override suspend fun thumbnail(bytes: ByteArray, info: ImageInfo): Thumbnail? {
         calls++
+        lastBytes = bytes
         return if (fail) null else Thumbnail(THUMB, hasAlpha)
     }
 
     companion object {
         val THUMB = byteArrayOf(0x57, 0x45, 0x42, 0x50)
+    }
+}
+
+/** By default "converts" to a bigger, unscaled WebP, so the received bytes are kept (the pre-M4.5 behavior). */
+class FakeStillConverter : StillConverter {
+    var calls = 0
+    var last: ConvertedStill? = null
+    var next: (ByteArray) -> ConvertedStill? = { webp(scaled = false, size = it.size + 1) }
+
+    override suspend fun convert(bytes: ByteArray, info: ImageInfo): ConvertedStill? {
+        calls++
+        return next(bytes).also { last = it }
+    }
+
+    companion object {
+        fun webp(scaled: Boolean, rotated: Boolean = false, size: Int) =
+            ConvertedStill(ByteArray(size) { 7 }, ImageType.WEBP, 512, 256, scaled, rotated)
     }
 }

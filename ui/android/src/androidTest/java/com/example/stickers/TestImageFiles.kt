@@ -35,6 +35,34 @@ object TestImageFiles {
             .toByteArray()
     }
 
+    /** Opaque PNG with a colour gradient (so scaling changes pixels) and a fully transparent top-left block. */
+    fun gradientPng(width: Int, height: Int): ByteArray {
+        val pixels = IntArray(width * height) { i ->
+            val x = i % width
+            val y = i / width
+            val corner = x < width / 8 && y < height / 8
+            if (corner) Color.TRANSPARENT else Color.rgb(x * 255 / width, y * 255 / height, 90)
+        }
+        val bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+        return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+    }
+
+    /**
+     * JPEG of [width]x[height], left half red and right half blue, with EXIF [orientation]
+     * (6 = the camera was turned 90 degrees clockwise). ExifInterface can only save to a file, hence [context].
+     */
+    fun halvesJpeg(context: Context, width: Int, height: Int, orientation: Int): ByteArray {
+        val pixels = IntArray(width * height) { i -> if (i % width < width / 2) Color.RED else Color.BLUE }
+        val bitmap = Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
+        val file = java.io.File(context.cacheDir, "exif-test.jpg")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+        android.media.ExifInterface(file.path).apply {
+            setAttribute(android.media.ExifInterface.TAG_ORIENTATION, orientation.toString())
+            saveAttributes()
+        }
+        return file.readBytes().also { file.delete() }
+    }
+
     /** The classic 1x1 transparent GIF89a. */
     val GIF_1X1: ByteArray = byteArrayOf(
         0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80.toByte(), 0x00, 0x00,

@@ -73,7 +73,8 @@ class ShareIntentTest {
         shareAndSave(send(uri), "1 sticker saved")
 
         val saved = assertNotNull(container.stickers.findByHash(hashes.single()))
-        assertEquals("image/png", saved.mimeType)
+        // Stored as PNG or lossless WebP, whichever is smaller.
+        assertTrue(saved.mimeType in setOf("image/png", "image/webp"), saved.mimeType)
         assertTrue(container.fileStore.exists(FileArea.STICKERS, saved.filePath))
         assertTrue(container.fileStore.exists(FileArea.THUMBS, saved.thumbPath))
         val countBefore = container.stickers.allOnce().size

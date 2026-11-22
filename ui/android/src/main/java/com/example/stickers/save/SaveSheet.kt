@@ -233,6 +233,7 @@ private fun typeLabel(preview: ItemPreview): String = when (preview) {
         val info = preview.details.info
         when (info.type) {
             ImageType.PNG -> stringResource(R.string.save_type_png)
+            ImageType.JPEG -> stringResource(R.string.save_type_jpeg)
             ImageType.WEBP -> stringResource(
                 if (info.isAnimated) R.string.save_type_webp_animated else R.string.save_type_webp,
             )
