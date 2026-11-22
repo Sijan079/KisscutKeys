@@ -50,7 +50,8 @@ class AndroidStillConverter(private val maxSide: Int = ImportLimits.STORED_MAX_S
                 width = upright.width,
                 height = upright.height,
                 scaled = longest > maxSide,
-                rotated = orientation != ExifInterface.ORIENTATION_NORMAL,
+                // Only a real turn or flip counts (UNDEFINED and NORMAL leave the bitmap as it is).
+                rotated = upright !== scaled,
             )
         } finally {
             if (upright != null && upright !== scaled) upright.recycle()
