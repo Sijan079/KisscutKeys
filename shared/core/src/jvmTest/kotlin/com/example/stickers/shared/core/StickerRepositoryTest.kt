@@ -69,7 +69,7 @@ class StickerRepositoryTest {
     @Test
     fun addRejectsBadInput() = runTest {
         assertFailsWith<IllegalArgumentException> { repo.add(newSticker("x").copy(hash = " "), null) }
-        assertFailsWith<IllegalArgumentException> { repo.add(newSticker("x").copy(mimeType = "image/jpeg"), null) }
+        assertFailsWith<IllegalArgumentException> { repo.add(newSticker("x").copy(mimeType = "image/bmp"), null) }
     }
 
     // --- lists through the repository --------------------------------------------------------

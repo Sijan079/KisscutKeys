@@ -21,7 +21,7 @@
     <string name="save_progress">Saving %1$d of %2$d</string>
     <string name="save_item_details">%1$s · %2$d × %3$d</string>
     <string name="save_item_loading">Reading image</string>
-    <string name="save_item_unsupported">Not a PNG, WebP or GIF, or too large</string>
+    <string name="save_item_unsupported">Not a PNG, JPEG, WebP or GIF, or too large</string>
     <string name="save_count_images">%1$d images</string>
     <string name="save_type_png">PNG sticker</string>
     <string name="save_type_webp">WebP sticker</string>

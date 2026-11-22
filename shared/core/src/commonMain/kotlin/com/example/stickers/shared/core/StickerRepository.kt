@@ -81,6 +81,6 @@ class StickerRepository(
 
     companion object {
         const val DEFAULT_RECENTS = 30
-        val SUPPORTED_MIME_TYPES = setOf("image/png", "image/webp", "image/gif")
+        val SUPPORTED_MIME_TYPES = setOf("image/png", "image/jpeg", "image/webp", "image/gif")
     }
 }

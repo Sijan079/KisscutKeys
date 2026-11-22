@@ -18,7 +18,7 @@ enum class RejectReason {
     /** Over [ImportLimits.MAX_STICKER_BYTES] or [ImportLimits.MAX_DIMENSION]. */
     TOO_LARGE,
 
-    /** Not a PNG, WebP or GIF. */
+    /** Not a PNG, JPEG, WebP or GIF. */
     UNSUPPORTED_TYPE,
 
     /** Could not be read or decoded. */

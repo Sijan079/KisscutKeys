@@ -3,6 +3,7 @@ package com.example.stickers.shared.core
 /** The image formats the app stores. The extension names files; the MIME type goes in the row. */
 enum class ImageType(val mimeType: String, val extension: String) {
     PNG("image/png", "png"),
+    JPEG("image/jpeg", "jpg"),
     WEBP("image/webp", "webp"),
     GIF("image/gif", "gif"),
 }
@@ -21,7 +22,7 @@ data class ImageInfo(
 
 /**
  * Reads the real type from magic bytes; file names and declared MIME types are never trusted.
- * Returns null for anything that is not a well-formed PNG, WebP or GIF header.
+ * Returns null for anything that is not a well-formed PNG, JPEG, WebP or GIF header.
  */
 object ImageSniffer {
     fun sniff(bytes: ByteArray): ImageInfo? {
@@ -30,6 +31,7 @@ object ImageSniffer {
             r.startsWith(PNG_SIGNATURE) -> png(r)
             r.ascii(0, 4) == "GIF8" && (r.ascii(0, 6) == "GIF87a" || r.ascii(0, 6) == "GIF89a") -> gif(r)
             r.ascii(0, 4) == "RIFF" && r.ascii(8, 4) == "WEBP" -> webp(r)
+            r.u8(0) == 0xFF && r.u8(1) == 0xD8 && r.u8(2) == 0xFF -> jpeg(r)
             else -> null
         }
         return info?.takeIf { it.width > 0 && it.height > 0 }
@@ -87,6 +89,31 @@ object ImageSniffer {
         return ImageInfo(ImageType.GIF, width, height, isAnimated = frames > 1, mayHaveAlpha = transparent)
     }
 
+    // JPEG: walk the marker segments to the first start-of-frame (SOF0-SOF15 except DHT, JPG and DAC).
+    // Width and height sit there; stopping at start-of-scan or the end means no frame header.
+    private fun jpeg(r: Bytes): ImageInfo? {
+        var pos = 2
+        while (true) {
+            if (r.u8(pos) != 0xFF) return null
+            val marker = r.u8(pos + 1) ?: return null
+            when {
+                marker == 0xFF -> pos += 1 // fill byte
+                marker == 0x01 || marker in 0xD0..0xD7 -> pos += 2 // no length
+                marker == 0xD9 || marker == 0xDA -> return null // end or scan before any frame
+                marker in 0xC0..0xCF && marker != 0xC4 && marker != 0xC8 && marker != 0xCC -> {
+                    val height = r.u16Be(pos + 5) ?: return null
+                    val width = r.u16Be(pos + 7) ?: return null
+                    return ImageInfo(ImageType.JPEG, width, height, isAnimated = false, mayHaveAlpha = false)
+                }
+                else -> {
+                    val length = r.u16Be(pos + 2) ?: return null
+                    if (length < 2) return null
+                    pos += 2 + length
+                }
+            }
+        }
+    }
+
     private fun webp(r: Bytes): ImageInfo? = when (r.ascii(12, 4)) {
         "VP8 " -> {
             if (r.u8(23) != 0x9D || r.u8(24) != 0x01 || r.u8(25) != 0x2A) {
@@ -136,6 +163,12 @@ object ImageSniffer {
             val lo = u8(i) ?: return null
             val hi = u8(i + 1) ?: return null
             return lo or (hi shl 8)
+        }
+
+        fun u16Be(i: Int): Int? {
+            val hi = u8(i) ?: return null
+            val lo = u8(i + 1) ?: return null
+            return (hi shl 8) or lo
         }
 
         fun u24Le(i: Int): Int? {

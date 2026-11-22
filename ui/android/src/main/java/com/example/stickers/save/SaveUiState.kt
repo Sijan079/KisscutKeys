@@ -10,7 +10,7 @@ sealed interface ItemPreview {
     data object Loading : ItemPreview
     data class Ready(val details: ItemDetails) : ItemPreview
 
-    /** Not a PNG, WebP or GIF, too large, or unreadable. Saving will report it as rejected. */
+    /** Not a PNG, JPEG, WebP or GIF, too large, or unreadable. Saving will report it as rejected. */
     data object Unsupported : ItemPreview
 }
 

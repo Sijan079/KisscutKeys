@@ -110,6 +110,37 @@ class ImageSnifferTest {
         assertFalse(still.mayHaveAlpha)
     }
 
+    // --- JPEG ----------------------------------------------------------------------------------
+
+    @Test
+    fun realJpegIsOpaqueStill() {
+        val info = assertNotNull(ImageSniffer.sniff(TestImages.realJpeg(width = 9, height = 4)))
+
+        assertEquals(ImageType.JPEG, info.type)
+        assertEquals(9, info.width)
+        assertEquals(4, info.height)
+        assertFalse(info.isAnimated)
+        assertFalse(info.mayHaveAlpha)
+    }
+
+    @Test
+    fun jpegSizeIsFoundAfterOtherSegments() {
+        // EXIF and a quant table before a progressive frame header, with a fill byte between segments.
+        val info = assertNotNull(ImageSniffer.sniff(TestImages.jpeg(width = 640, height = 480, sof = 0xC2)))
+
+        assertEquals(640, info.width)
+        assertEquals(480, info.height)
+    }
+
+    @Test
+    fun brokenJpegsAreRejected() {
+        val noFrame = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte()) + ByteArray(40)
+        assertNull(ImageSniffer.sniff(noFrame), "segment length 0")
+        assertNull(ImageSniffer.sniff(TestImages.jpeg(scanBeforeFrame = true)), "scan before any frame")
+        assertNull(ImageSniffer.sniff(TestImages.jpeg().copyOf(30)), "cut off before the frame header")
+        assertNull(ImageSniffer.sniff(TestImages.jpeg(width = 0)), "zero width")
+    }
+
     // --- rejected ------------------------------------------------------------------------------
 
     @Test
@@ -120,8 +151,8 @@ class ImageSnifferTest {
 
     @Test
     fun otherFormatsAreRejected() {
-        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte()) + ByteArray(40)
-        assertNull(ImageSniffer.sniff(jpeg))
+        val bmp = "BM".toByteArray() + ByteArray(40)
+        assertNull(ImageSniffer.sniff(bmp))
         val wav = "RIFF".toByteArray() + ByteArray(4) + "WAVEfmt ".toByteArray() + ByteArray(30)
         assertNull(ImageSniffer.sniff(wav))
     }

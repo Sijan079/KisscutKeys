@@ -35,6 +35,42 @@ object TestImages {
         return ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
     }
 
+    /** A real JPEG encoded by ImageIO. */
+    fun realJpeg(width: Int = 3, height: Int = 2): ByteArray {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        return ByteArrayOutputStream().also { ImageIO.write(image, "jpg", it) }.toByteArray()
+    }
+
+    /**
+     * JPEG headers: SOI, an APP1 (EXIF) segment, a DQT, a fill byte, then a frame header of type [sof].
+     * [scanBeforeFrame] puts a start-of-scan before the frame header instead.
+     */
+    fun jpeg(width: Int = 8, height: Int = 6, sof: Int = 0xC0, scanBeforeFrame: Boolean = false): ByteArray {
+        val out = ByteArrayOutputStream()
+        out.write(byteArrayOf(0xFF.toByte(), 0xD8.toByte()))
+        out.segment(0xE1, "Exif".toByteArray() + ByteArray(10))
+        out.segment(0xDB, ByteArray(65))
+        if (scanBeforeFrame) out.segment(0xDA, ByteArray(10))
+        out.write(0xFF) // fill byte
+        val frame = ByteArrayOutputStream().apply {
+            write(8) // precision
+            writeShortBe(height)
+            writeShortBe(width)
+            write(byteArrayOf(1, 1, 0x11, 0))
+        }.toByteArray()
+        out.segment(sof, frame)
+        out.write(byteArrayOf(0xFF.toByte(), 0xD9.toByte()))
+        return out.toByteArray()
+    }
+
+    private fun ByteArrayOutputStream.segment(marker: Int, data: ByteArray) {
+        write(byteArrayOf(0xFF.toByte(), marker.toByte()))
+        writeShortBe(data.size + 2)
+        write(data)
+    }
+
+    private fun ByteArrayOutputStream.writeShortBe(v: Int) = write(byteArrayOf((v ushr 8).toByte(), v.toByte()))
+
     /** A real single-frame GIF encoded by ImageIO. */
     fun realGif(width: Int = 5, height: Int = 7): ByteArray {
         val image = BufferedImage(width, height, BufferedImage.TYPE_BYTE_INDEXED)
