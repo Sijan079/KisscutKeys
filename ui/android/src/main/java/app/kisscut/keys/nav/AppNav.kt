@@ -106,7 +106,7 @@ fun AppNav(
             if (settingsScreen != null) {
                 settingsScreen(::go, openSetup)
             } else {
-                SettingsScreen(SettingsUiState(), SettingsActions(onKeyboardSetup = openSetup), ::go, onAdd)
+                SettingsScreen(SettingsUiState(), SettingsActions(onKeyboardSetup = openSetup), ::go)
             }
         }
         composable(Routes.SETUP) {

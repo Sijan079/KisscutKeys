@@ -247,45 +247,80 @@ fun BoxScope.FloatingBar(
     )
 }
 
-/** Floating pill nav: Stickers, Collections, Add (+), Settings. The active one is a lime pill with its label. */
+/**
+ * Floating pill nav (Stickers, Collections, Settings; the active one is a lime pill with its label) and,
+ * beside it, a round lime Add button when [onAdd] is set (user's call: adding is an action, not a place,
+ * so it is not inside the nav; Settings has none).
+ */
 @Composable
-fun BoxScope.FloatingNav(current: TopLevel, onSelect: (TopLevel) -> Unit, onAdd: () -> Unit) {
+fun BoxScope.FloatingNav(current: TopLevel, onSelect: (TopLevel) -> Unit, onAdd: (() -> Unit)?) {
+    val colors = StickersTheme.colors
     BottomFade()
-    // SpaceBetween plus a shrinkable active pill: at large font sizes the label ellipsizes instead of
-    // pushing the last button off the bar.
-    FloatingBar(arrangement = Arrangement.SpaceBetween) {
-        NavItem(
-            TopLevel.LIBRARY,
-            current,
-            Icons.Outlined.GridView,
-            R.string.nav_stickers,
-            PartTags.NAV_LIBRARY,
-            onSelect,
-        )
-        NavItem(
-            TopLevel.COLLECTIONS,
-            current,
-            Icons.Outlined.Folder,
-            R.string.nav_collections,
-            PartTags.NAV_COLLECTIONS,
-            onSelect,
-        )
-        Surface(
-            onClick = onAdd,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-            modifier = Modifier.size(StickerSizes.NavItem).testTag(PartTags.NAV_ADD),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .navigationBarsPadding()
+            .padding(start = 20.dp, end = 20.dp, bottom = 20.dp)
+            .widthIn(max = 560.dp)
+            .fillMaxWidth(),
+    ) {
+        // SpaceBetween plus a shrinkable active pill: at large font sizes the label ellipsizes instead of
+        // pushing the last button off the bar.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .weight(1f)
+                .heightIn(min = StickerSizes.NavBarHeight)
+                .background(colors.raised, StickerShapes.Pill)
+                .border(1.dp, colors.line, StickerShapes.Pill)
+                .padding(8.dp),
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Outlined.Add,
-                    contentDescription = stringResource(R.string.nav_add),
-                    modifier = Modifier.size(24.dp),
-                )
+            NavItem(
+                TopLevel.LIBRARY,
+                current,
+                Icons.Outlined.GridView,
+                R.string.nav_stickers,
+                PartTags.NAV_LIBRARY,
+                onSelect,
+            )
+            NavItem(
+                TopLevel.COLLECTIONS,
+                current,
+                Icons.Outlined.Folder,
+                R.string.nav_collections,
+                PartTags.NAV_COLLECTIONS,
+                onSelect,
+            )
+            NavItem(
+                TopLevel.SETTINGS,
+                current,
+                Icons.Outlined.Tune,
+                R.string.nav_settings,
+                PartTags.NAV_SETTINGS,
+                onSelect,
+            )
+        }
+        if (onAdd != null) {
+            Surface(
+                onClick = onAdd,
+                shape = CircleShape,
+                color = colors.lime,
+                contentColor = colors.onLime,
+                shadowElevation = 4.dp,
+                modifier = Modifier.size(StickerSizes.NavBarHeight).testTag(PartTags.NAV_ADD),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.nav_add),
+                        modifier = Modifier.size(30.dp),
+                    )
+                }
             }
         }
-        NavItem(TopLevel.SETTINGS, current, Icons.Outlined.Tune, R.string.nav_settings, PartTags.NAV_SETTINGS, onSelect)
     }
 }
 

@@ -135,7 +135,7 @@ class MainActivity : ComponentActivity() {
                             onAdd = addStickers,
                             startAtSetup = start,
                             setupScreen = { leave -> Setup(container, addStickers, leave) },
-                            settingsScreen = { go, openSetup -> Settings(container, go, openSetup, addStickers) },
+                            settingsScreen = { go, openSetup -> Settings(container, go, openSetup) },
                         )
                     }
                 }
@@ -198,7 +198,6 @@ class MainActivity : ComponentActivity() {
         container: AppContainer,
         onNavigate: (TopLevel) -> Unit,
         openSetup: () -> Unit,
-        addStickers: () -> Unit,
     ) {
         val vm: SettingsViewModel = viewModel(
             factory = viewModelFactory {
@@ -222,7 +221,6 @@ class MainActivity : ComponentActivity() {
                 onImport = { openPack.launch(arrayOf("*/*")) },
             ),
             onNavigate = onNavigate,
-            onAdd = addStickers,
             version = container.appVersion,
         )
     }

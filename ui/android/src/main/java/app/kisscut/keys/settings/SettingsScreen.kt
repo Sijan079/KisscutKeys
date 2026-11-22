@@ -72,7 +72,6 @@ fun SettingsScreen(
     state: SettingsUiState,
     actions: SettingsActions,
     onNavigate: (TopLevel) -> Unit,
-    onAdd: () -> Unit,
     version: String = "",
 ) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("settings")) {
@@ -133,7 +132,7 @@ fun SettingsScreen(
                 )
             }
         }
-        FloatingNav(TopLevel.SETTINGS, onNavigate, onAdd)
+        FloatingNav(TopLevel.SETTINGS, onNavigate, onAdd = null)
     }
 }
 

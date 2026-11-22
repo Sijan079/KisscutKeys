@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.kisscut.keys.backup.BackupDialogs
+import app.kisscut.keys.common.PartTags
 import app.kisscut.keys.backup.BackupTags
 import app.kisscut.keys.backup.BackupViewModel
 import app.kisscut.keys.backup.PackBackend
@@ -74,7 +75,6 @@ class SettingsUiTest {
                         onImport = { taps += "import" },
                     ),
                     onNavigate = {},
-                    onAdd = {},
                     version = "1.0",
                 )
             }
@@ -91,6 +91,7 @@ class SettingsUiTest {
         assertEquals(listOf("backup", "share", "import"), taps)
         rule.onNodeWithTag(SettingsTags.STORAGE).performScrollTo()
         rule.onNodeWithText("38 stickers", substring = true).assertExists()
+        rule.onNodeWithTag(PartTags.NAV_ADD).assertDoesNotExist() // nothing to add from Settings
     }
 
     @Test

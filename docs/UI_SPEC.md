@@ -63,7 +63,7 @@ Corner radii: 20 (tiles), 26 (cards), 32 (sheets, top corners), pill (buttons, c
 ### Parts
 - **Primary button:** Lime fill, Ink text, pill, Bricolage 15/800.
 - **Selected chip:** Text-colored fill with Ink text; **Chip:** transparent, Line border, Muted text.
-- **Floating pill nav bar:** Raised fill, floats above content with a short fade behind it (the only gradient allowed, purely functional).
+- **Floating pill nav bar:** Raised fill, floats above content with a short fade behind it (the only gradient allowed, purely functional). Three tabs: Stickers, Collections, Settings. Beside it (12dp gap), a round lime Add button the bar's height (68dp) with a + icon, on Stickers and Collections only (user's call, 2026-11-23: the + used to sit inside the pill between Collections and Settings, which mixed an action with places).
 - **Sticker tile:** see below.
 
 ## Sticker rendering
