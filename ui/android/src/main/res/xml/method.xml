@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Sticker keyboard (docs/KEYBOARD.md). Offers a way to switch back, as Android requires. -->
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
-    android:settingsActivity="com.example.stickers.MainActivity"
+    android:settingsActivity="app.kisscut.keys.MainActivity"
     android:supportsSwitchingToNextInputMethod="true" />

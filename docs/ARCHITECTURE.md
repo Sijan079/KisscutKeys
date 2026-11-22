@@ -23,7 +23,7 @@
 - `shared:core` depends on `shared:db`.
 - The keyboard lives in `ui/android` under a `keyboard` package, **not** a separate module. It uses the same repositories and database as the app.
 
-Packages in `ui/android` (`com.example.stickers`): `library`, `collections`, `save` and `share` (Save sheet and share intents), `settings`, `setup` (keyboard setup and the DataStore settings store), `keyboard` (IME), `nav`, `common` (shared parts), `ui/theme`. Debug-only code (seed data, `ImeTestActivity`) lives in `src/debug`. One feature per package; a new screen gets its own package.
+Packages in `ui/android` (`app.kisscut.keys`): `library`, `collections`, `save` and `share` (Save sheet and share intents), `settings`, `setup` (keyboard setup and the DataStore settings store), `keyboard` (IME), `nav`, `common` (shared parts), `ui/theme`. Debug-only code (seed data, `ImeTestActivity`) lives in `src/debug`. One feature per package; a new screen gets its own package.
 - `ui/ios` does not exist yet.
 
 ## expect/actual and interfaces
@@ -94,7 +94,7 @@ Native Android Views (RecyclerView), not Compose. Reasons: `InputMethodService` 
 
 ## Open decisions (ask the user)
 
-- Package ID: default `app.kisscut.keys` (see `docs/BRAND.md`). Confirm with the user before first Play upload, since it cannot change later.
+- Package ID: `app.kisscut.keys` (user confirmed 2026-11-22, see `docs/BRAND.md`). It cannot change after the first Play upload.
 - Free-tier limits for the $1 unlock.
 - Whether to add Koin.
 - Shrinking animated stickers: decided for GIF (own Kotlin encoder, no library, ROADMAP M4.5). Animated WebP would need libwebp; still undecided, stored unchanged.

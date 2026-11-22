@@ -1,0 +1,300 @@
+package app.kisscut.keys.keyboard
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.StateListDrawable
+import android.view.Gravity
+import android.view.HapticFeedbackConstants
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import app.kisscut.keys.R
+
+/**
+ * The typing keyboard (docs/KEYBOARD.md, Typing layout): letters, `?123` and `=\<` pages, Shift with caps lock,
+ * Backspace that repeats while held, an Enter key that shows the field's action, a sticker key and a globe.
+ * It only reports key presses through [actions]; it never sees the field's text.
+ */
+@SuppressLint("ViewConstructor")
+class TypingView(
+    context: Context,
+    private val palette: KeyboardPalette,
+    private val actions: Actions,
+) : LinearLayout(context) {
+
+    interface Actions {
+        fun onText(text: String)
+        fun onBackspace()
+        fun onEnter()
+        fun onStickers()
+        fun onGlobe()
+        fun onGlobeLongPress()
+    }
+
+    val shift = ShiftLogic()
+    var page: TypingPage = TypingPage.LETTERS
+        private set
+    private var enter: EnterAction = EnterAction.NewLine
+    private var enterActionId = EditorInfo.IME_ACTION_UNSPECIFIED
+    private var stickersAllowed = true
+    private val letterLabels = mutableListOf<Pair<TextView, String>>()
+    private var shiftIcon: ImageView? = null
+
+    init {
+        orientation = VERTICAL
+        background = panelBackground(context, palette)
+        setPadding(dp(4), dp(10), dp(4), dp(8))
+        ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            v.setPadding(dp(4), dp(10), dp(4), dp(8) + nav)
+            insets
+        }
+        build()
+    }
+
+    fun showPage(to: TypingPage) {
+        if (to == page) return
+        page = to
+        build()
+    }
+
+    /** Sets the Enter key for the current field. */
+    fun setEnter(action: EnterAction) {
+        enter = action
+        enterActionId = (action as? EnterAction.Action)?.id ?: EditorInfo.IME_ACTION_UNSPECIFIED
+        build()
+    }
+
+    /** Off in password fields: the sticker key is dimmed and does nothing. */
+    fun setStickersAllowed(allowed: Boolean) {
+        if (stickersAllowed == allowed) return
+        stickersAllowed = allowed
+        build()
+    }
+
+    /** Call after Shift or auto-capitals change, to redraw letters and the Shift icon. */
+    fun refreshShift() {
+        for ((view, letter) in letterLabels) view.text = shift.apply(letter)
+        shiftIcon?.let { icon ->
+            icon.setImageResource(
+                when (shift.state) {
+                    ShiftState.OFF -> R.drawable.ic_kb_shift
+                    ShiftState.ONCE -> R.drawable.ic_kb_shift_on
+                    ShiftState.LOCKED -> R.drawable.ic_kb_shift_lock
+                },
+            )
+            (icon.parent as View).contentDescription = context.getString(
+                when (shift.state) {
+                    ShiftState.OFF -> R.string.kb_key_shift
+                    ShiftState.ONCE -> R.string.kb_key_shift_on
+                    ShiftState.LOCKED -> R.string.kb_key_caps_lock
+                },
+            )
+        }
+    }
+
+    private fun build() {
+        removeAllViews()
+        letterLabels.clear()
+        shiftIcon = null
+        for (row in typingRows(page)) {
+            val line = LinearLayout(context).apply {
+                orientation = HORIZONTAL
+                gravity = Gravity.CENTER
+            }
+            // The middle letter row is narrower: half a key of space on each side, as on most keyboards.
+            val inset = page == TypingPage.LETTERS && row.size == 9
+            if (inset) line.addView(View(context), LayoutParams(0, MATCH).apply { weight = 0.5f })
+            for (key in row) line.addView(keyView(key), LayoutParams(0, MATCH).apply { weight = key.weight })
+            if (inset) line.addView(View(context), LayoutParams(0, MATCH).apply { weight = 0.5f })
+            addView(line, LayoutParams(MATCH, 0).apply { weight = 1f })
+        }
+        refreshShift()
+    }
+
+    private fun keyView(key: Key): View = when (key) {
+        is Key.Text -> {
+            val letter = key.text.length == 1 && key.text[0].isLetter()
+            textKey(key.text, special = false, tag = KeyboardTags.key(key.text)).also { cell ->
+                if (letter) letterLabels += (cell.getChildAt(0) as TextView) to key.text
+                cell.setOnClickListener {
+                    tap(it)
+                    actions.onText(if (letter) shift.apply(key.text) else key.text)
+                }
+            }
+        }
+        Key.Space -> textKey(context.getString(R.string.kb_key_space_label), special = false, tag = KeyboardTags.SPACE)
+            .apply {
+                (getChildAt(0) as TextView).textSize = 13f
+                contentDescription = context.getString(R.string.kb_key_space)
+                setOnClickListener {
+                    tap(it)
+                    actions.onText(" ")
+                }
+            }
+        is Key.Page -> {
+            val label = when (key.to) {
+                TypingPage.LETTERS -> R.string.kb_page_letters
+                TypingPage.SYMBOLS -> R.string.kb_page_symbols
+                TypingPage.MORE_SYMBOLS -> R.string.kb_page_more_symbols
+            }
+            textKey(context.getString(label), special = true, tag = KeyboardTags.page(key.to.name)).apply {
+                (getChildAt(0) as TextView).textSize = 15f
+                setOnClickListener {
+                    tap(it)
+                    showPage(key.to)
+                }
+            }
+        }
+        Key.Shift -> iconKey(R.drawable.ic_kb_shift, R.string.kb_key_shift, special = true, tag = KeyboardTags.SHIFT)
+            .apply {
+                shiftIcon = getChildAt(0) as ImageView
+                if (page != TypingPage.LETTERS) visibility = INVISIBLE
+                setOnClickListener {
+                    tap(it)
+                    shift.tap(System.currentTimeMillis())
+                    refreshShift()
+                }
+            }
+        Key.Backspace -> iconKey(R.drawable.ic_kb_backspace, R.string.kb_backspace, special = true, KeyboardTags.KEY_BACKSPACE)
+            .apply { repeatWhileHeld(this) }
+        Key.Enter -> {
+            val (icon, label) = when (enterActionId) {
+                EditorInfo.IME_ACTION_SEND -> R.drawable.ic_kb_send to R.string.kb_key_send
+                EditorInfo.IME_ACTION_SEARCH -> R.drawable.ic_kb_search to R.string.kb_key_search
+                EditorInfo.IME_ACTION_DONE -> R.drawable.ic_kb_done to R.string.kb_key_done
+                EditorInfo.IME_ACTION_GO, EditorInfo.IME_ACTION_NEXT -> R.drawable.ic_kb_next to R.string.kb_key_go
+                else -> R.drawable.ic_kb_enter to R.string.kb_key_enter
+            }
+            iconKey(icon, label, special = true, tag = KeyboardTags.ENTER, fill = palette.lime, ink = palette.onLime)
+                .apply {
+                    setOnClickListener {
+                        tap(it)
+                        actions.onEnter()
+                    }
+                }
+        }
+        Key.Stickers -> iconKey(R.drawable.ic_kb_sticker, R.string.kb_key_stickers, special = true, KeyboardTags.STICKERS)
+            .apply {
+                isEnabled = stickersAllowed
+                alpha = if (stickersAllowed) 1f else 0.4f
+                setOnClickListener {
+                    tap(it)
+                    actions.onStickers()
+                }
+            }
+        Key.Globe -> iconKey(R.drawable.ic_kb_globe, R.string.kb_switch_keyboard, special = true, KeyboardTags.KEY_GLOBE)
+            .apply {
+                setOnClickListener {
+                    tap(it)
+                    actions.onGlobe()
+                }
+                setOnLongClickListener {
+                    actions.onGlobeLongPress()
+                    true
+                }
+            }
+    }
+
+    /** Deletes once on press, then repeats until the finger lifts. TalkBack taps delete once. */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun repeatWhileHeld(view: View) {
+        val repeat = object : Runnable {
+            override fun run() {
+                actions.onBackspace()
+                view.postDelayed(this, REPEAT_MS)
+            }
+        }
+        view.setOnClickListener { actions.onBackspace() }
+        view.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.isPressed = true
+                    tap(v)
+                    actions.onBackspace()
+                    v.postDelayed(repeat, FIRST_REPEAT_MS)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.isPressed = false
+                    v.removeCallbacks(repeat)
+                }
+            }
+            true
+        }
+    }
+
+    private fun textKey(label: String, special: Boolean, tag: String): FrameLayout = cell(special, tag).apply {
+        addView(
+            TextView(context).apply {
+                text = label
+                textSize = 21f
+                setTextColor(palette.text)
+                applyFigtree(600)
+                gravity = Gravity.CENTER
+                maxLines = 1
+                importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+            },
+            FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER),
+        )
+        contentDescription = label
+    }
+
+    private fun iconKey(
+        icon: Int,
+        label: Int,
+        special: Boolean,
+        tag: String,
+        fill: Int? = null,
+        ink: Int = palette.text,
+    ): FrameLayout = cell(special, tag, fill).apply {
+        addView(
+            ImageView(context).apply {
+                setImageResource(icon)
+                imageTintList = ColorStateList.valueOf(ink)
+                importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+            },
+            FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER),
+        )
+        contentDescription = context.getString(label)
+    }
+
+    /** A key: rounded fill with a small gap around it, darker while pressed. */
+    private fun cell(special: Boolean, testTag: String, fill: Int? = null) = FrameLayout(context).apply {
+        tag = testTag
+        val base = fill ?: if (special) palette.line else palette.raised
+        val pressed = if (special || fill != null) palette.raised else palette.line
+        background = StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_pressed), keyShape(pressed))
+            addState(intArrayOf(), keyShape(base))
+        }
+        isClickable = true
+        isFocusable = true
+        minimumHeight = dp(42)
+    }
+
+    private fun keyShape(color: Int): Drawable = InsetDrawable(rounded(color, dp(9f)), dp(3), dp(4), dp(3), dp(4))
+
+    private fun tap(v: View) {
+        v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+    }
+
+    private fun dp(v: Int) = context.dp(v)
+    private fun dp(v: Float) = context.dp(v)
+
+    private companion object {
+        const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
+        const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
+        const val FIRST_REPEAT_MS = 400L
+        const val REPEAT_MS = 60L
+    }
+}

@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.stickers"
+    namespace = "app.kisscut.keys"
     // Compose 1.13 requires compiling against Android 37.1 (a minor SDK release).
     compileSdk {
         version = release(37) {
@@ -13,7 +13,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.stickers"
+        applicationId = "app.kisscut.keys"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

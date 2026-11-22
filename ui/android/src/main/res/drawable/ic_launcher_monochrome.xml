@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed launcher icon: keycap wall with the top face cut out, and the face (docs/BRAND.md). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M40,28H68A15,15 0,0 1 83,43V69A15,15 0,0 1 68,84H40A15,15 0,0 1 25,69V43A15,15 0,0 1 40,28ZM42,31H66A11,11 0,0 1 77,42V62A11,11 0,0 1 66,73H42A11,11 0,0 1 31,62V42A11,11 0,0 1 42,31Z"
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd" />
+    <path
+        android:pathData="M45.6,48.8a2.4,2.4 0,1 0,4.8,0a2.4,2.4 0,1 0,-4.8,0ZM57.6,48.8a2.4,2.4 0,1 0,4.8,0a2.4,2.4 0,1 0,-4.8,0Z"
+        android:fillColor="#FFFFFFFF" />
+    <path
+        android:pathData="M46.8,53.6Q54,60.8 61.2,53.6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round" />
+</vector>

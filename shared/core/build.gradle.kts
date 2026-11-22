@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.example.stickers.shared.core"
+        namespace = "app.kisscut.keys.shared.core"
         compileSdk = 37
         minSdk = 26
         // Host (JVM) tests for androidMain code that needs no Context, e.g. AndroidFileStore.

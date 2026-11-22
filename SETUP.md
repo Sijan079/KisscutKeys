@@ -162,15 +162,15 @@ On Windows PowerShell, `>` may re-encode binary output. If `screen.png` is corru
 
 ## 8. Testing the keyboard (IME)
 
-The keyboard is `com.example.stickers/.keyboard.StickerImeService`. After `installDebug`:
+The keyboard is `app.kisscut.keys/.keyboard.StickerImeService`. After `installDebug`:
 
 ```powershell
-adb shell ime enable com.example.stickers/.keyboard.StickerImeService
-adb shell ime set com.example.stickers/.keyboard.StickerImeService
-adb shell am start -n com.example.stickers/.debug.ImeTestActivity   # debug-only test fields
+adb shell ime enable app.kisscut.keys/.keyboard.StickerImeService
+adb shell ime set app.kisscut.keys/.keyboard.StickerImeService
+adb shell am start -n app.kisscut.keys/.debug.ImeTestActivity   # debug-only test fields
 ```
 
-Tap a field in `ImeTestActivity`; the keyboard opens on letters (or on stickers if they were used last). Fill the library first with `adb shell am broadcast -n com.example.stickers/.debug.SeedReceiver --ez clear true`.
+Tap a field in `ImeTestActivity`; the keyboard opens on letters (or on stickers if they were used last). Fill the library first with `adb shell am broadcast -n app.kisscut.keys/.debug.SeedReceiver --ez clear true`.
 
 Reset to the default keyboard afterwards: `adb shell ime reset`.
 

@@ -21,7 +21,7 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 
 ## Components
 
-All in `ui/android/src/main/java/com/example/stickers/keyboard/`:
+All in `ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 
 - `StickerImeService : InputMethodService`: builds both views in `onCreateInputView()` inside a frame sized to the sticker panel, picks the view and page for each field in `onStartInputView()`, sends keys and stickers. All coroutines live in a scope cancelled on rebuild and in `onDestroy`.
 - `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on), unit-tested on the JVM.

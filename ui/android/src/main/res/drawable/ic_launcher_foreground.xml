@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon foreground: the lime keycap with a sticker face (docs/BRAND.md). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M40,32H68A15,15 0,0 1 83,47V73A15,15 0,0 1 68,88H40A15,15 0,0 1 25,73V47A15,15 0,0 1 40,32Z"
+        android:fillColor="#66000000" />
+    <path
+        android:pathData="M40,28H68A15,15 0,0 1 83,43V69A15,15 0,0 1 68,84H40A15,15 0,0 1 25,69V43A15,15 0,0 1 40,28Z"
+        android:fillColor="#8DB10F" />
+    <path
+        android:pathData="M42,31H66A11,11 0,0 1 77,42V62A11,11 0,0 1 66,73H42A11,11 0,0 1 31,62V42A11,11 0,0 1 42,31Z"
+        android:fillColor="#C8F23D" />
+    <path
+        android:pathData="M43,34.5H65A8,8 0,0 1 73,42.5V61.5A8,8 0,0 1 65,69.5H43A8,8 0,0 1 35,61.5V42.5A8,8 0,0 1 43,34.5Z"
+        android:fillColor="#D9F76A" />
+    <path
+        android:pathData="M38,36.5H60"
+        android:strokeColor="#B3FFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M45.6,48.8a2.4,2.4 0,1 0,4.8,0a2.4,2.4 0,1 0,-4.8,0ZM57.6,48.8a2.4,2.4 0,1 0,4.8,0a2.4,2.4 0,1 0,-4.8,0Z"
+        android:fillColor="#14131C" />
+    <path
+        android:pathData="M46.8,53.6Q54,60.8 61.2,53.6"
+        android:strokeColor="#14131C"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round" />
+</vector>

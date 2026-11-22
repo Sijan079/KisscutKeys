@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.example.stickers.shared.db"
+        namespace = "app.kisscut.keys.shared.db"
         compileSdk = 37
         minSdk = 26
     }

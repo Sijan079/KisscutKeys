@@ -1,6 +1,6 @@
 # BRAND.md
 
-Name, icon and listing text. The icon is final. The package ID is a default the user can still change before first release.
+Name, icon and listing text. The icon is final. The package ID is applied in code (2026-11-22) and becomes permanent at the first Play upload.
 
 ## Names
 
@@ -13,7 +13,7 @@ Name, icon and listing text. The icon is final. The package ID is a default the 
 | Short description | Your sticker library, on your keyboard. |
 | Package / `applicationId` | `app.kisscut.keys` (permanent once published; confirm with the user first) |
 
-Kotlin namespace and Gradle module names follow the package ID. Replace `com.example.stickers` everywhere.
+Kotlin namespace follows the package ID: `app.kisscut.keys`, with `app.kisscut.keys.shared.core` and `app.kisscut.keys.shared.db` for the shared modules. The theme style is `Theme.KisscutKeys`. Gradle module names (`shared:db`, `shared:core`, `ui:android`) stay as they are.
 
 ## Icon: the keycap
 
