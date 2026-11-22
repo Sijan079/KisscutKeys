@@ -13,6 +13,7 @@ import androidx.core.view.WindowCompat
 import com.example.stickers.App
 import com.example.stickers.MainActivity
 import com.example.stickers.R
+import com.example.stickers.debug.FieldTypesLog
 import com.example.stickers.shared.core.KeyboardTab
 import com.example.stickers.shared.core.StickerKind
 import com.example.stickers.shared.db.Sticker
@@ -73,6 +74,7 @@ class StickerImeService : InputMethodService() {
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        info?.let(FieldTypesLog::log)
         password = info != null && isPasswordField(info.inputType)
         val start = fieldStart(info?.inputType ?: 0, view)
         typing?.apply {
