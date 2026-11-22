@@ -61,8 +61,8 @@ Done when: on the emulator, typing "Hi there" plus a sticker into `ImeTestActivi
 
 ## M4.5: Smaller storage and file types
 First, check the send rule (send the stored type if the field accepts it, else a PNG copy, else the clipboard):
-- [ ] Debug-only log in the keyboard of the MIME types each field accepts (`src/debug`, nothing in release)
-- [ ] The user taps the text box in WhatsApp, Discord, Messenger, Google Messages, Telegram on their phone; record each list in KEYBOARD's app table and check the rule fits before changing the stored format
+- [x] Debug-only log in the keyboard of the MIME types each field accepts (`src/debug`, nothing in release)
+- [x] The user taps the text box in WhatsApp, Discord, Messenger, Google Messages, Telegram on their phone; record each list in KEYBOARD's app table and check the rule fits before changing the stored format
 
 Still images:
 - [ ] Accept JPEG; still images stored at most 512px as lossless WebP (PNG on API 26-28), never bigger than the input (IMPORT_EXPORT, Stored format)
@@ -153,3 +153,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-21, M4.2: Opens on the view used last (kept in memory while the keyboard runs, not saved). Enter sends `\n` with commitText for new lines, not a KEYCODE_ENTER event, because some chat apps treat that key as Send.
 - 2026-11-21, M4.2: Gotchas: in strings.xml `?123` must be written `\?123` (a leading `?` is a theme reference) and the backslash in `=\<` doubled; a MATCH_PARENT child of a wrap-content FrameLayout in an IME window takes the whole screen, so the frame is measured to the sticker panel's height. With a phone plugged in, `installDebug` and `connectedAndroidTest` hit both devices: set `ANDROID_SERIAL=emulator-5554` for tests.
 - 2026-11-21, M4.2: Not built: key preview popups, long-press for accents or digits, other layouts and languages. No board exists for the letters; screenshots in artifacts/ (typing-dark, typing-light).
+- 2026-11-22, M4.5: Logged the accepted types in 7 apps on the user's phone (KEYBOARD, Real-app checks). The send rule fits: Discord, Telegram, Viber, FB Lite and Google Messages take WebP; WhatsApp and Instagram don't, so they get the PNG copy. WhatsApp lists `image/webp.wasticker`, its own sticker type; not used yet. The release build has a no-op `FieldTypesLog` in `src/release`.

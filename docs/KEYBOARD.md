@@ -94,3 +94,17 @@ Enable and select the IME via adb: `adb shell ime enable <APP_ID>/<service class
 | App | Device | Date | Build | Typing | Still sticker | GIF | Notes |
 |---|---|---|---|---|---|---|---|
 | Discord | Xiaomi M2103K19G (user's phone) | 2026-11-21 | M4.2 (stickers stored as received: PNG/WebP/GIF) | works | works | works | Direct insert vs clipboard paste not noted; re-check after M4.5 makes WebP the stored format |
+
+Types each app's message box accepts from keyboards, read with the debug-only `FieldTypesLog` (`adb logcat -s StickerFieldTypes`; on the user's phone run `adb logcat -G 16M` first, the default 256 KB buffer drops lines). Same phone, 2026-11-22.
+
+| App | Accepts | Stored still WebP goes as |
+|---|---|---|
+| Discord | `image/*` | WebP |
+| Telegram | `image/gif`, `image/*`, `image/jpg`, `image/png`, `image/webp` | WebP |
+| Viber | `image/*` | WebP |
+| Facebook Lite | `image/*` | WebP |
+| Google Messages | `image/*`, `video/*`, `audio/*`, documents | WebP |
+| WhatsApp | `image/gif`, `video/x.looping_mp4`, `image/jpeg`, `image/jpg`, `image/png`, `image/webp.wasticker` | PNG copy (no plain `image/webp`) |
+| Instagram | `image/png`, `image/jpeg`, `image/gif` | PNG copy |
+
+Animated WebP has no accepted type in WhatsApp or Instagram, so it gets the "can't send" hint there. WhatsApp's `image/webp.wasticker` is its own sticker type (WebP, 512x512); sending as it is not built.
