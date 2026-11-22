@@ -94,7 +94,7 @@ Native Android Views (RecyclerView), not Compose. Reasons: `InputMethodService` 
 
 ## Open decisions (ask the user)
 
-- Final app name and `<APP_ID>` (package). Use `com.example.stickers` until told.
+- Package ID: default `app.kisscut.keys` (see `docs/BRAND.md`). Confirm with the user before first Play upload, since it cannot change later.
 - Free-tier limits for the $1 unlock.
 - Whether to add Koin.
 - Shrinking animated stickers: decided for GIF (own Kotlin encoder, no library, ROADMAP M4.5). Animated WebP would need libwebp; still undecided, stored unchanged.

@@ -7,7 +7,7 @@ import com.example.stickers.ui.theme.stickerColorScheme
 import com.example.stickers.ui.theme.stickerColors
 
 /**
- * The die-cut tokens from Theme.kt as ARGB ints for the View-based panel. No hex values here:
+ * The Kisscut tokens from Theme.kt as ARGB ints for the View-based panel. No hex values here:
  * the keyboard reads the same tokens as the app (docs/KEYBOARD.md, States to handle).
  */
 data class KeyboardPalette(

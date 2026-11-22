@@ -1,12 +1,12 @@
 # UI_SPEC.md
 
 Source of truth: the "Sticker app: UI designs" artifact.
-- Page **Die-cut**: the target look. Dark screens in the top row, light screens directly below. Boards: Look (design language), Keyboard setup, Library, Inside a collection, Keyboard in a chat, Save with nested picker.
+- Page **Kisscut**: the target look. Dark screens in the top row, light screens directly below. Boards: Look (design language), Keyboard setup, Library, Inside a collection, Keyboard in a chat, Save with nested picker.
 - Page **Skeletal**: the plain reference version of every screen.
 
-All eight screens now exist in Die-cut, dark and light. Skeletal's Collections list and Settings were also updated (nested tree, theme row), so the Skeletal page matches this spec.
+All eight screens now exist in Kisscut, dark and light. Skeletal's Collections list and Settings were also updated (nested tree, theme row), so the Skeletal page matches this spec.
 
-Boards on the Die-cut page for the three most recent screens: "Collections, nested", "Select mode", "Settings" (each with a light twin).
+Boards on the Kisscut page for the three most recent screens: "Collections, nested", "Select mode", "Settings" (each with a light twin).
 
 Screen-specific notes from those designs:
 - **Collections list:** each row is a Surface card with up to three overlapping mini stickers, name (Bricolage 17/700), total count including subcollections, and a chevron button (48dp) to expand or collapse. Children indent with a 2dp Line-colored rail on the left; depth 3 is the maximum. An expanded top-level row uses Raised fill. System rows: Favorites (heart on pink tint) and Unsorted (tray icon) have no chevron. A dashed "New collection" row ends the list; a lime "New" pill sits in the header.
@@ -14,7 +14,7 @@ Screen-specific notes from those designs:
 - **Settings:** keyboard status card (lime tint, tappable, leads to keyboard setup), a Theme segmented control (System, Dark, Light; selected segment uses the inverted fill), grouped rows with violet icon tiles for Backup and sharing, switches with a lime track and Ink knob, and a storage row. The nav shows Settings as the active lime pill.
 - Light-mode substitutions for these: violet icons use #5B4BD6, selection ring and check badge use Olive (#4D6B00) with a white check.
 
-## Look: "Die-cut"
+## Look: "Kisscut"
 
 Dark, sticker-first. Every transparent sticker gets a white cut line and a soft shadow, like a real sticker. Color lives in the stickers; the interface stays quiet.
 

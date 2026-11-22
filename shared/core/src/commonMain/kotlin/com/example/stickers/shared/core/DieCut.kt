@@ -10,7 +10,7 @@ class ArgbImage(val width: Int, val height: Int, val pixels: IntArray) {
 }
 
 /**
- * The die-cut look (docs/UI_SPEC.md): a white cut line around the shape of a transparent sticker.
+ * The Kisscut look's cut line (docs/UI_SPEC.md): a white line around the shape of a transparent sticker.
  * Baked once into the thumbnail at import; never computed while scrolling. The soft shadow is drawn by
  * the UI, because its strength differs between dark and light themes.
  */

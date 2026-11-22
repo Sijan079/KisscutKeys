@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Sticker manager + custom keyboard for Android (Google Play). Kotlin Multiplatform shared logic, native Android UI, native keyboard. iOS comes later and is out of scope now.
+Kisscut Keys: sticker manager + custom keyboard for Android (Google Play). Kotlin Multiplatform shared logic, native Android UI, native keyboard. iOS comes later and is out of scope now.
 
 Read this file first, then the doc for the area you are touching.
 
@@ -17,8 +17,9 @@ Read this file first, then the doc for the area you are touching.
 | `docs/IMPORT_EXPORT.md` | `.stickerpack` format, security rules |
 | `docs/TESTING.md` | What to test and how, per layer |
 | `docs/ROADMAP.md` | Ordered milestones and the current task |
+| `docs/BRAND.md` | App name, package ID, launcher icon spec |
 
-Design source of truth: the "Sticker app: UI designs" artifact. Die-cut (dark and light) is the target look. Skeletal is the plain reference. If a doc and a design disagree, ask the user.
+Design source of truth: the "Sticker app: UI designs" artifact. Kisscut (dark and light) is the target look. Skeletal is the plain reference. If a doc and a design disagree, ask the user.
 
 ## Ground rules
 

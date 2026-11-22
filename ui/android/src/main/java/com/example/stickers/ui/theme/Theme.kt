@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.stickers.R
 
 // ---------------------------------------------------------------------------------------------
-// Raw tokens from docs/UI_SPEC.md ("Die-cut"). The only place hex values may appear.
+// Raw tokens from docs/UI_SPEC.md ("Kisscut"). The only place hex values may appear.
 // Note: "Ink" names two different colors in the spec: the dark background (#0F0E15) and the
 // light-mode text (#14131C). They are kept apart here as DarkInk and LightInk.
 // ---------------------------------------------------------------------------------------------

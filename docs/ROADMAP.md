@@ -96,7 +96,7 @@ Done when: round-trip test and all rejection tests pass.
 ## M6: Polish and release prep
 - [ ] Performance pass: scrolling with 2000 stickers, animated items only when visible, memory check
 - [ ] Release build config: minify, shrink, signing config read from user-provided properties (never commit secrets)
-- [ ] App icon, name, Play listing assets (ask the user for name and direction)
+- [ ] App icon, name, Play listing assets (final: see `docs/BRAND.md`)
 - [ ] Privacy statement text for the listing (draft for the user to review)
 - [ ] Entitlements interface and $1 unlock plumbing, behind a flag (ask the user for free-tier limits first)
 - [ ] Manual test checklist for real chat apps (for the user)

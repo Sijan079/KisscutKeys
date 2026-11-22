@@ -69,7 +69,7 @@ object TileTags {
 }
 
 /**
- * One sticker in the die-cut look (docs/UI_SPEC.md, Sticker rendering):
+ * One sticker in the Kisscut look (docs/UI_SPEC.md, Sticker rendering):
  * transparent stills sit on a tinted tile with the baked cut line plus a drawn shadow; opaque images fill a
  * rounded tile; animated ones are a plain tile with a GIF badge. [selected] null means not in select mode.
  */
