@@ -42,8 +42,9 @@ enum class InsertOutcome {
 
 /**
  * Sends a sticker to the app being typed in (docs/KEYBOARD.md, Inserting a sticker): commit-content when the
- * field accepts the type, a PNG copy when it only takes PNG, otherwise the clipboard. Never changes the
- * stored file. [markUsed] runs only after a successful commit.
+ * field accepts the type, a PNG copy when it only takes PNG, otherwise the clipboard (still stickers as a PNG
+ * copy, since pasting WebP fails in some apps). Never changes the stored file. [markUsed] runs only after a
+ * successful commit.
  */
 class StickerInserter(
     private val context: Context,
@@ -75,14 +76,21 @@ class StickerInserter(
                 if (commit(connection!!, editor!!, storedUri, sticker.mimeType)) return sent(sticker)
             }
             InsertRoute.COMMIT_AS_PNG -> {
-                val png = withContext(Dispatchers.IO) { pngCopyOf(stored, sticker.hash) }
+                val png = withContext(Dispatchers.IO) { pngCopyOf(stored, "${sticker.hash}.png") }
                 val pngUri = png?.let(::uriOf)
                 if (pngUri != null && commit(connection!!, editor!!, pngUri, PNG)) return sent(sticker)
             }
             else -> Unit
         }
         // Not committed: offer it on the clipboard instead. Never claim it was sent.
-        if (!copy(storedUri, sticker.mimeType)) return InsertOutcome.FAILED
+        val clipPng = if (!sticker.isAnimated && sticker.mimeType != PNG) {
+            withContext(Dispatchers.IO) { clipPngOf(stored, sticker.hash) }?.let(::uriOf)
+        } else {
+            null
+        }
+        // If the copy can't be made (too big, undecodable), the stored file still goes on the clipboard.
+        val copied = if (clipPng != null) copy(clipPng, PNG) else copy(storedUri, sticker.mimeType)
+        if (!copied) return InsertOutcome.FAILED
         return if (route == InsertRoute.CLIPBOARD_TYPE_REJECTED) {
             InsertOutcome.COPIED_TYPE_REJECTED
         } else {
@@ -115,8 +123,17 @@ class StickerInserter(
 
     private fun uriOf(file: File): Uri? = runCatching { FileProvider.getUriForFile(context, authority, file) }.getOrNull()
 
-    /** Lossless PNG with the same pixels, in `cache/send/`. Null if it cannot be decoded or is too big. */
-    private fun pngCopyOf(source: File, hash: String): File? {
+    /**
+     * The clipboard's PNG copy. Named apart from the send copies so the next send does not delete what the
+     * clipboard still points to; the previous clipboard copy is removed here instead.
+     */
+    private fun clipPngOf(source: File, hash: String): File? {
+        sendDir.listFiles()?.filter { it.name.startsWith(CLIP_PREFIX) }?.forEach { it.delete() }
+        return pngCopyOf(source, "$CLIP_PREFIX$hash.png")
+    }
+
+    /** Lossless PNG named [name] with the same pixels, in `cache/send/`. Null if undecodable or too big. */
+    private fun pngCopyOf(source: File, name: String): File? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(source.path, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
@@ -127,7 +144,7 @@ class StickerInserter(
         ) ?: return null
         return try {
             sendDir.mkdirs()
-            val out = File(sendDir, "$hash.png")
+            val out = File(sendDir, name)
             out.outputStream().use { if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) return null }
             out
         } finally {
@@ -135,13 +152,14 @@ class StickerInserter(
         }
     }
 
-    /** PNG copies live until the next send. */
+    /** Send copies live until the next send; the clipboard copy until the next clipboard copy. */
     private fun clearSendFolder() {
-        sendDir.listFiles()?.forEach { it.delete() }
+        sendDir.listFiles()?.filterNot { it.name.startsWith(CLIP_PREFIX) }?.forEach { it.delete() }
     }
 
     private companion object {
         const val SEND_DIR = "send"
+        const val CLIP_PREFIX = "clip-"
         const val PNG = "image/png"
 
         /** About 64 MB of pixels; bigger stills are copied to the clipboard instead of converted. */

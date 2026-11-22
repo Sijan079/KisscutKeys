@@ -94,8 +94,9 @@ class KeyboardTest {
 
         val got = waitFor { ImeTestActivity.received.firstOrNull() }
         assertEquals(ImeTestActivity.FIELD_ANY, got.field)
-        assertEquals("image/png", got.mimeType)
-        assertEquals("image/png", got.resolvedType)
+        // Stored as PNG or lossless WebP, whichever was smaller; the field takes any image, so it goes as stored.
+        assertEquals(reactions.mimeType, got.mimeType)
+        assertEquals(reactions.mimeType, got.resolvedType)
         waitFor { service().lastOutcome?.takeIf { it == InsertOutcome.SENT } }
 
         val used = waitFor { runBlocking { container.stickers.observeRecents().first() }.firstOrNull() }
@@ -144,6 +145,27 @@ class KeyboardTest {
         assertEquals(app.packageName + ".fileprovider", clip.getItemAt(0).uri.authority)
         // Copying is not sending: no use recorded.
         assertNull(runBlocking { container.stickers.observeRecents().first() }.firstOrNull())
+    }
+
+    @Test
+    fun webpOnTheClipboardIsAPngCopyThatOutlivesTheNextSend() {
+        focusStickers { it.plain }
+        tab(KeyboardTags.collection(workId))
+        tapSticker(webp)
+
+        waitFor { service().lastOutcome?.takeIf { it == InsertOutcome.COPIED } }
+        val clip = onMain { service().inserterForTest?.lastCopied } ?: fail("nothing copied")
+        assertTrue(clip.description.hasMimeType("image/png"), "pasting WebP fails in some apps")
+        val copy = File(File(app.cacheDir, "send"), clip.getItemAt(0).uri.lastPathSegment!!)
+        assertTrue(copy.isFile, copy.path)
+
+        // A later send clears its own copies, but not the file the clipboard points to.
+        focusStickers { it.pngOnly }
+        tab(KeyboardTags.collection(workId))
+        tapSticker(webp)
+        waitFor { ImeTestActivity.received.firstOrNull() }
+        assertTrue(copy.isFile, "clipboard copy still there")
+        assertTrue(container.originalOf(webp)!!.name.endsWith(".webp"), "stored file untouched")
     }
 
     @Test
