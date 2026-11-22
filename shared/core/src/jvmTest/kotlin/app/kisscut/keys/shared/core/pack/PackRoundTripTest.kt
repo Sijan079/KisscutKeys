@@ -6,6 +6,8 @@ import app.kisscut.keys.shared.core.CollectionRepository
 import app.kisscut.keys.shared.core.FakeFileStore
 import app.kisscut.keys.shared.core.FakeStillConverter
 import app.kisscut.keys.shared.core.FakeThumbnailer
+import app.kisscut.keys.shared.core.FileArea
+import app.kisscut.keys.shared.core.FileStore
 import app.kisscut.keys.shared.core.ImageType
 import app.kisscut.keys.shared.core.ImportResult
 import app.kisscut.keys.shared.core.RejectReason
@@ -36,15 +38,16 @@ import kotlin.test.assertTrue
 /** Export and import end to end on a real in-memory database (docs/IMPORT_EXPORT.md, Tests). */
 class PackRoundTripTest {
     /** One app's library: database, files and the pieces that work on them. */
-    private class Library(val limits: PackLimits = PackLimits()) {
+    private class Library(val limits: PackLimits = PackLimits(), failWritesAfter: Int? = null) {
         val db: StickerDatabase = inMemoryStickerDatabase()
         val files = FakeFileStore()
+        private val store: FileStore = failWritesAfter?.let { FailingWrites(files, it) } ?: files
         val converter = FakeStillConverter()
         val clock = TestClock()
-        val stickers = StickerRepository(db, files, clock)
-        val collections = CollectionRepository(db, files, clock)
-        val importer = StickerImporter(stickers, files, FakeThumbnailer(), converter)
-        val exporter = PackExporter(db, files, clock, "test", limits)
+        val stickers = StickerRepository(db, store, clock)
+        val collections = CollectionRepository(db, store, clock)
+        val importer = StickerImporter(stickers, store, FakeThumbnailer(), converter)
+        val exporter = PackExporter(db, store, clock, "test", limits)
         val packs = PackImporter(db, importer, clock, limits)
 
         suspend fun save(bytes: ByteArray, collectionId: Long?) =
@@ -70,6 +73,15 @@ class PackRoundTripTest {
         suspend fun collectionPaths() = collections.observeAll().first().map { it.name }.sorted()
 
         fun close() = db.close()
+    }
+
+    /** Writes start failing after [okWrites] (a disk filling up). */
+    private class FailingWrites(private val inner: FakeFileStore, private val okWrites: Int) : FileStore by inner {
+        private var writes = 0
+        override suspend fun write(area: FileArea, relativePath: String, bytes: ByteArray) {
+            if (++writes > okWrites) throw IllegalStateException("disk full")
+            inner.write(area, relativePath, bytes)
+        }
     }
 
     private val a = Library()
@@ -229,6 +241,21 @@ class PackRoundTripTest {
         assertEquals(0, b.stickers.allOnce().size)
         assertEquals(emptyList(), b.collectionPaths())
         assertEquals(emptyMap(), b.files.files.toMap(), "files written before the break are removed")
+    }
+
+    @Test
+    fun aDiskThatFillsUpMidwayUndoesTheWholeImport() = runTest {
+        a.fill()
+        val pack = a.export()
+        val full = Library(failWritesAfter = 4) // two stickers' files fit, the third fails
+        try {
+            assertFailsWith<PackWriteException> { full.import(pack) }
+            assertEquals(0, full.stickers.allOnce().size)
+            assertEquals(emptyList(), full.collectionPaths())
+            assertEquals(emptyMap(), full.files.files.toMap())
+        } finally {
+            full.close()
+        }
     }
 
     @Test

@@ -21,6 +21,9 @@ interface PackSource {
     suspend fun readEntries(onSticker: suspend (path: String, bytes: ByteArray?) -> Unit): ByteArray?
 }
 
+/** Storing a sticker failed during a pack import (disk full, I/O error); the import was undone. */
+class PackWriteException : Exception("could not store a sticker; the import was undone")
+
 /** What an import did (docs/IMPORT_EXPORT.md, Import step 5). */
 data class ImportSummary(
     val added: Int,
@@ -84,7 +87,9 @@ class PackImporter(
                 if (!seen.add(path)) return@readEntries
                 when (val r = if (bytes == null) null else importer.prepare(bytes, entry.hash)) {
                     null -> rejected.count(RejectReason.TOO_LARGE)
-                    is PrepareResult.Rejected -> rejected.count(r.reason)
+                    // A failed write (disk full) is not one bad sticker: stop and undo everything.
+                    is PrepareResult.Rejected ->
+                        if (r.reason == RejectReason.FAILED) throw PackWriteException() else rejected.count(r.reason)
                     is PrepareResult.Duplicate -> duplicates++
                     is PrepareResult.Ready ->
                         if (hashes.add(r.prepared.new.hash)) {

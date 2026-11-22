@@ -132,5 +132,5 @@ Code: `PackExporter` and `PackImporter` in `shared:core` (`pack` package) over `
 - Duplicate import is idempotent.
 - Zip-slip entry, oversized entry, zip bomb, wrong extension with valid PNG bytes, valid extension with garbage bytes, and future version number are each rejected or handled as specified.
 - Nested depth over 3 gets flattened with a report.
-- Failure and cancel midway leave no new rows and no new files.
+- Failure (including a disk that fills up), and cancel midway leave no new rows and no new files.
 - Same-name collections merge; a full export of a library at the limits imports cleanly.
