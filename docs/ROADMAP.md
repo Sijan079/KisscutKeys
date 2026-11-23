@@ -108,7 +108,7 @@ Done when: round-trip test and all rejection tests pass.
 ## M6: Keyboard basics
 Planned 2026-11-23 at the user's request, ahead of release prep (now M9). One commit per step.
 1. [x] Key preview popup on press; long-press a letter for accents (e, a, o, u, i, n, c, s, y, z), long-press period for punctuation. Backspace repeat and the ABC long-press keep working. Accent maps in `TypingLayout.kt`, JVM-tested
-2. [ ] Space-bar cursor slide: drag on space moves the cursor left or right with DPAD key events (never reads the field). Step math JVM-tested
+2. [x] Space-bar cursor slide: drag on space moves the cursor left or right with DPAD key events (never reads the field). Step math JVM-tested
 3. [ ] Emoji page: system emoji by category, filtered with `Paint.hasGlyph()` so old phones show no empty boxes; list kept in code, not `strings.xml`; no new library. Ask the user where the key goes and whether recent emoji are kept (that stores something typed)
 4. [ ] Keyboard settings in the app's Settings screen: key sound, vibration, number row, keyboard height. Height and number row apply to the letters and the sticker panel alike; changes apply at the next field. Keys through the one DataStore delegate, added to DATA_MODEL
 5. [ ] Device tests written for each step (`KeyboardTest`)

@@ -209,6 +209,29 @@ class KeyboardTest {
     }
 
     @Test
+    fun slidingOnSpaceMovesTheCursorWithoutTypingASpace() {
+        focus { it.plain }
+        type(listOf("a", "b", "c").map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "abc" } }
+        val space = waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.SPACE) } }
+        val slop = android.view.ViewConfiguration.get(app).scaledTouchSlop
+        val step = app.resources.displayMetrics.density * 12
+        val start = onMain { space.width / 2f }
+        val down = android.os.SystemClock.uptimeMillis()
+        fun touch(action: Int, x: Float) = onMain {
+            val e = android.view.MotionEvent.obtain(down, android.os.SystemClock.uptimeMillis(), action, x, space.height / 2f, 0)
+            space.dispatchTouchEvent(e)
+            e.recycle()
+        }
+        touch(android.view.MotionEvent.ACTION_DOWN, start)
+        // Past the slop, then two and a half steps left: the cursor moves two characters.
+        touch(android.view.MotionEvent.ACTION_MOVE, start - slop - step * 2.5f)
+        touch(android.view.MotionEvent.ACTION_UP, start - slop - step * 2.5f)
+        type(listOf("x").map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "axbc" } }
+    }
+
+    @Test
     fun accentsAreActionsForTalkBack() {
         focus { it.plain }
         if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)

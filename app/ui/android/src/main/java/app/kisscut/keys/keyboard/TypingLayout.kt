@@ -81,6 +81,34 @@ fun alternateIndex(fingerX: Float, popupLeft: Float, cellWidth: Float, count: In
 fun popupLeft(keyCenterX: Int, popupWidth: Int, containerWidth: Int): Int =
     (keyCenterX - popupWidth / 2).coerceAtMost(containerWidth - popupWidth).coerceAtLeast(0)
 
+/**
+ * Sliding on the space bar moves the cursor (docs/KEYBOARD.md, Cursor slide). A press that never moves past
+ * [startSlop] is a tap and types a space; past it, every [step] pixels moves the cursor one character.
+ */
+class CursorSlide(private val startSlop: Float, private val step: Float) {
+    var sliding = false
+        private set
+    private var anchor = 0f
+
+    fun down(x: Float) {
+        anchor = x
+        sliding = false
+    }
+
+    /** Characters to move for the finger now at [x]: negative is left. */
+    fun move(x: Float): Int {
+        if (!sliding) {
+            val dx = x - anchor
+            if (kotlin.math.abs(dx) < startSlop) return 0
+            sliding = true
+            anchor += if (dx > 0) startSlop else -startSlop
+        }
+        val steps = ((x - anchor) / step).toInt()
+        anchor += steps * step
+        return steps
+    }
+}
+
 enum class ShiftState { OFF, ONCE, LOCKED }
 
 /**

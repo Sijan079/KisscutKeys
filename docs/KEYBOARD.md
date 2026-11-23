@@ -6,7 +6,7 @@ The keyboard is an `InputMethodService` in the Android app module (`keyboard` pa
 
 A basic typing keyboard plus the sticker panel (typing added in ROADMAP M4.2, user's call). Letters, numbers and symbols, no autocorrect, word suggestions, swipe typing or emoji search (autocorrect and swipe are planned in ROADMAP M7; until then they stay out). A sticker key swaps the letters for the sticker panel and an ABC key swaps back. A globe key switches to another keyboard (Android requires every keyboard to offer a way to switch).
 
-Privacy: keys are sent to the field as they are pressed. Nothing typed is stored, logged, read back or sent anywhere. The only reads of the field are the cursor's caps mode (for auto-capitalization) and the editor's action (Send, Search, Done) for the Enter key.
+Privacy: keys are sent to the field as they are pressed. Nothing typed is stored, logged, read back or sent anywhere. The only reads of the field are the cursor's caps mode (for auto-capitalization) and the editor's action (Send, Search, Done) for the Enter key. Moving the cursor uses arrow key events, which read nothing.
 
 ### Typing layout (M4.2)
 
@@ -16,6 +16,7 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 - Enter performs the field's action (Send, Search, Go, Done, Next) unless the field is multi-line or sets `IME_FLAG_NO_ENTER_ACTION`; then it types a new line.
 - Backspace repeats while held. Keys give a light haptic tap.
 - Key popups (M6): a bubble shows the pressed key above it; the key types on release. Holding a key with alternates (accents on e a o u i n c s y z, punctuation on the period) for 350 ms opens a row with the most common choice above the finger; slide to pick, release to type. Accents follow Shift (one with no one-letter capital, like `ß`, stays as it is). TalkBack gets each alternate as a key action ("Type é").
+- Cursor slide (M6): sliding a finger on the space bar past the touch slop moves the cursor one character per 12 dp, with a tick per step, and types no space. The keyboard sends arrow key events (DPAD left and right), so the field moves its own cursor and nothing is read.
 - Number and phone fields open on the `?123` page. Password fields open on letters and the sticker key is off.
 - The keyboard opens on the view used last (letters or stickers), except in password, number and phone fields.
 - Same panel height as the sticker panel, same tokens: keys on Raised, special keys on Line, Enter on Lime.

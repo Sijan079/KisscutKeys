@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
@@ -35,6 +36,9 @@ class TypingView(
     interface Actions {
         fun onText(text: String)
         fun onBackspace()
+
+        /** Moves the cursor [chars] characters; negative is left. */
+        fun onMoveCursor(chars: Int)
         fun onEnter()
         fun onStickers()
         fun onGlobe()
@@ -154,6 +158,7 @@ class TypingView(
                     tap(it)
                     actions.onText(" ")
                 }
+                slideCursor(this)
             }
         is Key.Page -> {
             val label = when (key.to) {
@@ -261,6 +266,34 @@ class TypingView(
         }
     }
 
+    /** Space: a tap types a space, a slide moves the cursor and types nothing. TalkBack taps type a space. */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun slideCursor(view: View) {
+        val slide = CursorSlide(ViewConfiguration.get(context).scaledTouchSlop.toFloat(), dp(SLIDE_STEP_DP).toFloat())
+        view.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.isPressed = true
+                    tap(v)
+                    slide.down(e.x)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val chars = slide.move(e.x)
+                    if (chars != 0) {
+                        v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        actions.onMoveCursor(chars)
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    v.isPressed = false
+                    if (!slide.sliding) actions.onText(" ")
+                }
+                MotionEvent.ACTION_CANCEL -> v.isPressed = false
+            }
+            true
+        }
+    }
+
     /** Deletes once on press, then repeats until the finger lifts. TalkBack taps delete once. */
     @SuppressLint("ClickableViewAccessibility")
     private fun repeatWhileHeld(view: View) {
@@ -352,5 +385,6 @@ class TypingView(
         const val FIRST_REPEAT_MS = 400L
         const val REPEAT_MS = 60L
         const val LONG_PRESS_MS = 350L
+        const val SLIDE_STEP_DP = 12
     }
 }

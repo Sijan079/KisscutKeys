@@ -83,6 +83,29 @@ class TypingLayoutTest {
     }
 
     @Test
+    fun spaceSlideStartsPastTheSlopThenMovesOneCharacterPerStep() {
+        val slide = CursorSlide(startSlop = 20f, step = 10f)
+        slide.down(100f)
+        assertEquals(0, slide.move(115f))
+        assertFalse(slide.sliding, "a small wobble is still a tap")
+        assertEquals(0, slide.move(125f))
+        assertTrue(slide.sliding)
+        assertEquals(1, slide.move(130f))
+        assertEquals(2, slide.move(152f))
+        assertEquals(-3, slide.move(120f))
+    }
+
+    @Test
+    fun spaceSlideWorksLeftAndResetsOnTheNextPress() {
+        val slide = CursorSlide(startSlop = 20f, step = 10f)
+        slide.down(100f)
+        assertEquals(-2, slide.move(55f))
+        slide.down(300f)
+        assertFalse(slide.sliding)
+        assertEquals(0, slide.move(305f))
+    }
+
+    @Test
     fun shiftOnceThenLockThenOff() {
         val s = ShiftLogic()
         s.tap(now = 0)

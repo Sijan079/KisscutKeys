@@ -186,6 +186,12 @@ class StickerImeService : InputMethodService() {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
         }
 
+        /** Arrow key events, like a hardware keyboard: the field moves its own cursor; nothing is read. */
+        override fun onMoveCursor(chars: Int) {
+            val key = if (chars < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+            repeat(kotlin.math.abs(chars)) { sendDownUpKeyEvents(key) }
+        }
+
         override fun onEnter() {
             val info = currentInputEditorInfo
             when (val action = enterAction(info?.imeOptions ?: 0, info?.inputType ?: 0)) {
