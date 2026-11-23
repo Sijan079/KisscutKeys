@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -35,9 +36,16 @@ data class KeyboardUiState(
     val stickers: List<Sticker> = emptyList(),
     /** Collection names by id, for content descriptions. */
     val collectionNames: Map<Long, String> = emptyMap(),
+    /** Category shown on the Emoji tab. */
+    val emojiCategory: EmojiCategory = EmojiCategory.SMILEYS,
 )
 
-private data class Choice(val tab: KeyboardTab?, val chip: Long?, val kind: StickerKind)
+private data class Choice(
+    val tab: KeyboardTab?,
+    val chip: Long?,
+    val kind: StickerKind,
+    val emoji: EmojiCategory = EmojiCategory.SMILEYS,
+)
 
 private data class Library(
     val collections: List<StickerCollection>,
@@ -65,6 +73,7 @@ class KeyboardModel(private val backend: LibraryBackend, scope: CoroutineScope) 
         val tabs = keyboardTabs(collections, hasUnsorted = unsorted.isNotEmpty())
         val start = startTab(tabs) { tab ->
             when (tab) {
+                KeyboardTab.Emoji -> false
                 KeyboardTab.Recents -> recents.isNotEmpty()
                 KeyboardTab.Favorites -> favorites.isNotEmpty()
                 KeyboardTab.Unsorted -> unsorted.isNotEmpty()
@@ -92,6 +101,7 @@ class KeyboardModel(private val backend: LibraryBackend, scope: CoroutineScope) 
                     kind = c.kind,
                     stickers = list.filterKind(c.kind),
                     collectionNames = lib.collections.associate { it.id to it.name },
+                    emojiCategory = c.emoji,
                 )
             }
         }
@@ -110,7 +120,13 @@ class KeyboardModel(private val backend: LibraryBackend, scope: CoroutineScope) 
         choice.value = choice.value.copy(tab = choice.value.tab ?: state.value.tab, kind = kind)
     }
 
+    /** Keeps the Emoji tab and shows [category]. */
+    fun selectEmojiCategory(category: EmojiCategory) {
+        choice.value = choice.value.copy(tab = KeyboardTab.Emoji, emoji = category)
+    }
+
     private fun source(tab: KeyboardTab, chip: Long?): Flow<List<Sticker>> = when (tab) {
+        KeyboardTab.Emoji -> flowOf(emptyList())
         KeyboardTab.Recents -> backend.observeRecents()
         KeyboardTab.Favorites -> backend.observeFavorites()
         KeyboardTab.Unsorted -> backend.observeUnsorted()

@@ -147,4 +147,25 @@ class KeyboardModelTest {
         assertEquals(KeyboardTab.Collection(2, "Office"), m.s.tab)
         stop()
     }
+
+    @Test
+    fun emojiTabComesFirstShowsNoStickersAndKeepsItsCategory() = runTest(dispatcher) {
+        val (m, stop) = model()
+        assertEquals(KeyboardTab.Emoji, m.s.tabs.first())
+        m.selectTab(KeyboardTab.Emoji)
+        advanceUntilIdle()
+        assertEquals(KeyboardTab.Emoji, m.s.tab)
+        assertTrue(m.s.stickers.isEmpty())
+        assertEquals(EmojiCategory.SMILEYS, m.s.emojiCategory)
+        m.selectEmojiCategory(EmojiCategory.FOOD)
+        advanceUntilIdle()
+        assertEquals(KeyboardTab.Emoji, m.s.tab)
+        assertEquals(EmojiCategory.FOOD, m.s.emojiCategory)
+        // Back on stickers and again on Emoji: the category is remembered while the keyboard runs.
+        m.selectTab(KeyboardTab.Favorites)
+        m.selectTab(KeyboardTab.Emoji)
+        advanceUntilIdle()
+        assertEquals(EmojiCategory.FOOD, m.s.emojiCategory)
+        stop()
+    }
 }

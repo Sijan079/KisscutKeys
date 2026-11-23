@@ -197,6 +197,15 @@
     <string name="kb_key_go">Go</string>
     <string name="kb_key_stickers">Stickers</string>
     <string name="kb_type_alternate">Type %1$s</string>
+    <string name="kb_tab_emoji">Emoji</string>
+    <string name="kb_emoji_smileys">Smileys</string>
+    <string name="kb_emoji_people">People</string>
+    <string name="kb_emoji_animals">Animals and nature</string>
+    <string name="kb_emoji_food">Food and drink</string>
+    <string name="kb_emoji_activities">Activities</string>
+    <string name="kb_emoji_travel">Travel and places</string>
+    <string name="kb_emoji_objects">Objects</string>
+    <string name="kb_emoji_symbols">Symbols</string>
 
     <!-- Keyboard setup -->
     <string name="setup_title">Every sticker, one tap away</string>

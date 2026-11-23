@@ -44,6 +44,8 @@ class StickerPanelView(
         fun onChip(id: Long?)
         fun onKind(kind: StickerKind)
         fun onSticker(sticker: Sticker)
+        fun onEmojiCategory(category: EmojiCategory)
+        fun onEmoji(emoji: String)
         fun onLetters()
         fun onGlobeLongPress()
         fun onBackspace()
@@ -63,6 +65,17 @@ class StickerPanelView(
         addItemDecoration(Gap(dp(3)))
         itemAnimator = null
         overScrollMode = OVER_SCROLL_NEVER
+    }
+    private val emojiAdapter = EmojiAdapter(palette, actions::onEmoji)
+    private val emojiGrid = RecyclerView(context).apply {
+        tag = KeyboardTags.GRID_EMOJI
+        layoutManager = GridLayoutManager(context, emojiSpanCount())
+        adapter = emojiAdapter
+        clipToPadding = false
+        setPadding(dp(7), dp(4), dp(7), dp(7))
+        itemAnimator = null
+        overScrollMode = OVER_SCROLL_NEVER
+        visibility = GONE
     }
     private val messageTitle = text(17f, 700, palette.text).apply { gravity = Gravity.CENTER }
     private val messageBody = text(14f, 600, palette.muted).apply { gravity = Gravity.CENTER }
@@ -99,12 +112,14 @@ class StickerPanelView(
     }
     private val middle = LinearLayout(context).apply { orientation = VERTICAL }
     private val kindButtons = mutableMapOf<StickerKind, TextView>()
+    private var kindGroup: View? = null
     private val hideHint = Runnable { hint.visibility = GONE }
 
     private var shownTabs: List<KeyboardTab>? = null
     private var shownTab: KeyboardTab? = null
-    private var shownChips: Pair<List<Pair<Long, String>>, Long?>? = null
+    private var shownChips: Any? = null
     private var shownView: Triple<KeyboardTab, Long?, StickerKind>? = null
+    private var shownEmoji: EmojiCategory? = null
 
     init {
         orientation = VERTICAL
@@ -117,6 +132,7 @@ class StickerPanelView(
 
         val content = FrameLayout(context).apply {
             addView(grid, FrameLayout.LayoutParams(MATCH, MATCH))
+            addView(emojiGrid, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(message, FrameLayout.LayoutParams(MATCH, MATCH))
             addView(
                 hint,
@@ -143,13 +159,22 @@ class StickerPanelView(
             shownTabs = state.tabs
             shownTab = state.tab
         }
-        val chips = state.chips.map { it.id to it.name } to state.chip
+        val emoji = state.tab == KeyboardTab.Emoji
+        val stickerChips = state.chips.map { it.id to it.name }
+        val chips: Any = if (emoji) state.emojiCategory else stickerChips to state.chip
         if (chips != shownChips) {
-            buildChips(chips.first, chips.second)
+            if (emoji) buildEmojiChips(state.emojiCategory) else buildChips(stickerChips, state.chip)
             shownChips = chips
         }
-        chipScroll.visibility = if (state.chips.isEmpty()) GONE else VISIBLE
+        chipScroll.visibility = if (emoji || state.chips.isNotEmpty()) VISIBLE else GONE
         kindButtons.forEach { (kind, button) -> styleSegment(button, kind == state.kind) }
+        // Static and GIF mean nothing for emoji; the space stays so the row does not jump.
+        kindGroup?.visibility = if (emoji) INVISIBLE else VISIBLE
+        if (emoji) {
+            renderEmoji(state.emojiCategory, password)
+            return
+        }
+        emojiGrid.visibility = GONE
 
         adapter.collectionNames = state.collectionNames
         adapter.enabled = !password
@@ -183,6 +208,20 @@ class StickerPanelView(
         openApp.visibility = if (showOpen) VISIBLE else GONE
     }
 
+    private fun renderEmoji(category: EmojiCategory, password: Boolean) {
+        val switched = shownView?.first != KeyboardTab.Emoji || shownEmoji != category
+        shownView = Triple(KeyboardTab.Emoji, null, StickerKind.ALL)
+        shownEmoji = category
+        emojiAdapter.submitList(EmojiAdapter.shown(category)) { if (switched) emojiGrid.scrollToPosition(0) }
+        grid.visibility = GONE
+        emojiGrid.visibility = if (password) GONE else VISIBLE
+        message.visibility = if (password) VISIBLE else GONE
+        messageTitle.visibility = GONE
+        messageBody.text = context.getString(R.string.kb_password)
+        messageBody.visibility = if (password) VISIBLE else GONE
+        openApp.visibility = GONE
+    }
+
     /** A short message over the grid ("Copied. Paste to send."). */
     fun showHint(text: String) {
         hint.text = text
@@ -206,12 +245,14 @@ class StickerPanelView(
         tabs.forEachIndexed { i, tab ->
             val on = tab == selected
             val view = when (tab) {
+                KeyboardTab.Emoji -> iconTab(R.drawable.ic_kb_emoji, R.string.kb_tab_emoji, on)
                 KeyboardTab.Recents -> iconTab(R.drawable.ic_kb_recents, R.string.kb_tab_recents, on)
                 KeyboardTab.Favorites -> iconTab(R.drawable.ic_kb_favorites, R.string.kb_tab_favorites, on)
                 KeyboardTab.Unsorted -> textTab(context.getString(R.string.kb_tab_unsorted), on)
                 is KeyboardTab.Collection -> textTab(tab.name, on)
             }
             view.tag = when (tab) {
+                KeyboardTab.Emoji -> KeyboardTags.EMOJI
                 KeyboardTab.Recents -> KeyboardTags.RECENTS
                 KeyboardTab.Favorites -> KeyboardTags.FAVORITES
                 KeyboardTab.Unsorted -> KeyboardTags.UNSORTED
@@ -250,30 +291,45 @@ class StickerPanelView(
         chipRow.removeAllViews()
         val all = listOf<Pair<Long?, String>>(null to context.getString(R.string.kb_chip_all)) + chips
         all.forEachIndexed { i, (id, name) ->
-            val on = id == selected
-            val chip = text(13f, 700, if (on) palette.onInverse else palette.muted).apply {
-                tag = if (id == null) KeyboardTags.CHIP_ALL else KeyboardTags.chip(id)
-                text = name
-                maxLines = 1
-                ellipsize = TextUtils.TruncateAt.END
-                maxWidth = dp(160)
-                gravity = Gravity.CENTER
-                minWidth = dp(48)
-                setBackgroundKeepPadding(
-                    pill(
-                        fill = if (on) palette.inverse else Color.TRANSPARENT,
-                        visualHeight = 32,
-                        stroke = if (on) palette.inverse else palette.line,
-                    ),
-                    dp(14),
-                )
-                isSelected = on
-                isClickable = true
-                isFocusable = true
-                setOnClickListener { actions.onChip(id) }
-            }
-            chipRow.addView(chip, lp(WRAP, dp(48)).apply { if (i > 0) marginStart = dp(8) })
+            val tag = if (id == null) KeyboardTags.CHIP_ALL else KeyboardTags.chip(id)
+            addChip(i, name, tag, on = id == selected) { actions.onChip(id) }
         }
+    }
+
+    private fun buildEmojiChips(selected: EmojiCategory) {
+        chipRow.removeAllViews()
+        EmojiCategory.entries.forEachIndexed { i, category ->
+            val tag = KeyboardTags.emojiCategory(category.name)
+            addChip(i, context.getString(category.label), tag, on = category == selected) {
+                actions.onEmojiCategory(category)
+            }
+        }
+    }
+
+    private fun addChip(i: Int, name: String, testTag: String, on: Boolean, onClick: () -> Unit) {
+        val chip = text(13f, 700, if (on) palette.onInverse else palette.muted).apply {
+            tag = testTag
+            text = name
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
+            maxWidth = dp(160)
+            gravity = Gravity.CENTER
+            minWidth = dp(48)
+            setBackgroundKeepPadding(
+                pill(
+                    fill = if (on) palette.inverse else Color.TRANSPARENT,
+                    visualHeight = 32,
+                    stroke = if (on) palette.inverse else palette.line,
+                ),
+                dp(14),
+            )
+            isSelected = on
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { onClick() }
+        }
+        chipRow.addView(chip, lp(WRAP, dp(48)).apply { if (i > 0) marginStart = dp(8) })
+        if (on) chipRow.post { chip.requestRectangleOnScreen(android.graphics.Rect(0, 0, chip.width, chip.height)) }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -327,6 +383,7 @@ class StickerPanelView(
             kindButtons[kind] = b
             group.addView(b, lp(WRAP, dp(42)).apply { if (i > 0) marginStart = dp(2) })
         }
+        kindGroup = group
         val center = FrameLayout(context).apply {
             addView(group, FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
         }
@@ -391,6 +448,11 @@ class StickerPanelView(
         return max(MIN_COLUMNS, ((widthDp - 20) / CELL_DP).toInt())
     }
 
+    private fun emojiSpanCount(): Int {
+        val widthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density
+        return max(MIN_EMOJI_COLUMNS, ((widthDp - 14) / EMOJI_CELL_DP).toInt())
+    }
+
     private fun dp(v: Int) = context.dp(v)
     private fun dp(v: Float) = context.dp(v)
 
@@ -411,6 +473,8 @@ class StickerPanelView(
 
         /** 5 columns on a 390dp phone, as on the board; more on wide screens. */
         const val CELL_DP = 70f
+        const val MIN_EMOJI_COLUMNS = 7
+        const val EMOJI_CELL_DP = 48f
         const val HINT_MS = 2500L
 
         fun lp(w: Int, h: Int) = LinearLayout.LayoutParams(w, h)

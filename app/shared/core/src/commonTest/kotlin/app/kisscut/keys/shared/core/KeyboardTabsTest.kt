@@ -17,9 +17,10 @@ class KeyboardTabsTest {
     )
 
     @Test
-    fun tabsAreSystemThenTopLevelInOrder() {
+    fun tabsAreEmojiThenSystemThenTopLevelInOrder() {
         assertEquals(
             listOf(
+                KeyboardTab.Emoji,
                 KeyboardTab.Recents,
                 KeyboardTab.Favorites,
                 KeyboardTab.Collection(1, "Reactions"),
@@ -32,7 +33,10 @@ class KeyboardTabsTest {
     @Test
     fun unsortedTabOnlyWhenItHasStickers() {
         assertEquals(KeyboardTab.Unsorted, keyboardTabs(all, hasUnsorted = true).last())
-        assertEquals(listOf(KeyboardTab.Recents, KeyboardTab.Favorites), keyboardTabs(emptyList(), false))
+        assertEquals(
+            listOf(KeyboardTab.Emoji, KeyboardTab.Recents, KeyboardTab.Favorites),
+            keyboardTabs(emptyList(), false),
+        )
     }
 
     @Test
@@ -54,5 +58,11 @@ class KeyboardTabsTest {
         assertEquals(KeyboardTab.Collection(2, "Work"), startTab(tabs) { it == KeyboardTab.Collection(2, "Work") })
         assertEquals(KeyboardTab.Unsorted, startTab(tabs) { it == KeyboardTab.Unsorted })
         assertEquals(KeyboardTab.Recents, startTab(tabs) { false })
+    }
+
+    @Test
+    fun neverStartsOnEmoji() {
+        val tabs = keyboardTabs(all, hasUnsorted = false)
+        assertEquals(KeyboardTab.Recents, startTab(tabs) { it == KeyboardTab.Emoji })
     }
 }

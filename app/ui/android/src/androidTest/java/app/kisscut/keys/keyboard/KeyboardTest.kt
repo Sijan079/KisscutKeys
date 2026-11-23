@@ -273,6 +273,21 @@ class KeyboardTest {
     }
 
     @Test
+    fun emojiTabTypesEmojiByCategory() {
+        focusStickers { it.plain }
+        tab(KeyboardTags.EMOJI)
+        click(KeyboardTags.emojiCategory(EmojiCategory.FOOD.name))
+        val first = EmojiAdapter.shown(EmojiCategory.FOOD).first()
+        click(KeyboardTags.emoji(first))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == first } }
+        // The sticker type switch means nothing here, so it is hidden.
+        assertEquals(
+            View.INVISIBLE,
+            onMain { (panel().findViewWithTag<View>(KeyboardTags.kind("ALL")).parent as View).visibility },
+        )
+    }
+
+    @Test
     fun switchingTabsAndChipsShowsTheRightStickers() {
         focusStickers { it.anyImage }
         tab(KeyboardTags.collection(reactionsId))

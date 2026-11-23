@@ -21,14 +21,23 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 - The keyboard opens on the view used last (letters or stickers), except in password, number and phone fields.
 - Same panel height as the sticker panel, same tokens: keys on Raised, special keys on Line, Enter on Lime.
 
+### Emoji tab (M6)
+
+- First tab of the sticker panel (user's call, 2026-11-23: a tab, not a key on the letters). Never the tab the panel opens on.
+- Category chips in the chip row: Smileys, People, Animals and nature, Food and drink, Activities, Travel and places, Objects, Symbols. The chosen category is kept while the keyboard runs.
+- A tap types the emoji as text, like a key. No recent emoji (user's call: nothing typed is stored), no search, no skin tones.
+- The All/Static/GIF switch is hidden (kept in place, so the row does not jump). Works with an empty library.
+- The list lives in code (UI strings carry no emoji); emoji the phone cannot draw are left out, so older phones show no empty boxes.
+
 ## Components
 
 All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 
 - `StickerImeService : InputMethodService`: builds both views in `onCreateInputView()` inside a frame sized to the sticker panel, picks the view and page for each field in `onStartInputView()`, sends keys and stickers. All coroutines live in a scope cancelled on rebuild and in `onDestroy`.
 - `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on, alternates and popup placement), unit-tested on the JVM. `KeyPopups`: the preview and alternates bubbles (touch-through `PopupWindow`s anchored to the key, closed when the keyboard hides).
-- `StickerPanelView`: tab row (Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row, `RecyclerView` with `GridLayoutManager`, bottom bar (ABC, All/Static/GIF, Backspace). ABC returns to the letters; long-press opens the system keyboard list.
+- `StickerPanelView`: tab row (Emoji, Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row (emoji categories on the Emoji tab), `RecyclerView` with `GridLayoutManager`, bottom bar (ABC, All/Static/GIF, Backspace). ABC returns to the letters; long-press opens the system keyboard list.
 - `KeyboardModel`: the sticker panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
+- `EmojiCatalog.kt` (`EmojiCategory`): the built-in emoji list by category, JVM-tested. `EmojiAdapter`: the emoji grid; drops emoji the phone's font cannot draw (`Paint.hasGlyph`).
 - `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M9.
 - `StickerInserter`: sends a sticker (see Inserting a sticker). `InputFields.kt`: password detection. `KeyboardPalette`: Theme.kt tokens as ARGB ints.
 - Shared rules in `app/shared/core`: `InsertPlan.kt` (MIME matching and the insert route) and `KeyboardTabs.kt` (tabs, chips, start tab).

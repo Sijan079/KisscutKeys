@@ -32,6 +32,7 @@ object KeyboardTags {
     fun chip(id: Long) = "chip:$id"
     fun kind(name: String) = "kind:$name"
     const val GRID = "kb:grid"
+    const val GRID_EMOJI = "kb:grid-emoji"
     const val MESSAGE = "kb:message"
     const val OPEN_APP = "kb:open-app"
     const val HINT = "kb:hint"
@@ -43,6 +44,11 @@ object KeyboardTags {
     fun key(text: String) = "key:$text"
     /** One choice in the long-press alternates row. */
     fun alternate(text: String) = "alt:$text"
+
+    // Emoji tab
+    const val EMOJI = "tab:emoji"
+    fun emojiCategory(name: String) = "emoji-cat:$name"
+    fun emoji(text: String) = "emoji:$text"
     fun page(name: String) = "key:page:$name"
     const val SPACE = "key:space"
     const val SHIFT = "key:shift"

@@ -214,6 +214,12 @@ class StickerImeService : InputMethodService() {
         override fun onChip(id: Long?) = model.selectChip(id)
         override fun onKind(kind: StickerKind) = model.selectKind(kind)
         override fun onSticker(sticker: Sticker) = send(sticker)
+        override fun onEmojiCategory(category: EmojiCategory) = model.selectEmojiCategory(category)
+
+        /** Emoji go to the field as text, like a key; nothing is kept. */
+        override fun onEmoji(emoji: String) {
+            currentInputConnection?.commitText(emoji, 1)
+        }
         override fun onLetters() = show(KeyboardView.LETTERS)
         override fun onGlobeLongPress() = showPicker()
         override fun onBackspace() = sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
