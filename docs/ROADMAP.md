@@ -99,7 +99,7 @@ Plan agreed 2026-11-22; one commit per step.
 2. [x] Export engine (all or one collection), progress and cancel; round-trip test; exports never exceed the import limits
 3. [x] Import engine: dedupe, same-name merge, flattening, rollback on failure and cancel, free-space check, summary
 4. [x] Settings screen: theme (app and keyboard), export all, export a collection, import, keyboard card
-5. [x] Open `.stickerpack` from other apps, checked on the emulator (Files app, "Open with"); the user's phone is still to try
+5. [x] Open `.stickerpack` from other apps, checked on the emulator (Files app, "Open with"); the user accepted the emulator check, the phone was not tried
 
 Decisions: pack limits 1 GB and 10,000 stickers (IMPORT_EXPORT, Limits); no usage history in packs; same-name collections merge; existing stickers are not moved; the animation toggle moves to M6.
 
