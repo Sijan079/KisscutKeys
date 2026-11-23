@@ -52,7 +52,7 @@ object KeyboardTags {
 
 /**
  * Sticker tiles for the panel grid. Thumbnails only (docs/KEYBOARD.md, Performance); animated stickers show
- * their first frame, like the Library, until playback-while-visible lands in M6.
+ * their first frame, like the Library, until playback-while-visible lands in M9.
  */
 class StickerAdapter(
     private val palette: KeyboardPalette,

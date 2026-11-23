@@ -46,7 +46,7 @@ settings.json        (optional)
 
 ### settings.json (optional: in "Back up everything", never in a shared collection)
 
-`{ "theme": "system" }`. Unknown keys ignored. `animateStickers` joins in M6 with playback. `keyboard_setup_dismissed` is never exported.
+`{ "theme": "system" }`. Unknown keys ignored. `animateStickers` joins in M9 with playback. `keyboard_setup_dismissed` is never exported.
 
 ## Export
 

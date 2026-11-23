@@ -4,7 +4,7 @@ The keyboard is an `InputMethodService` in the Android app module (`keyboard` pa
 
 ## Purpose
 
-A basic typing keyboard plus the sticker panel (typing added in ROADMAP M4.2, user's call). Letters, numbers and symbols, no autocorrect, word suggestions, swipe typing or emoji search. A sticker key swaps the letters for the sticker panel and an ABC key swaps back. A globe key switches to another keyboard (Android requires every keyboard to offer a way to switch).
+A basic typing keyboard plus the sticker panel (typing added in ROADMAP M4.2, user's call). Letters, numbers and symbols, no autocorrect, word suggestions, swipe typing or emoji search (autocorrect and swipe are planned in ROADMAP M7; until then they stay out). A sticker key swaps the letters for the sticker panel and an ABC key swaps back. A globe key switches to another keyboard (Android requires every keyboard to offer a way to switch).
 
 Privacy: keys are sent to the field as they are pressed. Nothing typed is stored, logged, read back or sent anywhere. The only reads of the field are the cursor's caps mode (for auto-capitalization) and the editor's action (Send, Search, Done) for the Enter key.
 
@@ -27,7 +27,7 @@ All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 - `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on), unit-tested on the JVM.
 - `StickerPanelView`: tab row (Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row, `RecyclerView` with `GridLayoutManager`, bottom bar (ABC, All/Static/GIF, Backspace). ABC returns to the letters; long-press opens the system keyboard list.
 - `KeyboardModel`: the sticker panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
-- `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M6.
+- `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M9.
 - `StickerInserter`: sends a sticker (see Inserting a sticker). `InputFields.kt`: password detection. `KeyboardPalette`: Theme.kt tokens as ARGB ints.
 - Shared rules in `app/shared/core`: `InsertPlan.kt` (MIME matching and the insert route) and `KeyboardTabs.kt` (tabs, chips, start tab).
 - Manifest: service with `android.permission.BIND_INPUT_METHOD`, intent filter `android.view.InputMethod`, `meta-data` pointing at `res/xml/method.xml`.

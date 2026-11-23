@@ -101,11 +101,42 @@ Plan agreed 2026-11-22; one commit per step.
 4. [x] Settings screen: theme (app and keyboard), export all, export a collection, import, keyboard card
 5. [x] Open `.stickerpack` from other apps, checked on the emulator (Files app, "Open with"); the user accepted the emulator check, the phone was not tried
 
-Decisions: pack limits 1 GB and 10,000 stickers (IMPORT_EXPORT, Limits); no usage history in packs; same-name collections merge; existing stickers are not moved; the animation toggle moves to M6.
+Decisions: pack limits 1 GB and 10,000 stickers (IMPORT_EXPORT, Limits); no usage history in packs; same-name collections merge; existing stickers are not moved; the animation toggle moves to M9 (was M6 before the 2026-11-23 renumbering).
 
 Done when: round-trip test and all rejection tests pass.
 
-## M6: Polish and release prep
+## M6: Keyboard basics
+Planned 2026-11-23 at the user's request, ahead of release prep (now M9). One commit per step.
+1. [ ] Key preview popup on press; long-press a letter for accents (e, a, o, u, i, n, c, s, y, z), long-press period for punctuation. Backspace repeat and the ABC long-press keep working. Accent maps in `TypingLayout.kt`, JVM-tested
+2. [ ] Space-bar cursor slide: drag on space moves the cursor left or right with DPAD key events (never reads the field). Step math JVM-tested
+3. [ ] Emoji page: system emoji by category, filtered with `Paint.hasGlyph()` so old phones show no empty boxes; list kept in code, not `strings.xml`; no new library. Ask the user where the key goes and whether recent emoji are kept (that stores something typed)
+4. [ ] Keyboard settings in the app's Settings screen: key sound, vibration, number row, keyboard height. Height and number row apply to the letters and the sticker panel alike; changes apply at the next field. Keys through the one DataStore delegate, added to DATA_MODEL
+5. [ ] Device tests written for each step (`KeyboardTest`)
+6. [ ] Emulator check with screenshots (deferred by the user on 2026-11-23; ask before booting)
+
+Done when: JVM tests pass, device tests pass on the emulator, and screenshots of the new keyboard parts are in `artifacts/`.
+
+## M7: Swipe typing and autocorrect
+Changes a v1 non-goal (PRODUCT, KEYBOARD); confirm with the user before starting.
+- [ ] Bundled English word list with a license that allows shipping (ask the user to approve the list and its size)
+- [ ] Suggestion strip above the letters; autocorrect on space, undo with Backspace; on or off in Settings
+- [ ] Swipe typing: trace across letters, best word from the list, alternatives in the strip
+- [ ] All on the device; nothing typed is learned, stored or sent. Privacy text updated
+- [ ] Off in password, number, phone, email and URL fields
+
+Done when: swipe and autocorrect work on the emulator, JVM tests cover matching and correction, and tests pass.
+
+## M8: Sticker auto-tagging and quick search
+Changes two v1 non-goals (no ML, no search); confirm with the user before starting.
+- [ ] Choose the on-device image labelling library with the user (rule 7); works without the INTERNET permission
+- [ ] Tags table and migration (with a test over old data); labels made on save and for the existing library in the background
+- [ ] Users can add, edit and remove tags
+- [ ] Search in the app and in the keyboard panel by tag and collection name
+- [ ] Tags in `.stickerpack` (optional field; older packs still import)
+
+Done when: new and old stickers get tags on the emulator, search finds them in the app and the keyboard, and tests pass.
+
+## M9: Polish and release prep
 - [ ] Performance pass: scrolling with 2000 stickers, animated items only when visible, memory check
 - [ ] Animated sticker playback (app and keyboard) and the Settings animation toggle (`animateStickers`), moved from M5
 - [ ] Release build config: minify, shrink, signing config read from user-provided properties (never commit secrets)
@@ -117,8 +148,7 @@ Done when: round-trip test and all rejection tests pass.
 Done when: signed release bundle builds and the manual checklist exists.
 
 ## Later (not planned yet)
-- On-device auto-suggestions for collections (ML)
-- Search
+- Voice typing (needs the microphone permission and Android's on-device recognizer, Android 12 and up)
 - iOS port (SwiftUI or Compose Multiplatform; keyboard cannot insert images directly there, clipboard only)
 - Direct sharing without a file (needs a network decision)
 - WhatsApp: send as `image/webp.wasticker` (512x512 WebP, at most 100 KB) to skip WhatsApp's "send as sticker?" prompt. Only if the prompt annoys users.
@@ -189,3 +219,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-23, M5.4-5: Device tests caught that debug builds replace `res/xml/file_paths.xml` (`src/debug`), so the new `cache/export/` path was missing there; both files now say to stay in sync. Forced Light under a dark system left the status bar icons white; the activity now sets the bar icon colors from the app theme. Checked by hand on the emulator: Back up everything through the system save dialog (32 stickers, 567 KB), emptied the library, opened the backup from the Files app ("Open with: Kisscut Keys"), all 32 stickers, 9 collections and favorites back; Share a collection hands `Reactions.stickerpack` to the share sheet; the keyboard is light under forced Light. Device tests 68/68.
 - 2026-11-23, M5: Noticed, not changed: in light mode dialog buttons (OK, Cancel) use lime text on a light dialog, hard to read; it comes from the shared light color scheme, so it needs a design call.
 - 2026-11-23: The Gradle project (wrapper, settings, `gradle/`, `shared/`, `ui/`) moved into `app/`; run Gradle from there. Older notes above use the old root paths.
+- 2026-11-23: Renumbered. New M6 (keyboard basics), M7 (swipe and autocorrect), M8 (auto-tagging and search); release prep moved from M6 to M9. Earlier notes that say M6 mean today's M9.
