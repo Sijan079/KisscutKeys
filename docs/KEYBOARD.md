@@ -25,7 +25,7 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 
 In the app's Settings screen, Keyboard group:
 
-- Sound on key press (default off): the system key-click sound at the phone's touch-sound volume.
+- Sound on key press (default off): the system key-click sound, a little under media volume. Plays even when the phone's Touch sounds are off (this switch is the setting).
 - Vibrate on key press (default on): the light haptic tap.
 - Number row (default off): digits 1 to 0 above the letters. The panel grows by one key row, so keys keep their size.
 - Keyboard height: Small (0.85x), Normal, Large (1.15x). The letters and the sticker panel share the height.
@@ -38,7 +38,7 @@ Sound and vibration apply on the next tap (`KeyFeedback` reads them each time). 
 - Category chips in the chip row: Smileys, People, Animals and nature, Food and drink, Activities, Travel and places, Objects, Symbols. The chosen category is kept while the keyboard runs.
 - A tap types the emoji as text, like a key. No recent emoji (user's call: nothing typed is stored), no search, no skin tones.
 - The All/Static/GIF switch is hidden (kept in place, so the row does not jump). Works with an empty library.
-- The list lives in code (UI strings carry no emoji); emoji the phone cannot draw are left out, so older phones show no empty boxes.
+- The list lives in code (UI strings carry no emoji); emoji the phone cannot draw are left out, so older phones show no empty boxes. Symbols that default to text style (heart, plane, arrows) carry U+FE0F so they show and send in color; a JVM test checks this.
 
 ## Components
 

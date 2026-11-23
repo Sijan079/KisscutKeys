@@ -36,6 +36,8 @@ internal class EmojiAdapter(
     override fun onBindViewHolder(holder: Cell, position: Int) {
         val emoji = getItem(position)
         holder.view.text = emoji
+        // TalkBack reads an emoji's name from the emoji itself.
+        holder.view.contentDescription = emoji
         holder.view.tag = KeyboardTags.emoji(emoji)
         holder.view.setOnClickListener {
             feedback.tap(it)
