@@ -33,3 +33,6 @@ desktop.ini
 
 # Local copy of the original starter docs (the live docs are in docs/)
 dev-docs/
+
+# Local PowerShell helper scripts (kept on this machine only)
+scripts/
