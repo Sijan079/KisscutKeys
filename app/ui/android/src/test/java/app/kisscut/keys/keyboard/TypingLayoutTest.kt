@@ -44,6 +44,45 @@ class TypingLayoutTest {
     }
 
     @Test
+    fun longPressLettersOfferAccentsMostCommonFirst() {
+        assertEquals(listOf("é", "è", "ê", "ë", "ē"), alternates("e", upper = false))
+        assertEquals(listOf("ñ", "ń"), alternates("n", upper = false))
+        assertTrue(alternates("q", upper = false).isEmpty())
+        for (letter in "eaouincsyz") assertTrue(alternates(letter.toString(), upper = false).isNotEmpty(), "$letter")
+    }
+
+    @Test
+    fun accentsFollowShiftButNeverGrowLonger() {
+        assertEquals(listOf("É", "È", "Ê", "Ë", "Ē"), alternates("e", upper = true))
+        // ß has no one-letter capital ("SS"), so it stays as it is.
+        assertEquals(listOf("ß", "Ś", "Š"), alternates("s", upper = true))
+    }
+
+    @Test
+    fun longPressPeriodOffersPunctuation() {
+        val marks = alternates(".", upper = true)
+        assertTrue(marks.containsAll(listOf("?", "!", "'", "-")))
+        assertTrue(marks.all { it.length == 1 && !it[0].isLetter() })
+    }
+
+    @Test
+    fun slidingPicksTheAlternateUnderTheFinger() {
+        assertEquals(0, alternateIndex(fingerX = -40f, popupLeft = 0f, cellWidth = 100f, count = 4))
+        assertEquals(0, alternateIndex(fingerX = 50f, popupLeft = 0f, cellWidth = 100f, count = 4))
+        assertEquals(2, alternateIndex(fingerX = 260f, popupLeft = 0f, cellWidth = 100f, count = 4))
+        assertEquals(3, alternateIndex(fingerX = 900f, popupLeft = 0f, cellWidth = 100f, count = 4))
+        assertEquals(1, alternateIndex(fingerX = 370f, popupLeft = 250f, cellWidth = 100f, count = 4))
+    }
+
+    @Test
+    fun popupsStayInsideTheKeyboard() {
+        assertEquals(150, popupLeft(keyCenterX = 200, popupWidth = 100, containerWidth = 1000))
+        assertEquals(0, popupLeft(keyCenterX = 20, popupWidth = 300, containerWidth = 1000))
+        assertEquals(700, popupLeft(keyCenterX = 990, popupWidth = 300, containerWidth = 1000))
+        assertEquals(0, popupLeft(keyCenterX = 50, popupWidth = 1200, containerWidth = 1000))
+    }
+
+    @Test
     fun shiftOnceThenLockThenOff() {
         val s = ShiftLogic()
         s.tap(now = 0)

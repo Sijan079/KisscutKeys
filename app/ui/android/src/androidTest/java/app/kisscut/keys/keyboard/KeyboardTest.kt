@@ -189,6 +189,41 @@ class KeyboardTest {
     }
 
     @Test
+    fun holdingALetterAndSlidingTypesAnAccent() {
+        focus { it.plain }
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        val key = waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.key("e")) } }
+        val down = android.os.SystemClock.uptimeMillis()
+        fun touch(action: Int, x: Float) = onMain {
+            val e = android.view.MotionEvent.obtain(down, android.os.SystemClock.uptimeMillis(), action, x, key.height / 2f, 0)
+            key.dispatchTouchEvent(e)
+            e.recycle()
+        }
+        touch(android.view.MotionEvent.ACTION_DOWN, key.width / 2f)
+        Thread.sleep(700)
+        // The first choice sits above the finger: one key width to the right is the second, "è".
+        touch(android.view.MotionEvent.ACTION_MOVE, key.width * 1.5f)
+        touch(android.view.MotionEvent.ACTION_UP, key.width * 1.5f)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t.isNotEmpty() } }
+        assertTrue(scenarioText { it.plain } in setOf("è", "È"), scenarioText { it.plain })
+    }
+
+    @Test
+    fun accentsAreActionsForTalkBack() {
+        focus { it.plain }
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        val key = waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.key("n")) } }
+        val label = app.getString(R.string.kb_type_alternate, "ñ")
+        onMain {
+            val info = android.view.accessibility.AccessibilityNodeInfo.obtain()
+            key.onInitializeAccessibilityNodeInfo(info)
+            val action = info.actionList.first { it.label == label }
+            key.performAccessibilityAction(action.id, null)
+        }
+        waitFor { scenarioText { it.plain }.takeIf { t -> t.equals("ñ", ignoreCase = true) } }
+    }
+
+    @Test
     fun enterRunsTheFieldsSendAction() {
         focus { it.send }
         type(listOf("o", "k").map(::keyTag))

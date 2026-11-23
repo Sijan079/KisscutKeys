@@ -41,6 +41,8 @@ object KeyboardTags {
 
     // Typing keyboard
     fun key(text: String) = "key:$text"
+    /** One choice in the long-press alternates row. */
+    fun alternate(text: String) = "alt:$text"
     fun page(name: String) = "key:page:$name"
     const val SPACE = "key:space"
     const val SHIFT = "key:shift"

@@ -196,6 +196,7 @@
     <string name="kb_key_done">Done</string>
     <string name="kb_key_go">Go</string>
     <string name="kb_key_stickers">Stickers</string>
+    <string name="kb_type_alternate">Type %1$s</string>
 
     <!-- Keyboard setup -->
     <string name="setup_title">Every sticker, one tap away</string>

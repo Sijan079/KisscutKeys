@@ -15,6 +15,7 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 - `?123` page: digits and common symbols, with a `=\<` page for the rest. `ABC` returns to letters.
 - Enter performs the field's action (Send, Search, Go, Done, Next) unless the field is multi-line or sets `IME_FLAG_NO_ENTER_ACTION`; then it types a new line.
 - Backspace repeats while held. Keys give a light haptic tap.
+- Key popups (M6): a bubble shows the pressed key above it; the key types on release. Holding a key with alternates (accents on e a o u i n c s y z, punctuation on the period) for 350 ms opens a row with the most common choice above the finger; slide to pick, release to type. Accents follow Shift (one with no one-letter capital, like `ß`, stays as it is). TalkBack gets each alternate as a key action ("Type é").
 - Number and phone fields open on the `?123` page. Password fields open on letters and the sticker key is off.
 - The keyboard opens on the view used last (letters or stickers), except in password, number and phone fields.
 - Same panel height as the sticker panel, same tokens: keys on Raised, special keys on Line, Enter on Lime.
@@ -24,7 +25,7 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 
 - `StickerImeService : InputMethodService`: builds both views in `onCreateInputView()` inside a frame sized to the sticker panel, picks the view and page for each field in `onStartInputView()`, sends keys and stickers. All coroutines live in a scope cancelled on rebuild and in `onDestroy`.
-- `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on), unit-tested on the JVM.
+- `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on, alternates and popup placement), unit-tested on the JVM. `KeyPopups`: the preview and alternates bubbles (touch-through `PopupWindow`s anchored to the key, closed when the keyboard hides).
 - `StickerPanelView`: tab row (Recents, Favorites, top-level collections, Unsorted while non-empty), subcollection chip row, `RecyclerView` with `GridLayoutManager`, bottom bar (ABC, All/Static/GIF, Backspace). ABC returns to the letters; long-press opens the system keyboard list.
 - `KeyboardModel`: the sticker panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
 - `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M9.

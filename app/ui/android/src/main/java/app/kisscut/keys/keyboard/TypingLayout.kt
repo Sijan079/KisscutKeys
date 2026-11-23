@@ -48,6 +48,39 @@ fun typingRows(page: TypingPage): List<List<Key>> {
     }
 }
 
+/** Long-press choices per key (docs/KEYBOARD.md, Key popups), most common first. */
+private val ALTERNATES = mapOf(
+    "e" to "éèêëē",
+    "a" to "áàâäãåæā",
+    "o" to "óòôöõøœō",
+    "u" to "úùûüū",
+    "i" to "íìîïī",
+    "n" to "ñń",
+    "c" to "çćč",
+    "s" to "ßśš",
+    "y" to "ýÿ",
+    "z" to "žźż",
+    "." to "?!'\"-:;@&",
+)
+
+/** What a long-press on [key] offers. Letters follow [upper]; one that has no one-letter capital stays as it is. */
+fun alternates(key: String, upper: Boolean): List<String> {
+    val chars = ALTERNATES[key] ?: return emptyList()
+    return chars.map { c ->
+        val s = c.toString()
+        val up = s.uppercase()
+        if (upper && up.length == 1) up else s
+    }
+}
+
+/** Which of [count] alternates, each [cellWidth] wide from [popupLeft], is under [fingerX]. */
+fun alternateIndex(fingerX: Float, popupLeft: Float, cellWidth: Float, count: Int): Int =
+    ((fingerX - popupLeft) / cellWidth).toInt().coerceIn(0, count - 1)
+
+/** Left edge of a popup centered on a key, kept inside the keyboard's width. */
+fun popupLeft(keyCenterX: Int, popupWidth: Int, containerWidth: Int): Int =
+    (keyCenterX - popupWidth / 2).coerceAtMost(containerWidth - popupWidth).coerceAtLeast(0)
+
 enum class ShiftState { OFF, ONCE, LOCKED }
 
 /**

@@ -131,6 +131,7 @@ class StickerImeService : InputMethodService() {
     override fun onFinishInputView(finishingInput: Boolean) {
         super.onFinishInputView(finishingInput)
         panel?.clearHint()
+        typing?.dismissPopups()
     }
 
     /** Never take over the screen in landscape: the chat must stay visible. */

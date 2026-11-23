@@ -49,6 +49,7 @@ class TypingView(
     private var stickersAllowed = true
     private val letterLabels = mutableListOf<Pair<TextView, String>>()
     private var shiftIcon: ImageView? = null
+    private val popups = KeyPopups(context, palette, this)
 
     init {
         orientation = VERTICAL
@@ -103,7 +104,16 @@ class TypingView(
         }
     }
 
+    /** Closes the key preview and alternates; call when the keyboard hides. */
+    fun dismissPopups() = popups.dismissAll()
+
+    override fun onDetachedFromWindow() {
+        popups.dismissAll()
+        super.onDetachedFromWindow()
+    }
+
     private fun build() {
+        popups.dismissAll()
         removeAllViews()
         letterLabels.clear()
         shiftIcon = null
@@ -127,10 +137,13 @@ class TypingView(
             val letter = key.text.length == 1 && key.text[0].isLetter()
             textKey(key.text, special = false, tag = KeyboardTags.key(key.text)).also { cell ->
                 if (letter) letterLabels += (cell.getChildAt(0) as TextView) to key.text
+                val main = { if (letter) shift.apply(key.text) else key.text }
+                // TalkBack and tests tap through the click; a finger goes through pressWithPopups.
                 cell.setOnClickListener {
                     tap(it)
-                    actions.onText(if (letter) shift.apply(key.text) else key.text)
+                    actions.onText(main())
                 }
+                pressWithPopups(cell, key.text, main)
             }
         }
         Key.Space -> textKey(context.getString(R.string.kb_key_space_label), special = false, tag = KeyboardTags.SPACE)
@@ -204,6 +217,48 @@ class TypingView(
                     true
                 }
             }
+    }
+
+    /**
+     * A finger on a text key: the preview shows on press and the key types on release. Holding a key that
+     * has alternates opens them; sliding picks one and releasing types it. TalkBack gets each alternate as an
+     * action on the key ("Type é").
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun pressWithPopups(cell: FrameLayout, key: String, main: () -> String) {
+        val upper = { shift.state != ShiftState.OFF }
+        val hasAlternates = alternates(key, upper = false).isNotEmpty()
+        val open = Runnable { popups.showAlternates(cell, alternates(key, upper())) }
+        cell.setOnTouchListener { v, e ->
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.isPressed = true
+                    tap(v)
+                    popups.showPreview(v, main())
+                    if (hasAlternates) v.postDelayed(open, LONG_PRESS_MS)
+                }
+                MotionEvent.ACTION_MOVE -> popups.moveFinger(e.x)
+                MotionEvent.ACTION_UP -> {
+                    v.isPressed = false
+                    v.removeCallbacks(open)
+                    val picked = popups.chosen
+                    if (popups.alternatesShown) popups.dismissAll() else popups.hidePreview(v)
+                    actions.onText(picked ?: main())
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    v.isPressed = false
+                    v.removeCallbacks(open)
+                    popups.dismissAll()
+                }
+            }
+            true
+        }
+        alternates(key, upper = false).forEachIndexed { i, option ->
+            ViewCompat.addAccessibilityAction(cell, context.getString(R.string.kb_type_alternate, option)) { _, _ ->
+                actions.onText(alternates(key, upper())[i])
+                true
+            }
+        }
     }
 
     /** Deletes once on press, then repeats until the finger lifts. TalkBack taps delete once. */
@@ -296,5 +351,6 @@ class TypingView(
         const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
         const val FIRST_REPEAT_MS = 400L
         const val REPEAT_MS = 60L
+        const val LONG_PRESS_MS = 350L
     }
 }
