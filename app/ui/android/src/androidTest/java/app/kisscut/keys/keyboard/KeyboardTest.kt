@@ -13,6 +13,9 @@ import app.kisscut.keys.AppContainer
 import app.kisscut.keys.R
 import app.kisscut.keys.debug.ImeTestActivity
 import app.kisscut.keys.debug.SeedData
+import app.kisscut.keys.settings.KeyboardHeight
+import app.kisscut.keys.settings.KeyboardSettings
+import app.kisscut.keys.settings.KeyboardSettingsStore
 import app.kisscut.keys.keyboard.StickerImeService.Companion.inserterForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.loadedForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.panelForTest
@@ -50,6 +53,7 @@ class KeyboardTest {
     private lateinit var dir: File
     private lateinit var container: AppContainer
     private lateinit var scenario: ActivityScenario<ImeTestActivity>
+    private val keyboardSettings = MemoryKeyboardSettings()
 
     private lateinit var reactions: Sticker
     private lateinit var cat: Sticker
@@ -64,7 +68,7 @@ class KeyboardTest {
         realContainer = app.container
         db = Room.inMemoryDatabaseBuilder(app, StickerDatabase::class.java).buildStickerDatabase()
         dir = File(app.filesDir, "ime-test").apply { deleteRecursively(); mkdirs() }
-        container = AppContainer(app, db, dir)
+        container = AppContainer(app, db, dir, keyboardSettings)
         app.container = container
 
         reactionsId = container.collections.create("Reactions", null).id
@@ -194,11 +198,7 @@ class KeyboardTest {
         if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
         val key = waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.key("e")) } }
         val down = android.os.SystemClock.uptimeMillis()
-        fun touch(action: Int, x: Float) = onMain {
-            val e = android.view.MotionEvent.obtain(down, android.os.SystemClock.uptimeMillis(), action, x, key.height / 2f, 0)
-            key.dispatchTouchEvent(e)
-            e.recycle()
-        }
+        fun touch(action: Int, x: Float) = touch(key, down, action, x)
         touch(android.view.MotionEvent.ACTION_DOWN, key.width / 2f)
         Thread.sleep(700)
         // The first choice sits above the finger: one key width to the right is the second, "è".
@@ -218,17 +218,30 @@ class KeyboardTest {
         val step = app.resources.displayMetrics.density * 12
         val start = onMain { space.width / 2f }
         val down = android.os.SystemClock.uptimeMillis()
-        fun touch(action: Int, x: Float) = onMain {
-            val e = android.view.MotionEvent.obtain(down, android.os.SystemClock.uptimeMillis(), action, x, space.height / 2f, 0)
-            space.dispatchTouchEvent(e)
-            e.recycle()
-        }
+        fun touch(action: Int, x: Float) = touch(space, down, action, x)
         touch(android.view.MotionEvent.ACTION_DOWN, start)
         // Past the slop, then two and a half steps left: the cursor moves two characters.
         touch(android.view.MotionEvent.ACTION_MOVE, start - slop - step * 2.5f)
         touch(android.view.MotionEvent.ACTION_UP, start - slop - step * 2.5f)
         type(listOf("x").map(::keyTag))
         waitFor { scenarioText { it.plain }.takeIf { t -> t == "axbc" } }
+    }
+
+    @Test
+    fun numberRowAndHeightRebuildTheKeyboard() {
+        focus { it.plain }
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        val before = onMain { service().typingForTest!!.height }
+        assertNull(onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.key("1")) })
+
+        keyboardSettings.settings.value = KeyboardSettings(numberRow = true, height = KeyboardHeight.LARGE)
+        waitFor { container.keyboardSettings.value.takeIf { it.numberRow } }
+        onMain { service().rebuildForTest() }
+        // Letters open with digits on top, and the keyboard is taller.
+        click(KeyboardTags.key("1"), inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "1" } }
+        val after = waitFor { onMain { service().typingForTest!!.height.takeIf { h -> h > before } } }
+        assertTrue(after > before)
     }
 
     @Test
@@ -277,7 +290,7 @@ class KeyboardTest {
         focusStickers { it.plain }
         tab(KeyboardTags.EMOJI)
         click(KeyboardTags.emojiCategory(EmojiCategory.FOOD.name))
-        val first = EmojiAdapter.shown(EmojiCategory.FOOD).first()
+        val first = onMain { EmojiAdapter.shown(EmojiCategory.FOOD).first() }
         click(KeyboardTags.emoji(first))
         waitFor { scenarioText { it.plain }.takeIf { t -> t == first } }
         // The sticker type switch means nothing here, so it is hidden.
@@ -392,6 +405,14 @@ class KeyboardTest {
         else -> false
     }
 
+    /** Sends one finger event at [x], mid-height, to [view]; [down] is when the press began. */
+    private fun touch(view: View, down: Long, action: Int, x: Float) = onMain {
+        val now = android.os.SystemClock.uptimeMillis()
+        val e = android.view.MotionEvent.obtain(down, now, action, x, view.height / 2f, 0)
+        view.dispatchTouchEvent(e)
+        e.recycle()
+    }
+
     private fun <T> onMain(block: () -> T): T {
         var result: Result<T>? = null
         instrumentation.runOnMainSync { result = runCatching(block) }
@@ -435,5 +456,13 @@ class KeyboardTest {
         fun restoreKeyboard() {
             if (previousIme.isNotEmpty() && previousIme != "null" && previousIme != IME_ID) shell("ime set $previousIme")
         }
+    }
+}
+
+/** Keyboard settings in memory: tests never write the phone's real settings file. */
+private class MemoryKeyboardSettings : KeyboardSettingsStore {
+    override val settings = kotlinx.coroutines.flow.MutableStateFlow(KeyboardSettings())
+    override suspend fun set(settings: KeyboardSettings) {
+        this.settings.value = settings
     }
 }

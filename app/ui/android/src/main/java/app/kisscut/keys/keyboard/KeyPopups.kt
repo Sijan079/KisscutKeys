@@ -73,7 +73,8 @@ internal class KeyPopups(
         alternatesWindow.contentView = row
         // The first (most common) choice sits right above the finger; the rest follow to its right.
         val width = (cellWidth * options.size).toInt()
-        alternatesLeft = place(alternatesWindow, key, width, visual.height(), shift = (width - cellWidth.toInt()) / 2).toFloat()
+        val shift = (width - cellWidth.toInt()) / 2
+        alternatesLeft = place(alternatesWindow, key, width, visual.height(), shift).toFloat()
         highlight()
         key.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
     }
@@ -116,7 +117,11 @@ internal class KeyPopups(
         val y = -key.height - height + context.dp(6)
         window.width = width
         window.height = height
-        if (window.isShowing) window.update(key, left, y, width, height) else window.showAsDropDown(key, left, y, Gravity.NO_GRAVITY)
+        if (window.isShowing) {
+            window.update(key, left, y, width, height)
+        } else {
+            window.showAsDropDown(key, left, y, Gravity.NO_GRAVITY)
+        }
         return left
     }
 

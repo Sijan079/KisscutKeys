@@ -58,6 +58,8 @@ class AppContainer(
     /** Tests only: an in-memory database and a separate files folder instead of the real library. */
     databaseOverride: StickerDatabase? = null,
     private val filesDir: File = context.applicationContext.filesDir,
+    /** Tests only: keyboard settings kept in memory, so the real settings file is never written. */
+    keyboardSettingsOverride: KeyboardSettingsStore? = null,
 ) {
     private val appContext = context.applicationContext
     private val clock: () -> Long = { System.currentTimeMillis() }
@@ -82,7 +84,9 @@ class AppContainer(
         themeStore.theme.stateIn(scope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
     }
 
-    val keyboardSettingsStore: KeyboardSettingsStore by lazy { DataStoreKeyboardSettingsStore(appContext) }
+    val keyboardSettingsStore: KeyboardSettingsStore by lazy {
+        keyboardSettingsOverride ?: DataStoreKeyboardSettingsStore(appContext)
+    }
 
     /** Keyboard settings as last read, for the keyboard (read when a field opens). */
     val keyboardSettings: StateFlow<KeyboardSettings> by lazy {

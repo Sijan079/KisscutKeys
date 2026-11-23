@@ -111,8 +111,8 @@ Planned 2026-11-23 at the user's request, ahead of release prep (now M9). One co
 2. [x] Space-bar cursor slide: drag on space moves the cursor left or right with DPAD key events (never reads the field). Step math JVM-tested
 3. [x] Emoji page: system emoji by category, filtered with `Paint.hasGlyph()` so old phones show no empty boxes; list kept in code, not `strings.xml`; no new library. User's calls: an Emoji tab first in the sticker panel (no new key), categories only, no recent emoji
 4. [x] Keyboard settings in the app's Settings screen: key sound, vibration, number row, keyboard height. Height and number row apply to the letters and the sticker panel alike; changes apply at the next field. Keys through the one DataStore delegate, added to DATA_MODEL. Not exported in backups (no pack change)
-5. [x] Device tests written for each step (`KeyboardTest`, `SettingsUiTest`); not run yet. Number row and height on the real keyboard are JVM-tested only: a device test would write the emulator's real settings file
-6. [ ] Emulator check with screenshots (deferred by the user on 2026-11-23; ask before booting)
+5. [x] Device tests written for each step (`KeyboardTest`, `SettingsUiTest`); not run yet. `KeyboardTest` uses in-memory keyboard settings, so it never writes the real settings file
+6. [ ] Emulator check with screenshots (deferred by the user on 2026-11-23; ask before booting). Look at: previews on the top letter row (q to p) show above the keyboard; sliding right past the end of the text in a field with another field after it does not jump to that field; key sound plays with the phone's Touch sounds off; symbol emoji (heart, plane) show in color
 
 Done when: JVM tests pass, device tests pass on the emulator, and screenshots of the new keyboard parts are in `artifacts/`.
 

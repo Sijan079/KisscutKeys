@@ -10,7 +10,8 @@ Everything stays on the device: no internet permission, no accounts, no analytic
 - **Save** stickers from the share sheet or an in-app picker (PNG, JPEG, WebP, GIF, animated WebP)
 - **Library** with favorites, recents and "Unsorted"
 - **Collections**, nestable up to 3 levels, with bulk move, favorite and delete
-- **Keyboard** with basic typing (QWERTY, numbers, symbols) and a sticker panel; it never stores or sends what you type
+- **Keyboard** with basic typing (QWERTY, numbers, symbols), key popups with accents, a space bar that slides the cursor, an Emoji tab and a sticker panel; it never stores or sends what you type
+- **Keyboard settings**: key sound, vibration, number row and height
 - **Insert** stickers into chat apps, with a clipboard fallback when an app does not accept images
 - **Backup and share** as `.stickerpack` files
 
