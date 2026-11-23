@@ -14,3 +14,22 @@ local.properties
 
 # Screenshots and UI dumps
 artifacts/
+
+# Signing and release secrets
+keystore.properties
+*.apk
+*.aab
+
+# Logs and crash dumps
+*.log
+hs_err_pid*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+*.swp
+
+# Local copy of the original starter docs (the live docs are in docs/)
+dev-docs/
