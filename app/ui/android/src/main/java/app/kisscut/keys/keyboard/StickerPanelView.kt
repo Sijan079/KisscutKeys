@@ -37,6 +37,10 @@ class StickerPanelView(
     private val palette: KeyboardPalette,
     thumbnailOf: (Sticker) -> File?,
     private val actions: Actions,
+    feedback: KeyFeedback,
+    /** Height setting (Settings, Keyboard); the letters take the same height. */
+    private val heightScale: Float = 1f,
+    private val numberRow: Boolean = false,
 ) : LinearLayout(context) {
 
     interface Actions {
@@ -66,7 +70,7 @@ class StickerPanelView(
         itemAnimator = null
         overScrollMode = OVER_SCROLL_NEVER
     }
-    private val emojiAdapter = EmojiAdapter(palette, actions::onEmoji)
+    private val emojiAdapter = EmojiAdapter(palette, feedback, actions::onEmoji)
     private val emojiGrid = RecyclerView(context).apply {
         tag = KeyboardTags.GRID_EMOJI
         layoutManager = GridLayoutManager(context, emojiSpanCount())
@@ -436,12 +440,15 @@ class StickerPanelView(
         addView(child)
     }
 
-    /** About 40% of the screen in total (UI_SPEC), never less than one row of stickers. */
-    private fun middleHeight(): Int {
-        val screen = resources.displayMetrics.heightPixels
-        val chrome = dp(8 + 48 + 2 + 48 + 10)
-        return max(dp(48 + 96), (screen * PANEL_SHARE).toInt() - chrome)
-    }
+    /** About 40% of the screen in total (UI_SPEC) at Normal height, never less than one row of stickers. */
+    private fun middleHeight(): Int = panelMiddleHeight(
+        screenPx = resources.displayMetrics.heightPixels,
+        chromePx = dp(8 + 48 + 2 + 48 + 10),
+        minPx = dp(48 + 96),
+        scale = heightScale,
+        numberRow = numberRow,
+        share = PANEL_SHARE,
+    )
 
     private fun spanCount(): Int {
         val widthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density

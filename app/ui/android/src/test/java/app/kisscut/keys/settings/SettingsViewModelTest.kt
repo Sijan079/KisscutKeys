@@ -26,6 +26,13 @@ class SettingsViewModelTest {
         }
     }
 
+    private class FakeKeyboard : KeyboardSettingsStore {
+        override val settings = MutableStateFlow(KeyboardSettings())
+        override suspend fun set(settings: KeyboardSettings) {
+            this.settings.value = settings
+        }
+    }
+
     @Before
     fun setUp() = Dispatchers.setMain(dispatcher)
 
@@ -37,7 +44,7 @@ class SettingsViewModelTest {
         val themes = FakeThemes()
         val count = MutableStateFlow(2)
         var bytes = 100L
-        val vm = SettingsViewModel(themes, count) { bytes }
+        val vm = SettingsViewModel(themes, FakeKeyboard(), count) { bytes }
         advanceUntilIdle()
         assertEquals(SettingsUiState(ThemeMode.SYSTEM, 2, 100), vm.state.value)
 
@@ -46,6 +53,27 @@ class SettingsViewModelTest {
         vm.setTheme(ThemeMode.DARK)
         advanceUntilIdle()
         assertEquals(SettingsUiState(ThemeMode.DARK, 3, 250), vm.state.value)
+    }
+
+    @Test
+    fun keyboardSettingsDefaultToVibrationOnlyAndSaveChanges() = runTest(dispatcher) {
+        val keyboard = FakeKeyboard()
+        val vm = SettingsViewModel(FakeThemes(), keyboard, MutableStateFlow(0)) { 0 }
+        advanceUntilIdle()
+        assertEquals(KeyboardSettings(keySound = false, vibration = true, numberRow = false), vm.state.value.keyboard)
+        vm.setKeyboard(KeyboardSettings(keySound = true, numberRow = true, height = KeyboardHeight.LARGE))
+        advanceUntilIdle()
+        assertEquals(KeyboardHeight.LARGE, keyboard.settings.value.height)
+        assertTrue(vm.state.value.keyboard.keySound)
+        assertTrue(vm.state.value.keyboard.numberRow)
+    }
+
+    @Test
+    fun keyboardHeights() {
+        assertEquals(KeyboardHeight.SMALL, KeyboardHeight.of("small"))
+        assertEquals(KeyboardHeight.NORMAL, KeyboardHeight.of("huge"))
+        assertEquals(KeyboardHeight.NORMAL, KeyboardHeight.of(null))
+        assertTrue(KeyboardHeight.SMALL.scale < 1f && KeyboardHeight.LARGE.scale > 1f)
     }
 
     @Test

@@ -23,6 +23,24 @@ class TypingLayoutTest {
     }
 
     @Test
+    fun numberRowAddsDigitsAboveTheLettersOnly() {
+        val rows = typingRows(TypingPage.LETTERS, numberRow = true)
+        assertEquals(listOf("1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm", ",."), rows.map(::texts))
+        assertEquals(4, typingRows(TypingPage.SYMBOLS, numberRow = true).size)
+    }
+
+    @Test
+    fun panelHeightFollowsTheSettings() {
+        val normal = panelMiddleHeight(screenPx = 2000, chromePx = 300, minPx = 200, scale = 1f, numberRow = false)
+        assertEquals(500, normal)
+        assertEquals(425, panelMiddleHeight(2000, 300, 200, scale = 0.85f, numberRow = false))
+        assertEquals(575, panelMiddleHeight(2000, 300, 200, scale = 1.15f, numberRow = false))
+        // One more key row: a quarter of the whole panel (middle plus chrome) on top.
+        assertEquals(500 + 200, panelMiddleHeight(2000, 300, 200, scale = 1f, numberRow = true))
+        assertEquals(200, panelMiddleHeight(400, 300, 200, scale = 0.85f, numberRow = false))
+    }
+
+    @Test
     fun symbolPagesLinkBackToLetters() {
         val symbols = typingRows(TypingPage.SYMBOLS)
         assertEquals("1234567890", texts(symbols[0]))

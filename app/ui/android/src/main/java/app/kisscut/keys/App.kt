@@ -8,7 +8,10 @@ import app.kisscut.keys.backup.AndroidPackBackend
 import app.kisscut.keys.backup.PackBackend
 import app.kisscut.keys.common.AppLibraryBackend
 import app.kisscut.keys.common.LibraryBackend
+import app.kisscut.keys.settings.DataStoreKeyboardSettingsStore
 import app.kisscut.keys.settings.DataStoreThemeStore
+import app.kisscut.keys.settings.KeyboardSettings
+import app.kisscut.keys.settings.KeyboardSettingsStore
 import app.kisscut.keys.settings.ThemeMode
 import app.kisscut.keys.settings.ThemeStore
 import app.kisscut.keys.setup.AndroidKeyboardStatus
@@ -77,6 +80,13 @@ class AppContainer(
     /** The theme setting as last read, for the keyboard (which builds its views synchronously). */
     val theme: StateFlow<ThemeMode> by lazy {
         themeStore.theme.stateIn(scope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
+    }
+
+    val keyboardSettingsStore: KeyboardSettingsStore by lazy { DataStoreKeyboardSettingsStore(appContext) }
+
+    /** Keyboard settings as last read, for the keyboard (read when a field opens). */
+    val keyboardSettings: StateFlow<KeyboardSettings> by lazy {
+        keyboardSettingsStore.settings.stateIn(scope, SharingStarted.Eagerly, KeyboardSettings())
     }
 
     val appVersion: String by lazy {

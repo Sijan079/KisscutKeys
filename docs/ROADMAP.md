@@ -110,7 +110,7 @@ Planned 2026-11-23 at the user's request, ahead of release prep (now M9). One co
 1. [x] Key preview popup on press; long-press a letter for accents (e, a, o, u, i, n, c, s, y, z), long-press period for punctuation. Backspace repeat and the ABC long-press keep working. Accent maps in `TypingLayout.kt`, JVM-tested
 2. [x] Space-bar cursor slide: drag on space moves the cursor left or right with DPAD key events (never reads the field). Step math JVM-tested
 3. [x] Emoji page: system emoji by category, filtered with `Paint.hasGlyph()` so old phones show no empty boxes; list kept in code, not `strings.xml`; no new library. User's calls: an Emoji tab first in the sticker panel (no new key), categories only, no recent emoji
-4. [ ] Keyboard settings in the app's Settings screen: key sound, vibration, number row, keyboard height. Height and number row apply to the letters and the sticker panel alike; changes apply at the next field. Keys through the one DataStore delegate, added to DATA_MODEL
+4. [x] Keyboard settings in the app's Settings screen: key sound, vibration, number row, keyboard height. Height and number row apply to the letters and the sticker panel alike; changes apply at the next field. Keys through the one DataStore delegate, added to DATA_MODEL. Not exported in backups (no pack change)
 5. [ ] Device tests written for each step (`KeyboardTest`)
 6. [ ] Emulator check with screenshots (deferred by the user on 2026-11-23; ask before booting)
 

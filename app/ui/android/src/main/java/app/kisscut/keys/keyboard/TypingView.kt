@@ -31,6 +31,8 @@ class TypingView(
     context: Context,
     private val palette: KeyboardPalette,
     private val actions: Actions,
+    private val feedback: KeyFeedback,
+    private val numberRow: Boolean = false,
 ) : LinearLayout(context) {
 
     interface Actions {
@@ -121,7 +123,7 @@ class TypingView(
         removeAllViews()
         letterLabels.clear()
         shiftIcon = null
-        for (row in typingRows(page)) {
+        for (row in typingRows(page, numberRow)) {
             val line = LinearLayout(context).apply {
                 orientation = HORIZONTAL
                 gravity = Gravity.CENTER
@@ -372,9 +374,7 @@ class TypingView(
 
     private fun keyShape(color: Int): Drawable = InsetDrawable(rounded(color, dp(9f)), dp(3), dp(4), dp(3), dp(4))
 
-    private fun tap(v: View) {
-        v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-    }
+    private fun tap(v: View) = feedback.tap(v)
 
     private fun dp(v: Int) = context.dp(v)
     private fun dp(v: Float) = context.dp(v)

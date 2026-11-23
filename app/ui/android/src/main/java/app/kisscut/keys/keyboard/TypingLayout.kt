@@ -20,14 +20,18 @@ sealed class Key(val weight: Float) {
 
 enum class TypingPage { LETTERS, SYMBOLS, MORE_SYMBOLS }
 
-/** The four rows of [page]. Letters are lower case; the view applies Shift. */
-fun typingRows(page: TypingPage): List<List<Key>> {
+/**
+ * The rows of [page]: four, plus digits on top of the letters when [numberRow] is on. Letters are lower case;
+ * the view applies Shift.
+ */
+fun typingRows(page: TypingPage, numberRow: Boolean = false): List<List<Key>> {
     fun row(chars: String) = chars.map { Key.Text(it.toString()) }
     val bottom = { pageKey: Key.Page ->
         listOf(pageKey, Key.Stickers, Key.Globe, Key.Text(","), Key.Space, Key.Text("."), Key.Enter)
     }
     return when (page) {
-        TypingPage.LETTERS -> listOf(
+        TypingPage.LETTERS -> listOfNotNull(
+            if (numberRow) row("1234567890") else null,
             row("qwertyuiop"),
             row("asdfghjkl"),
             listOf(Key.Shift) + row("zxcvbnm") + Key.Backspace,
@@ -107,6 +111,23 @@ class CursorSlide(private val startSlop: Float, private val step: Float) {
         anchor += steps * step
         return steps
     }
+}
+
+/**
+ * Height of the panel's middle part (between the tabs and the bottom row): about [share] of [screenPx] less
+ * [chromePx], times [scale], never under [minPx]. The number row adds one more row of the same size, so the
+ * letters keep their key size.
+ */
+fun panelMiddleHeight(
+    screenPx: Int,
+    chromePx: Int,
+    minPx: Int,
+    scale: Float,
+    numberRow: Boolean,
+    share: Float = 0.40f,
+): Int {
+    val base = maxOf(minPx, ((screenPx * share - chromePx) * scale).toInt())
+    return if (numberRow) base + (base + chromePx) / 4 else base
 }
 
 enum class ShiftState { OFF, ONCE, LOCKED }

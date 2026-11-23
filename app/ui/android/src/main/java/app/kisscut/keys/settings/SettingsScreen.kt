@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -55,18 +57,23 @@ object SettingsTags {
     const val IMPORT = "settings:import"
     const val STORAGE = "settings:storage"
     fun theme(mode: ThemeMode) = "settings:theme:" + mode.key
+    const val KEY_SOUND = "settings:kb-sound"
+    const val VIBRATION = "settings:kb-vibration"
+    const val NUMBER_ROW = "settings:kb-number-row"
+    fun height(height: KeyboardHeight) = "settings:kb-height:" + height.key
 }
 
 /** What the Settings rows do; the activity wires them to the file pickers and the backup dialogs. */
 data class SettingsActions(
     val onTheme: (ThemeMode) -> Unit = {},
+    val onKeyboard: (KeyboardSettings) -> Unit = {},
     val onKeyboardSetup: () -> Unit = {},
     val onBackUp: () -> Unit = {},
     val onShare: () -> Unit = {},
     val onImport: () -> Unit = {},
 )
 
-/** Settings (docs/UI_SPEC.md, Settings board): keyboard card, theme, backup and sharing, storage. */
+/** Settings (docs/UI_SPEC.md, Settings board): keyboard card, theme, keyboard, backup and sharing, storage. */
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
@@ -91,6 +98,9 @@ fun SettingsScreen(
 
             SectionTitle(stringResource(R.string.settings_theme))
             ThemeSegments(state.theme, actions.onTheme)
+
+            SectionTitle(stringResource(R.string.settings_keyboard))
+            KeyboardGroup(state.keyboard, actions.onKeyboard)
 
             SectionTitle(stringResource(R.string.settings_backup))
             Group {
@@ -175,15 +185,86 @@ private fun KeyboardCard(onClick: () -> Unit) {
 
 /** System, Dark, Light; the selected segment uses the inverted fill. */
 @Composable
-private fun ThemeSegments(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
+private fun ThemeSegments(selected: ThemeMode, onPick: (ThemeMode) -> Unit) = Segments(
+    options = listOf(
+        ThemeMode.SYSTEM to R.string.theme_system,
+        ThemeMode.DARK to R.string.theme_dark,
+        ThemeMode.LIGHT to R.string.theme_light,
+    ),
+    selected = selected,
+    tag = SettingsTags::theme,
+    onPick = onPick,
+)
+
+/** Key sound, vibration and number row switches, then the keyboard height. Applied at the next text field. */
+@Composable
+private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSettings) -> Unit) {
+    Group {
+        SwitchRow(R.string.settings_kb_sound, settings.keySound, SettingsTags.KEY_SOUND) {
+            onChange(settings.copy(keySound = it))
+        }
+        HorizontalDivider(color = StickersTheme.colors.line)
+        SwitchRow(R.string.settings_kb_vibration, settings.vibration, SettingsTags.VIBRATION) {
+            onChange(settings.copy(vibration = it))
+        }
+        HorizontalDivider(color = StickersTheme.colors.line)
+        SwitchRow(R.string.settings_kb_number_row, settings.numberRow, SettingsTags.NUMBER_ROW) {
+            onChange(settings.copy(numberRow = it))
+        }
+        HorizontalDivider(color = StickersTheme.colors.line)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Text(
+                stringResource(R.string.settings_kb_height),
+                style = StickerType.Body,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Segments(
+                options = listOf(
+                    KeyboardHeight.SMALL to R.string.settings_kb_height_small,
+                    KeyboardHeight.NORMAL to R.string.settings_kb_height_normal,
+                    KeyboardHeight.LARGE to R.string.settings_kb_height_large,
+                ),
+                selected = settings.height,
+                tag = SettingsTags::height,
+                onPick = { onChange(settings.copy(height = it)) },
+            )
+        }
+    }
+}
+
+/** A row with a title and a switch; the whole row toggles it. */
+@Composable
+private fun SwitchRow(title: Int, checked: Boolean, tag: String, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .padding(horizontal = 16.dp)
+            .testTag(tag),
+    ) {
+        Text(
+            stringResource(title),
+            style = StickerType.Body,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        // The row handles the tap and TalkBack; the switch only shows the state.
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** A segmented choice; the selected segment uses the inverted fill. */
+@Composable
+private fun <T> Segments(options: List<Pair<T, Int>>, selected: T, tag: (T) -> String, onPick: (T) -> Unit) {
     val colors = StickersTheme.colors
     Surface(shape = RoundedCornerShape(26.dp), color = colors.raised, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            for ((mode, label) in listOf(
-                ThemeMode.SYSTEM to R.string.theme_system,
-                ThemeMode.DARK to R.string.theme_dark,
-                ThemeMode.LIGHT to R.string.theme_light,
-            )) {
+            for ((mode, label) in options) {
                 val on = mode == selected
                 Box(
                     contentAlignment = Alignment.Center,
@@ -195,7 +276,7 @@ private fun ThemeSegments(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
                             RoundedCornerShape(22.dp),
                         )
                         .selectable(selected = on, role = Role.RadioButton) { onPick(mode) }
-                        .testTag(SettingsTags.theme(mode)),
+                        .testTag(tag(mode)),
                 ) {
                     Text(
                         stringResource(label),

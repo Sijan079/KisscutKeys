@@ -13,6 +13,7 @@ import androidx.core.view.WindowCompat
 import app.kisscut.keys.App
 import app.kisscut.keys.MainActivity
 import app.kisscut.keys.R
+import app.kisscut.keys.settings.KeyboardHeight
 import app.kisscut.keys.debug.FieldTypesLog
 import app.kisscut.keys.shared.core.KeyboardTab
 import app.kisscut.keys.shared.core.StickerKind
@@ -39,6 +40,9 @@ class StickerImeService : InputMethodService() {
     /** Whether the views were built dark; rebuilt when the Settings theme changed since. */
     private var builtDark: Boolean? = null
 
+    /** Number row and height the views were built with; rebuilt when they changed in Settings. */
+    private var builtLayout: Pair<Boolean, KeyboardHeight>? = null
+
     /** Letters or stickers; kept while the keyboard runs, so it reopens on the view used last. */
     private var view = KeyboardView.LETTERS
 
@@ -60,8 +64,20 @@ class StickerImeService : InputMethodService() {
         inserter = StickerInserter(this, container::originalOf, container.stickers::markUsed)
         val palette = KeyboardPalette.of(this, container.theme.value)
         builtDark = palette.dark
-        val panel = StickerPanelView(this, palette, container::thumbnailOf, Actions(model))
-        val typing = TypingView(this, palette, Keys())
+        val settings = container.keyboardSettings.value
+        builtLayout = settings.numberRow to settings.height
+        // Sound and vibration are read on every tap, so they apply at once.
+        val feedback = KeyFeedback(this) { container.keyboardSettings.value }
+        val panel = StickerPanelView(
+            this,
+            palette,
+            container::thumbnailOf,
+            Actions(model),
+            feedback,
+            heightScale = settings.height.scale,
+            numberRow = settings.numberRow,
+        )
+        val typing = TypingView(this, palette, Keys(), feedback, numberRow = settings.numberRow)
         this.panel = panel
         this.typing = typing
         // The sticker panel sets the height; the letters fill the same space on top of it.
@@ -78,8 +94,10 @@ class StickerImeService : InputMethodService() {
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        val theme = (application as App).container.theme.value
-        if (builtDark != null && KeyboardPalette.of(this, theme).dark != builtDark) setInputView(onCreateInputView())
+        val container = (application as App).container
+        val dark = KeyboardPalette.of(this, container.theme.value).dark
+        val layout = container.keyboardSettings.value.let { it.numberRow to it.height }
+        if (builtDark != null && (dark != builtDark || layout != builtLayout)) setInputView(onCreateInputView())
         info?.let(FieldTypesLog::log)
         password = info != null && isPasswordField(info.inputType)
         val start = fieldStart(info?.inputType ?: 0, view)

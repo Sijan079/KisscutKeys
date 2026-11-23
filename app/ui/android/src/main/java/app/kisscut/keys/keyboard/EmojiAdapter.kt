@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 /** Emoji cells for the Emoji tab. A tap types the emoji; TalkBack reads its name from the text. */
 internal class EmojiAdapter(
     private val palette: KeyboardPalette,
+    private val feedback: KeyFeedback,
     private val onEmoji: (String) -> Unit,
 ) : ListAdapter<String, EmojiAdapter.Cell>(Same) {
 
@@ -37,7 +38,7 @@ internal class EmojiAdapter(
         holder.view.text = emoji
         holder.view.tag = KeyboardTags.emoji(emoji)
         holder.view.setOnClickListener {
-            it.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+            feedback.tap(it)
             onEmoji(emoji)
         }
     }

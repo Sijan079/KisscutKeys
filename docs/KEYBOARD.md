@@ -21,6 +21,17 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 - The keyboard opens on the view used last (letters or stickers), except in password, number and phone fields.
 - Same panel height as the sticker panel, same tokens: keys on Raised, special keys on Line, Enter on Lime.
 
+### Keyboard settings (M6)
+
+In the app's Settings screen, Keyboard group:
+
+- Sound on key press (default off): the system key-click sound at the phone's touch-sound volume.
+- Vibrate on key press (default on): the light haptic tap.
+- Number row (default off): digits 1 to 0 above the letters. The panel grows by one key row, so keys keep their size.
+- Keyboard height: Small (0.85x), Normal, Large (1.15x). The letters and the sticker panel share the height.
+
+Sound and vibration apply on the next tap (`KeyFeedback` reads them each time). Number row and height rebuild the views when the next field opens, like the theme. Not part of backups or shared packs.
+
 ### Emoji tab (M6)
 
 - First tab of the sticker panel (user's call, 2026-11-23: a tab, not a key on the letters). Never the tab the panel opens on.
@@ -39,6 +50,7 @@ All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 - `KeyboardModel`: the sticker panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
 - `EmojiCatalog.kt` (`EmojiCategory`): the built-in emoji list by category, JVM-tested. `EmojiAdapter`: the emoji grid; drops emoji the phone's font cannot draw (`Paint.hasGlyph`).
 - `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M9.
+- `KeyFeedback`: key sound and vibration as set in Settings. Settings live in `settings/KeyboardSettings.kt`.
 - `StickerInserter`: sends a sticker (see Inserting a sticker). `InputFields.kt`: password detection. `KeyboardPalette`: Theme.kt tokens as ARGB ints.
 - Shared rules in `app/shared/core`: `InsertPlan.kt` (MIME matching and the insert route) and `KeyboardTabs.kt` (tabs, chips, start tab).
 - Manifest: service with `android.permission.BIND_INPUT_METHOD`, intent filter `android.view.InputMethod`, `meta-data` pointing at `res/xml/method.xml`.

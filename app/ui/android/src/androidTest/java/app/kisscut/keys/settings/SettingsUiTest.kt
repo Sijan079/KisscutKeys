@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -92,6 +94,29 @@ class SettingsUiTest {
         rule.onNodeWithTag(SettingsTags.STORAGE).performScrollTo()
         rule.onNodeWithText("38 stickers", substring = true).assertExists()
         rule.onNodeWithTag(PartTags.NAV_ADD).assertDoesNotExist() // nothing to add from Settings
+    }
+
+    @Test
+    fun keyboardSwitchesAndHeightChangeTheSettings() {
+        var keyboard by mutableStateOf(KeyboardSettings())
+        rule.setContent {
+            StickersTheme {
+                SettingsScreen(
+                    SettingsUiState(keyboard = keyboard),
+                    SettingsActions(onKeyboard = { keyboard = it }),
+                    onNavigate = {},
+                )
+            }
+        }
+        rule.onNodeWithTag(SettingsTags.VIBRATION).performScrollTo().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.KEY_SOUND).performScrollTo().assertIsOff().performClick().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.NUMBER_ROW).performScrollTo().performClick().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.NORMAL)).performScrollTo().assertIsSelected()
+        rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.LARGE)).performClick().assertIsSelected()
+        assertEquals(
+            KeyboardSettings(keySound = true, vibration = true, numberRow = true, height = KeyboardHeight.LARGE),
+            keyboard,
+        )
     }
 
     @Test

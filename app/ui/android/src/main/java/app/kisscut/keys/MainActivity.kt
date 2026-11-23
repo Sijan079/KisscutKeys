@@ -204,6 +204,7 @@ class MainActivity : ComponentActivity() {
                 initializer {
                     SettingsViewModel(
                         container.themeStore,
+                        container.keyboardSettingsStore,
                         container.stickers.observeAll().map { it.size },
                         container::storageBytes,
                     )
@@ -215,6 +216,7 @@ class MainActivity : ComponentActivity() {
             state,
             SettingsActions(
                 onTheme = vm::setTheme,
+                onKeyboard = vm::setKeyboard,
                 onKeyboardSetup = openSetup,
                 onBackUp = { createBackup.launch(backupFileName()) },
                 onShare = backups::chooseCollectionToShare,
