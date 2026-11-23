@@ -21,7 +21,7 @@ Privacy: keys are sent to the field as they are pressed. Nothing typed is stored
 
 ## Components
 
-All in `ui/android/src/main/java/app/kisscut/keys/keyboard/`:
+All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 
 - `StickerImeService : InputMethodService`: builds both views in `onCreateInputView()` inside a frame sized to the sticker panel, picks the view and page for each field in `onStartInputView()`, sends keys and stickers. All coroutines live in a scope cancelled on rebuild and in `onDestroy`.
 - `TypingView` + `TypingLayout.kt`: the letters (see Typing layout). `TypingLayout.kt` holds the pure rules (rows, Shift, Enter action, which view a field opens on), unit-tested on the JVM.
@@ -29,7 +29,7 @@ All in `ui/android/src/main/java/app/kisscut/keys/keyboard/`:
 - `KeyboardModel`: the sticker panel's state (tab, chip, kind, stickers), unit-tested with the fake library.
 - `StickerAdapter`: binds thumbnails with Coil (ImageViews). Animated stickers show their first frame; playback while visible is ROADMAP M6.
 - `StickerInserter`: sends a sticker (see Inserting a sticker). `InputFields.kt`: password detection. `KeyboardPalette`: Theme.kt tokens as ARGB ints.
-- Shared rules in `shared/core`: `InsertPlan.kt` (MIME matching and the insert route) and `KeyboardTabs.kt` (tabs, chips, start tab).
+- Shared rules in `app/shared/core`: `InsertPlan.kt` (MIME matching and the insert route) and `KeyboardTabs.kt` (tabs, chips, start tab).
 - Manifest: service with `android.permission.BIND_INPUT_METHOD`, intent filter `android.view.InputMethod`, `meta-data` pointing at `res/xml/method.xml`.
 - `FileProvider` with authority `<APP_ID>.fileprovider` exposing `files/stickers/` and `cache/send/` (PNG copies). Debug builds add `files/ime-test/` for the keyboard tests.
 

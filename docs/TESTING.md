@@ -6,16 +6,16 @@ Goal: Claude Code can verify its own work without a human. Cheapest checks first
 
 | Layer | Where | Runs with | What it covers |
 |---|---|---|---|
-| Unit (JVM) | `shared/*/src/commonTest`, `ui/android/src/test` | `gradlew test` | repositories with fakes, nesting rules, import/export logic, ViewModels |
-| Database | `shared/db/src/androidInstrumentedTest` (or JVM with Room KMP in-memory where supported) | `gradlew test` or `connectedAndroidTest` | DAOs, recursive CTE, FK behavior, migrations |
-| Instrumented UI | `ui/android/src/androidTest` | `gradlew connectedAndroidTest` | Compose screens, navigation, share-sheet intent |
+| Unit (JVM) | `app/shared/*/src/commonTest`, `app/ui/android/src/test` | `gradlew test` | repositories with fakes, nesting rules, import/export logic, ViewModels |
+| Database | `app/shared/db/src/androidInstrumentedTest` (or JVM with Room KMP in-memory where supported) | `gradlew test` or `connectedAndroidTest` | DAOs, recursive CTE, FK behavior, migrations |
+| Instrumented UI | `app/ui/android/src/androidTest` | `gradlew connectedAndroidTest` | Compose screens, navigation, share-sheet intent |
 | Keyboard | same, with `ImeTestActivity` | `connectedAndroidTest` + adb | panel shows, insertion commits, fallback |
 | Visual check | emulator + screenshot | adb | compare against the artifact designs |
 
 ## Order of work
 
 1. Write or update unit tests first for logic changes.
-2. Run `.\gradlew.bat test`. Fix before moving on.
+2. Run `.\gradlew.bat test` from `app/`. Fix before moving on.
 3. For UI or keyboard changes, boot the emulator, run `installDebug`, then the instrumented tests, then take screenshots.
 
 ## What must be tested (minimum)
@@ -56,7 +56,7 @@ See `docs/IMPORT_EXPORT.md` Tests. Use small fixture files (a few KB) in `src/te
 How the keyboard tests run (`KeyboardTest`):
 - They swap `App.container` for an in-memory database and `files/ime-test/`, so the real library is never touched, and select the IME once per class (switching per test races with the old keyboard).
 - The emulator gives tests a blanked-out text clip, so the clipboard test checks what the inserter copied (`lastCopied`), not the system clipboard. Real clipboard behavior is checked by hand on a phone.
-- With a phone plugged in, Gradle runs device tests on every device. The app and its library stay installed afterwards (`gradle.properties`, `leaveApksInstalledAfterRun`). Set `$env:ANDROID_SERIAL = 'emulator-5554'` first.
+- With a phone plugged in, Gradle runs device tests on every device. The app and its library stay installed afterwards (`app/gradle.properties`, `leaveApksInstalledAfterRun`). Set `$env:ANDROID_SERIAL = 'emulator-5554'` first.
 
 ## Test data
 

@@ -120,9 +120,10 @@ Shut down when done: `adb emu kill`.
 
 ## 6. Project build and test (Gradle wrapper)
 
-The repo has a Gradle wrapper. Never install Gradle globally.
+The Gradle project and its wrapper live in `app/`. Run every Gradle command from there. Never install Gradle globally.
 
 ```powershell
+cd app
 .\gradlew.bat assembleDebug            # build the APK
 .\gradlew.bat test                     # JVM unit tests (shared core, Room DAOs via in-memory DB where possible)
 .\gradlew.bat connectedAndroidTest     # instrumented tests on the running emulator
@@ -175,7 +176,7 @@ Tap a field in `ImeTestActivity`; the keyboard opens on letters (or on stickers 
 Reset to the default keyboard afterwards: `adb shell ime reset`.
 
 Things that bite:
-- `connectedAndroidTest` leaves the app and its library installed, because `gradle.properties` sets `android.injected.androidTest.leaveApksInstalledAfterRun=true` (AGP uninstalls by default). The test helper `app.kisscut.keys.test` stays installed too.
+- `connectedAndroidTest` leaves the app and its library installed, because `app/gradle.properties` sets `android.injected.androidTest.leaveApksInstalledAfterRun=true` (AGP uninstalls by default). The test helper `app.kisscut.keys.test` stays installed too.
 - Force-stopping the app makes Android fall back to the previous keyboard.
 - The emulator is slow on its first cold start: thumbnails and the keyboard can take a few seconds. Tap the field again if the keyboard does not appear.
 - Which apps accept stickers directly is checked on a real phone (KEYBOARD.md, Known unknowns).
@@ -187,6 +188,7 @@ Things that bite:
 3. Build and install only on the phone (replace the serial with yours from `adb devices`):
 
 ```powershell
+cd app
 .\gradlew.bat assembleDebug
 adb -s <phone-serial> install -r ui/android/build/outputs/apk/debug/android-debug.apk
 ```

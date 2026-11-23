@@ -24,9 +24,9 @@ Design source of truth: the "Sticker app: UI designs" artifact. Kisscut (dark an
 ## Ground rules
 
 1. Work on one milestone from `docs/ROADMAP.md` at a time. Do not start the next until the current one's done criteria pass.
-2. Shared logic goes in `shared/`. No Android imports in `commonMain`.
+2. Shared logic goes in `app/shared/`. No Android imports in `commonMain`.
 3. The keyboard and the app share one Room database. Never open a second database file.
-4. Every behavior change gets a test (see `docs/TESTING.md`). Run `.\gradlew.bat test` before saying a task is done.
+4. Every behavior change gets a test (see `docs/TESTING.md`). Run `.\gradlew.bat test` (from `app/`) before saying a task is done.
 5. No internet permission in v1. Do not add network libraries. If a feature seems to need the network, stop and ask.
 6. No analytics, ads or accounts. Stickers never leave the device unless the user shares a file.
 7. Keep dependencies few. Ask before adding a library not named in `docs/ARCHITECTURE.md`.
@@ -37,18 +37,19 @@ Design source of truth: the "Sticker app: UI designs" artifact. Kisscut (dark an
 
 ## Commands
 
-Windows PowerShell. Details in `SETUP.md`.
+Windows PowerShell. Details in `SETUP.md`. The Gradle project lives in `app/`; run Gradle from there.
 
 ```powershell
+.\scripts\emu-start.ps1             # boot emulator `stickertest` (from the repo root)
+.\scripts\emu-stop.ps1
+cd app
 .\gradlew.bat test                  # fast JVM tests, run first
 .\gradlew.bat assembleDebug
 .\gradlew.bat installDebug          # needs a booted emulator
 .\gradlew.bat connectedAndroidTest  # needs a booted emulator
-.\scripts\emu-start.ps1             # boot emulator `stickertest`
-.\scripts\emu-stop.ps1
 ```
 
-With a phone plugged in, Gradle installs and tests on every device. Device tests leave the app and its library installed (`gradle.properties`), but still switch keyboards. Before tests run `$env:ANDROID_SERIAL = 'emulator-5554'`.
+With a phone plugged in, Gradle installs and tests on every device. Device tests leave the app and its library installed (`app/gradle.properties`), but still switch keyboards. Before tests run `$env:ANDROID_SERIAL = 'emulator-5554'`.
 
 ## Conventions
 

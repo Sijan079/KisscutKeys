@@ -20,15 +20,16 @@ In development. Milestones and progress are in [`docs/ROADMAP.md`](docs/ROADMAP.
 
 ## Tech
 
-- Kotlin Multiplatform shared logic (`shared/`), Room database shared by the app and the keyboard
-- Native Android UI in Jetpack Compose (`ui/android`)
+- Kotlin Multiplatform shared logic (`app/shared/`), Room database shared by the app and the keyboard
+- Native Android UI in Jetpack Compose (`app/ui/android`)
 - Native keyboard built on `InputMethodService`
 
 ## Build
 
-Needs a JDK and the Android SDK command-line tools. Full setup, emulator and adb notes: [`SETUP.md`](SETUP.md).
+Needs a JDK and the Android SDK command-line tools. The Gradle project lives in `app/`. Full setup, emulator and adb notes: [`SETUP.md`](SETUP.md).
 
 ```powershell
+cd app
 .\gradlew.bat test            # fast JVM tests
 .\gradlew.bat assembleDebug   # build the debug APK
 .\gradlew.bat installDebug    # install on a booted emulator or phone

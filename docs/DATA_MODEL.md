@@ -87,7 +87,7 @@ Deleting stickers always removes the files from disk in the same operation. If a
 
 ## Migrations
 
-- Schema export on (`exportSchema = true`), JSON files committed under `shared/db/schemas/`.
+- Schema export on (`exportSchema = true`), JSON files committed under `app/shared/db/schemas/`.
 - Version 1 is the first release shape above. If `parentId` or `hasAlpha` are added after an early build, write a real migration; never use destructive fallback.
 - Each migration has a test using `MigrationTestHelper` with old data.
 
