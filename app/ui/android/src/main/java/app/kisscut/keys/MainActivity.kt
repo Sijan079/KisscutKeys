@@ -138,7 +138,9 @@ class MainActivity : ComponentActivity() {
                             onAdd = addStickers,
                             startAtSetup = start,
                             setupScreen = { leave -> Setup(container, addStickers, leave) },
-                            settingsScreen = { go, openSetup -> Settings(container, go, openSetup) },
+                            settingsScreen = { go, openSetup, openLicenses ->
+                                Settings(container, go, openSetup, openLicenses)
+                            },
                             settingsRequests = settingsRequests,
                         )
                     }
@@ -210,6 +212,7 @@ class MainActivity : ComponentActivity() {
         container: AppContainer,
         onNavigate: (TopLevel) -> Unit,
         openSetup: () -> Unit,
+        openLicenses: () -> Unit,
     ) {
         val vm: SettingsViewModel = viewModel(
             factory = viewModelFactory {
@@ -233,6 +236,7 @@ class MainActivity : ComponentActivity() {
                 onBackUp = { createBackup.launch(backupFileName()) },
                 onShare = backups::chooseCollectionToShare,
                 onImport = { openPack.launch(arrayOf("*/*")) },
+                onLicenses = openLicenses,
             ),
             onNavigate = onNavigate,
             version = container.appVersion,

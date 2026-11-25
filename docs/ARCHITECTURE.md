@@ -24,7 +24,7 @@
 - `shared:core` source sets: `commonMain` (pure Kotlin, no `java.*`), `androidMain`, `jvmMain` (host tests), and `jvmSharedMain` for code both Android and the JVM can run but common cannot, such as `java.util.zip` (`.stickerpack` reading and writing). `.stickerpack` code lives in the `pack` package.
 - The keyboard lives in `ui/android` under a `keyboard` package, **not** a separate module. It uses the same repositories and database as the app.
 
-Packages in `app/ui/android` (`app.kisscut.keys`): `library`, `collections`, `save` and `share` (Save sheet and share intents), `settings` (Settings screen, theme), `backup` (back up, share and import packs, their dialogs), `setup` (keyboard setup; holds the one DataStore delegate for the `settings` file), `keyboard` (IME), `nav`, `common` (shared parts), `ui/theme`. Debug-only code (seed data, `ImeTestActivity`) lives in `src/debug`. One feature per package; a new screen gets its own package.
+Packages in `app/ui/android` (`app.kisscut.keys`): `library`, `collections`, `save` and `share` (Save sheet and share intents), `settings` (Settings screen, theme), `backup` (back up, share and import packs, their dialogs), `setup` (keyboard setup; holds the one DataStore delegate for the `settings` file), `keyboard` (IME), `licenses` (Open-source licenses screen), `nav`, `common` (shared parts), `ui/theme`. Debug-only code (seed data, `ImeTestActivity`) lives in `src/debug`. One feature per package; a new screen gets its own package.
 - `ui/ios` does not exist yet.
 
 ## expect/actual and interfaces

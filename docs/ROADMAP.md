@@ -118,14 +118,17 @@ Planned 2026-11-23 at the user's request, ahead of release prep (now M9). One co
 Done when: JVM tests pass, device tests pass on the emulator, and screenshots of the new keyboard parts are in `artifacts/`.
 
 ## M7: Swipe typing and autocorrect
-Changes a v1 non-goal (PRODUCT, KEYBOARD); confirm with the user before starting.
-- [ ] Bundled English word list with a license that allows shipping (ask the user to approve the list and its size)
-- [ ] Suggestion strip above the letters; autocorrect on space, undo with Backspace; on or off in Settings
-- [ ] Swipe typing: trace across letters, best word from the list, alternatives in the strip
-- [ ] All on the device; nothing typed is learned, stored or sent. Privacy text updated
-- [ ] Off in password, number, phone, email and URL fields
+Confirmed by the user 2026-11-25 (changes a v1 non-goal: PRODUCT, KEYBOARD). Planned 2026-11-25; one commit per step, each after the user's OK.
+1. [x] Word list: AOSP LatinIME `dictionaries/en_US_wordlist.combined.gz` (Apache 2.0, NOTICE checked 2026-11-25; blob id in KEYBOARD.md, Word list). Top 50,000 words by frequency (user's call), dropping `f=0` and `not_a_word`; `possibly_offensive` words stay known but are never suggested or used as a correction. Plain text in `assets/`, parsed in `shared:core` commonMain. Generator script in `tools/` (not `scripts/`, which is ignored). License and NOTICE shipped, plus an "Open-source licenses" entry in Settings. Device tests pass on the user's phone (`licenses-dark`)
+2. [ ] Engine in `shared:core` commonMain, JVM-tested: completions and corrections (edit distance up to 2, neighbouring keys cheaper, swaps), case and apostrophes ("dont" finds "don't"), the list's 99 fix pairs, and a pure autocorrect decision with explicit "never" cases. Takes a list of dictionaries so Tagalog can be added later
+3. [ ] Typing pipeline: the current word comes only from the keyboard's own key presses and shows as composing text; the field is never read. Autocorrect on space and punctuation, Backspace right after undoes it. Off in password, number, phone, email and URL fields and in fields that ask for no suggestions. Privacy text updated in the same step
+4. [ ] Suggestion strip (design first, on the canvas): shares the toolbar's row, so the height never jumps. Settings: Autocorrect switch, with Suggestions under it; Autocorrect on forces Suggestions on; Autocorrect starts off and Suggestions on until Tagalog lands, so Taglish isn't "fixed" (user's calls 2026-11-25)
+5. [ ] Swipe typing: trace across letters, best word from the list, alternatives in the strip
+6. [ ] Docs for the non-goal change (PRODUCT, KEYBOARD, TESTING) and a timing check on the phone
 
-Done when: swipe and autocorrect work on the emulator, JVM tests cover matching and correction, and tests pass.
+Later, not part of M7: Tagalog/Filipino word list. No permissive list with word frequencies found yet (2026-11-25); choose one with the user. Taglish means both lists are on at once, with no language switch.
+
+Done when: swipe and autocorrect work on the phone, JVM tests cover matching and correction, and tests pass.
 
 ## M8: Sticker auto-tagging and quick search
 Changes two v1 non-goals (no ML, no search); confirm with the user before starting.
@@ -222,3 +225,4 @@ Add one line per surprise or decision: date, milestone, what happened.
 - 2026-11-23: The Gradle project (wrapper, settings, `gradle/`, `shared/`, `ui/`) moved into `app/`; run Gradle from there. Older notes above use the old root paths.
 - 2026-11-23: Renumbered. New M6 (keyboard basics), M7 (swipe and autocorrect), M8 (auto-tagging and search); release prep moved from M6 to M9. Earlier notes that say M6 mean today's M9.
 - 2026-11-25, M6.7: On the phone the toolbar's Stickers and Emoji looked the same, because the sticker key's icon had a smiley face; the sticker icon lost the face and got a bigger peeled corner. The first gear looked like a sun (brightness) and became a ring with square teeth. Key sound is off by default, so the M6.6 check heard nothing until it was switched on.
+- 2026-11-25, M7.1: The source list has no "dont" to "don't" pair (only 99 pairs, like `cant` and `im`); "dont" is left to step 2's apostrophe-blind matching. Some pairs start from real words (`ill`, `lets`, `hid`), so they can't be applied blindly.

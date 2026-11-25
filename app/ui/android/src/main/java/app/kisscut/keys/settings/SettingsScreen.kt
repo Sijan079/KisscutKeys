@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.SdStorage
@@ -61,6 +62,7 @@ object SettingsTags {
     const val VIBRATION = "settings:kb-vibration"
     const val NUMBER_ROW = "settings:kb-number-row"
     const val TOOLBAR = "settings:kb-toolbar"
+    const val LICENSES = "settings:licenses"
     fun height(height: KeyboardHeight) = "settings:kb-height:" + height.key
 }
 
@@ -72,6 +74,7 @@ data class SettingsActions(
     val onBackUp: () -> Unit = {},
     val onShare: () -> Unit = {},
     val onImport: () -> Unit = {},
+    val onLicenses: () -> Unit = {},
 )
 
 /** Settings (docs/UI_SPEC.md, Settings board): keyboard card, theme, keyboard, backup and sharing, storage. */
@@ -132,6 +135,17 @@ fun SettingsScreen(
 
             SectionTitle(stringResource(R.string.settings_storage))
             Group { StorageRow(state) }
+
+            SectionTitle(stringResource(R.string.settings_about))
+            Group {
+                ActionRow(
+                    icon = Icons.Outlined.Description,
+                    title = R.string.settings_licenses,
+                    body = R.string.settings_licenses_body,
+                    tag = SettingsTags.LICENSES,
+                    onClick = actions.onLicenses,
+                )
+            }
 
             if (version.isNotEmpty()) {
                 Text(

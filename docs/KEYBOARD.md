@@ -42,6 +42,14 @@ Sound and vibration apply on the next tap (`KeyFeedback` reads them each time). 
 - The All/Static/GIF switch is hidden (kept in place, so the row does not jump). Works with an empty library.
 - The list lives in code (UI strings carry no emoji); emoji the phone cannot draw are left out, so older phones show no empty boxes. Symbols that default to text style (heart, plane, arrows) carry U+FE0F so they show and send in color; a JVM test checks this.
 
+### Word list (M7)
+
+English words for suggestions, autocorrect and swipe (used from M7 step 2 on). Source: AOSP LatinIME `dictionaries/en_US_wordlist.combined.gz` (blob `8aed9c5e0b94d0f3e9654f66104d7af1e84c454f`), Apache License 2.0, Copyright 2008 The Android Open Source Project. `tools/wordlist/build_en.py` turns a hand-downloaded copy into two assets (it never touches the network):
+- `assets/words/en_US.txt`: the 50,000 most common words (user's call), `word<TAB>frequency` with frequency the source's 0-255 score; `possibly_offensive` words carry a third column `o` and are known but never suggested or used as a correction. Entries with `f=0` or `not_a_word` are dropped. About 600 KB; the APK compresses it.
+- `assets/words/en_US_fixes.txt`: the source's 99 typed-to-fix pairs (`cant` to `can't`, `alot` to `a lot`). Some typed sides are real words (`ill`, `lets`), so step 2 decides when a pair applies.
+
+Both files say in their header that they were changed from the source. `shared:core` `words.WordList` parses them (strict: a malformed line fails with its line number). The license text ships in `assets/licenses/` and shows on Settings, Open-source licenses.
+
 ## Components
 
 All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:

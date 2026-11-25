@@ -2,6 +2,9 @@ package app.kisscut.keys.nav
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -18,6 +21,8 @@ import app.kisscut.keys.common.LibraryBackend
 import app.kisscut.keys.common.TopLevel
 import app.kisscut.keys.library.LibraryScreen
 import app.kisscut.keys.library.LibraryViewModel
+import app.kisscut.keys.licenses.LicensesScreen
+import app.kisscut.keys.licenses.LicensesViewModel
 import app.kisscut.keys.settings.SettingsActions
 import app.kisscut.keys.settings.SettingsScreen
 import app.kisscut.keys.settings.SettingsUiState
@@ -30,6 +35,7 @@ object Routes {
     const val UNSORTED = "unsorted"
     const val COLLECTION = "collection/{id}"
     const val SETUP = "setup"
+    const val LICENSES = "licenses"
 
     fun of(top: TopLevel) = when (top) {
         TopLevel.LIBRARY -> LIBRARY
@@ -56,7 +62,9 @@ fun AppNav(
     startAtSetup: Boolean = false,
     setupScreen: @Composable (onLeave: () -> Unit) -> Unit = {},
     /** The real Settings screen with its view models; tests may leave it out for a plain one. */
-    settingsScreen: (@Composable (onNavigate: (TopLevel) -> Unit, onKeyboardSetup: () -> Unit) -> Unit)? = null,
+    settingsScreen: (
+        @Composable (onNavigate: (TopLevel) -> Unit, onKeyboardSetup: () -> Unit, onLicenses: () -> Unit) -> Unit
+    )? = null,
     /** Each increase opens Settings (the keyboard toolbar's Settings button). */
     settingsRequests: Int = 0,
 ) {
@@ -110,11 +118,22 @@ fun AppNav(
         }
         composable(Routes.SETTINGS) {
             val openSetup = { nav.navigate(Routes.SETUP) }
+            val openLicenses = { nav.navigate(Routes.LICENSES) }
             if (settingsScreen != null) {
-                settingsScreen(::go, openSetup)
+                settingsScreen(::go, openSetup, openLicenses)
             } else {
-                SettingsScreen(SettingsUiState(), SettingsActions(onKeyboardSetup = openSetup), ::go)
+                SettingsScreen(
+                    SettingsUiState(),
+                    SettingsActions(onKeyboardSetup = openSetup, onLicenses = openLicenses),
+                    ::go,
+                )
             }
+        }
+        composable(Routes.LICENSES) {
+            val assets = LocalContext.current.assets
+            val vm = viewModel { LicensesViewModel(LicensesViewModel.assetReader(assets)) }
+            val state by vm.state.collectAsState()
+            LicensesScreen(state, onOpen = vm::open, onBack = { if (!vm.back()) nav.popBackStack() })
         }
         composable(Routes.SETUP) {
             setupScreen {
