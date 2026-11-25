@@ -4,7 +4,7 @@ The keyboard is an `InputMethodService` in the Android app module (`keyboard` pa
 
 ## Purpose
 
-A basic typing keyboard plus the sticker panel (typing added in ROADMAP M4.2, user's call). Letters, numbers and symbols, no autocorrect, word suggestions, swipe typing or emoji search (autocorrect and swipe are planned in ROADMAP M7; until then they stay out). A sticker key swaps the letters for the sticker panel and an ABC key swaps back. Holding the space bar opens the system keyboard list, to switch to another keyboard (no globe key since M6.7, user's call; Gboard does the same, and most phones also show their own switch button).
+A basic typing keyboard plus the sticker panel (typing added in ROADMAP M4.2, user's call). Letters, numbers and symbols, with English suggestions, autocorrect and swipe typing from ROADMAP M7 (sections below); no emoji search. A sticker key swaps the letters for the sticker panel and an ABC key swaps back. Holding the space bar opens the system keyboard list, to switch to another keyboard (no globe key since M6.7, user's call; Gboard does the same, and most phones also show their own switch button).
 
 Privacy: keys are sent to the field as they are pressed. Nothing typed is stored, logged, read back or sent anywhere. The only reads of the field are the cursor's caps mode (for auto-capitalization) and the editor's action (Send, Search, Done) for the Enter key. Moving the cursor uses arrow key events, which read nothing.
 
@@ -134,6 +134,7 @@ Animated stickers (GIF, animated WebP) are sent in their stored format. If the t
 
 - Thumbnails everywhere; originals only for animation.
 - Panel appears in under 150ms on a warm start. Build the adapter and tab data lazily.
+- Opening the keyboard (measured on the user's Redmi, 2026-11-26, after Discord felt slow): 2 to 5 ms when it was open before, about 290 ms on the first open after the process starts (was 270 to 330 ms and about 1.2 s). Three causes, all fixed: setting a weight on each key's Figtree TextView built a new font from the variable font every time (about 270 ms per rebuild), so `KeyboardFonts` makes each weight once and keys share it; `setEnter` rebuilt every key on every field even when the Enter key was the same; and the first build used the default settings because the saved ones load lazily, so the keyboard was built twice. The service now reads the saved theme and settings when it starts and builds with those.
 - Animate only visible items; pause when the panel hides (`onFinishInputView`).
 - Keep memory bounded: Coil memory cache limited; do not hold bitmaps for off-screen tabs.
 

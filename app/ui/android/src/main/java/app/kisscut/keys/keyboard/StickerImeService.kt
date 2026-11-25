@@ -14,6 +14,7 @@ import app.kisscut.keys.MainActivity
 import app.kisscut.keys.R
 import app.kisscut.keys.settings.KeyboardHeight
 import app.kisscut.keys.settings.KeyboardSettings
+import app.kisscut.keys.settings.ThemeMode
 import app.kisscut.keys.debug.FieldTypesLog
 import app.kisscut.keys.shared.core.KeyboardTab
 import app.kisscut.keys.shared.core.StickerKind
@@ -29,7 +30,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 
@@ -101,6 +104,12 @@ class StickerImeService : InputMethodService() {
         super.onCreate()
         active = WeakReference(this)
         loader = MainScope().also { scope ->
+            // Read the saved theme and settings now, so they are in memory when the keyboard is first built.
+            scope.launch(Dispatchers.IO) {
+                val container = (application as App).container
+                container.themeStore.theme.first()
+                container.keyboardSettingsStore.settings.first()
+            }
             scope.launch {
                 withContext(Dispatchers.Default) {
                     val lists = listOf(loadWords())
@@ -123,9 +132,11 @@ class StickerImeService : InputMethodService() {
         val container = (application as App).container
         val model = KeyboardModel(container.libraryBackend, scope).also { this.model = it }
         inserter = StickerInserter(this, container::originalOf, container.stickers::markUsed)
-        val palette = KeyboardPalette.of(this, container.theme.value)
+        // The saved theme and settings, not the in-memory copies: those may still hold the defaults on a fresh
+        // start, which built the keyboard twice (about 0.4 s more on the first open).
+        val palette = KeyboardPalette.of(this, savedTheme())
         builtDark = palette.dark
-        val settings = container.keyboardSettings.value
+        val settings = savedSettings()
         builtLayout = layoutOf(settings)
         // Sound and vibration are read on every tap, so they apply at once.
         val feedback = KeyFeedback(this) { container.keyboardSettings.value }
@@ -165,8 +176,8 @@ class StickerImeService : InputMethodService() {
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         val container = (application as App).container
-        val dark = KeyboardPalette.of(this, container.theme.value).dark
-        val layout = layoutOf(container.keyboardSettings.value)
+        val dark = KeyboardPalette.of(this, savedTheme()).dark
+        val layout = layoutOf(savedSettings())
         if (builtDark != null && (dark != builtDark || layout != builtLayout)) setInputView(onCreateInputView())
         info?.let(FieldTypesLog::log)
         password = info != null && isPasswordField(info.inputType)
@@ -434,6 +445,12 @@ class StickerImeService : InputMethodService() {
             )
         }
     }
+
+    /** The saved keyboard settings (DataStore keeps them in memory after the first read, so this is quick). */
+    private fun savedSettings(): KeyboardSettings =
+        runBlocking { (application as App).container.keyboardSettingsStore.settings.first() }
+
+    private fun savedTheme(): ThemeMode = runBlocking { (application as App).container.themeStore.theme.first() }
 
     private fun layoutOf(s: KeyboardSettings) =
         Layout(s.numberRow, s.height, s.toolbar, topRow = s.toolbar || s.showsSuggestions)

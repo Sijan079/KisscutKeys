@@ -225,12 +225,23 @@ internal fun rounded(color: Int, radius: Float, stroke: Int = 0, strokeColor: In
 
 /** Figtree (bundled variable font) at [weight]. */
 internal fun TextView.applyFigtree(weight: Int) {
-    typeface = KeyboardFonts.figtree(context)
-    fontVariationSettings = "'wght' $weight"
+    typeface = KeyboardFonts.figtree(context, weight)
 }
 
+/**
+ * Figtree at each weight, made once. Setting a weight on a TextView builds a new font from the variable font every
+ * time (a few ms each), which made building the letter keys take about 270 ms on a mid-range phone.
+ */
 internal object KeyboardFonts {
-    private var cached: android.graphics.Typeface? = null
-    fun figtree(context: Context): android.graphics.Typeface? =
-        cached ?: androidx.core.content.res.ResourcesCompat.getFont(context, R.font.figtree).also { cached = it }
+    private var base: android.graphics.Typeface? = null
+    private val byWeight = HashMap<Int, android.graphics.Typeface?>()
+
+    fun figtree(context: Context, weight: Int): android.graphics.Typeface? = byWeight.getOrPut(weight) {
+        val font = base ?: androidx.core.content.res.ResourcesCompat.getFont(context, R.font.figtree).also { base = it }
+        // A Paint derives the weighted font once; every key then shares it.
+        android.graphics.Paint().apply {
+            typeface = font
+            fontVariationSettings = "'wght' $weight"
+        }.typeface
+    }
 }

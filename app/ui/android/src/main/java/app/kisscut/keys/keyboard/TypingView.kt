@@ -117,6 +117,7 @@ class TypingView(
 
     /** Sets the Enter key for the current field. */
     fun setEnter(action: EnterAction) {
+        if (action == enter) return
         enter = action
         enterActionId = (action as? EnterAction.Action)?.id ?: EditorInfo.IME_ACTION_UNSPECIFIED
         build()
