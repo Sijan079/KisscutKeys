@@ -60,12 +60,18 @@ class SettingsViewModelTest {
         val keyboard = FakeKeyboard()
         val vm = SettingsViewModel(FakeThemes(), keyboard, MutableStateFlow(0)) { 0 }
         advanceUntilIdle()
-        assertEquals(KeyboardSettings(keySound = false, vibration = true, numberRow = false), vm.state.value.keyboard)
-        vm.setKeyboard(KeyboardSettings(keySound = true, numberRow = true, height = KeyboardHeight.LARGE))
+        assertEquals(
+            KeyboardSettings(keySound = false, vibration = true, numberRow = false, toolbar = false),
+            vm.state.value.keyboard,
+        )
+        vm.setKeyboard(
+            KeyboardSettings(keySound = true, numberRow = true, height = KeyboardHeight.LARGE, toolbar = true),
+        )
         advanceUntilIdle()
         assertEquals(KeyboardHeight.LARGE, keyboard.settings.value.height)
         assertTrue(vm.state.value.keyboard.keySound)
         assertTrue(vm.state.value.keyboard.numberRow)
+        assertTrue(vm.state.value.keyboard.toolbar)
     }
 
     @Test

@@ -24,7 +24,8 @@ import app.kisscut.keys.R
 /**
  * The typing keyboard (docs/KEYBOARD.md, Typing layout): letters, `?123` and `=\<` pages, Shift with caps lock,
  * Backspace that repeats while held, an Enter key that shows the field's action and a sticker key.
- * Holding Space opens the keyboard list.
+ * Holding Space opens the keyboard list. With [toolbar] on, a row above the keys holds Stickers, Emoji,
+ * Settings and Switch keyboard, and the sticker key leaves the bottom row.
  * It only reports key presses through [actions]; it never sees the field's text.
  */
 @SuppressLint("ViewConstructor")
@@ -34,6 +35,7 @@ class TypingView(
     private val actions: Actions,
     private val feedback: KeyFeedback,
     private val numberRow: Boolean = false,
+    private val toolbar: Boolean = false,
 ) : LinearLayout(context) {
 
     interface Actions {
@@ -45,8 +47,14 @@ class TypingView(
         fun onEnter()
         fun onStickers()
 
-        /** Opens the system keyboard list (hold Space). */
+        /** Opens the system keyboard list (hold Space, or the toolbar). */
         fun onSwitchKeyboard()
+
+        /** Toolbar: the sticker panel on its Emoji tab. */
+        fun onEmoji()
+
+        /** Toolbar: the app's Settings screen. */
+        fun onSettings()
     }
 
     val shift = ShiftLogic()
@@ -125,7 +133,8 @@ class TypingView(
         removeAllViews()
         letterLabels.clear()
         shiftIcon = null
-        for (row in typingRows(page, numberRow)) {
+        if (toolbar) addView(toolbarRow(), LayoutParams(MATCH, dp(TOOLBAR_DP)))
+        for (row in typingRows(page, numberRow, toolbar)) {
             val line = LinearLayout(context).apply {
                 orientation = HORIZONTAL
                 gravity = Gravity.CENTER
@@ -219,6 +228,56 @@ class TypingView(
                     actions.onStickers()
                 }
             }
+    }
+
+    /** Stickers and Emoji on the left, Settings and Switch keyboard on the right; flat icons, no key fill. */
+    private fun toolbarRow() = LinearLayout(context).apply {
+        orientation = HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        tag = KeyboardTags.TOOLBAR
+        fun button(icon: Int, label: Int, testTag: String, enabled: Boolean = true, onTap: () -> Unit) =
+            FrameLayout(context).apply {
+                tag = testTag
+                contentDescription = context.getString(label)
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_pressed), keyShape(palette.raised))
+                    addState(intArrayOf(), null)
+                }
+                isEnabled = enabled
+                alpha = if (enabled) 1f else 0.4f
+                isClickable = true
+                isFocusable = true
+                addView(
+                    ImageView(context).apply {
+                        setImageResource(icon)
+                        imageTintList = ColorStateList.valueOf(palette.text)
+                        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    },
+                    FrameLayout.LayoutParams(dp(22), dp(22), Gravity.CENTER),
+                )
+                setOnClickListener {
+                    tap(it)
+                    onTap()
+                }
+            }
+        val stickers = button(
+            R.drawable.ic_kb_sticker,
+            R.string.kb_key_stickers,
+            KeyboardTags.TOOLBAR_STICKERS,
+            stickersAllowed,
+        ) { actions.onStickers() }
+        val emoji = button(R.drawable.ic_kb_emoji, R.string.kb_tab_emoji, KeyboardTags.TOOLBAR_EMOJI, stickersAllowed) {
+            actions.onEmoji()
+        }
+        val settings = button(R.drawable.ic_kb_settings, R.string.kb_keyboard_settings, KeyboardTags.TOOLBAR_SETTINGS) {
+            actions.onSettings()
+        }
+        val switch = button(R.drawable.ic_kb_keyboard, R.string.kb_switch_keyboard, KeyboardTags.TOOLBAR_SWITCH) {
+            actions.onSwitchKeyboard()
+        }
+        for (b in listOf(stickers, emoji)) addView(b, LayoutParams(dp(TOOLBAR_DP), MATCH))
+        addView(View(context), LayoutParams(0, MATCH).apply { weight = 1f })
+        for (b in listOf(settings, switch)) addView(b, LayoutParams(dp(TOOLBAR_DP), MATCH))
     }
 
     /**

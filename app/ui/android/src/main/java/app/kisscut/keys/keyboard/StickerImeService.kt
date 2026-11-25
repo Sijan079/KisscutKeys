@@ -13,6 +13,7 @@ import app.kisscut.keys.App
 import app.kisscut.keys.MainActivity
 import app.kisscut.keys.R
 import app.kisscut.keys.settings.KeyboardHeight
+import app.kisscut.keys.settings.KeyboardSettings
 import app.kisscut.keys.debug.FieldTypesLog
 import app.kisscut.keys.shared.core.KeyboardTab
 import app.kisscut.keys.shared.core.StickerKind
@@ -39,8 +40,8 @@ class StickerImeService : InputMethodService() {
     /** Whether the views were built dark; rebuilt when the Settings theme changed since. */
     private var builtDark: Boolean? = null
 
-    /** Number row and height the views were built with; rebuilt when they changed in Settings. */
-    private var builtLayout: Pair<Boolean, KeyboardHeight>? = null
+    /** Number row, height and toolbar the views were built with; rebuilt when they changed in Settings. */
+    private var builtLayout: Triple<Boolean, KeyboardHeight, Boolean>? = null
 
     /** Letters or stickers; kept while the keyboard runs, so it reopens on the view used last. */
     private var view = KeyboardView.LETTERS
@@ -64,7 +65,7 @@ class StickerImeService : InputMethodService() {
         val palette = KeyboardPalette.of(this, container.theme.value)
         builtDark = palette.dark
         val settings = container.keyboardSettings.value
-        builtLayout = settings.numberRow to settings.height
+        builtLayout = layoutOf(settings)
         // Sound and vibration are read on every tap, so they apply at once.
         val feedback = KeyFeedback(this) { container.keyboardSettings.value }
         val panel = StickerPanelView(
@@ -75,8 +76,16 @@ class StickerImeService : InputMethodService() {
             feedback,
             heightScale = settings.height.scale,
             numberRow = settings.numberRow,
+            toolbar = settings.toolbar,
         )
-        val typing = TypingView(this, palette, Keys(), feedback, numberRow = settings.numberRow)
+        val typing = TypingView(
+            this,
+            palette,
+            Keys(),
+            feedback,
+            numberRow = settings.numberRow,
+            toolbar = settings.toolbar,
+        )
         this.panel = panel
         this.typing = typing
         // The sticker panel sets the height; the letters fill the same space on top of it.
@@ -95,7 +104,7 @@ class StickerImeService : InputMethodService() {
         super.onStartInputView(info, restarting)
         val container = (application as App).container
         val dark = KeyboardPalette.of(this, container.theme.value).dark
-        val layout = container.keyboardSettings.value.let { it.numberRow to it.height }
+        val layout = layoutOf(container.keyboardSettings.value)
         if (builtDark != null && (dark != builtDark || layout != builtLayout)) setInputView(onCreateInputView())
         info?.let(FieldTypesLog::log)
         password = info != null && isPasswordField(info.inputType)
@@ -216,7 +225,26 @@ class StickerImeService : InputMethodService() {
         }
 
         override fun onSwitchKeyboard() = showPicker()
+
+        override fun onEmoji() {
+            if (password) return
+            model?.selectTab(KeyboardTab.Emoji)
+            show(KeyboardView.STICKERS)
+        }
+
+        override fun onSettings() {
+            startActivity(
+                Intent(this@StickerImeService, MainActivity::class.java)
+                    .putExtra(MainActivity.EXTRA_OPEN_SETTINGS, true)
+                    .addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP,
+                    ),
+            )
+        }
     }
+
+    private fun layoutOf(s: KeyboardSettings) = Triple(s.numberRow, s.height, s.toolbar)
 
     private inner class Actions(private val model: KeyboardModel) : StickerPanelView.Actions {
         override fun onTab(tab: KeyboardTab) = model.selectTab(tab)

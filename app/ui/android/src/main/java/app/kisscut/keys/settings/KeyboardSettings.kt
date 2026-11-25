@@ -27,6 +27,9 @@ data class KeyboardSettings(
     val vibration: Boolean = true,
     val numberRow: Boolean = false,
     val height: KeyboardHeight = KeyboardHeight.NORMAL,
+
+    /** A row above the letters with Stickers, Emoji, Settings and Switch keyboard. */
+    val toolbar: Boolean = false,
 )
 
 interface KeyboardSettingsStore {
@@ -45,6 +48,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             vibration = it[VIBRATION] ?: defaults.vibration,
             numberRow = it[NUMBER_ROW] ?: defaults.numberRow,
             height = KeyboardHeight.of(it[HEIGHT]),
+            toolbar = it[TOOLBAR] ?: defaults.toolbar,
         )
     }
 
@@ -54,6 +58,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             it[VIBRATION] = settings.vibration
             it[NUMBER_ROW] = settings.numberRow
             it[HEIGHT] = settings.height.key
+            it[TOOLBAR] = settings.toolbar
         }
     }
 
@@ -62,5 +67,6 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
         val VIBRATION = booleanPreferencesKey("kb_vibration")
         val NUMBER_ROW = booleanPreferencesKey("kb_number_row")
         val HEIGHT = stringPreferencesKey("kb_height")
+        val TOOLBAR = booleanPreferencesKey("kb_toolbar")
     }
 }

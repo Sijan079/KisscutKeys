@@ -32,6 +32,18 @@ class TypingLayoutTest {
     }
 
     @Test
+    fun toolbarTakesTheStickerKeyOffTheBottomRow() {
+        for (page in TypingPage.entries) {
+            val bottom = typingRows(page, toolbar = true).last()
+            assertFalse(Key.Stickers in bottom, "$page")
+            assertTrue(Key.Space in bottom && Key.Enter in bottom, "$page")
+        }
+        val bottom = typingRows(TypingPage.LETTERS, toolbar = true).last()
+        assertEquals(10f, bottom.sumOf { it.weight.toDouble() }.toFloat())
+        assertEquals(4, typingRows(TypingPage.LETTERS, toolbar = true).size)
+    }
+
+    @Test
     fun panelHeightFollowsTheSettings() {
         val normal = panelMiddleHeight(screenPx = 2000, chromePx = 300, minPx = 200, scale = 1f, numberRow = false)
         assertEquals(500, normal)
@@ -40,6 +52,9 @@ class TypingLayoutTest {
         // One more key row: a quarter of the whole panel (middle plus chrome) on top.
         assertEquals(500 + 200, panelMiddleHeight(2000, 300, 200, scale = 1f, numberRow = true))
         assertEquals(200, panelMiddleHeight(400, 300, 200, scale = 0.85f, numberRow = false))
+        // The toolbar adds exactly its own height, alone or with the number row.
+        assertEquals(500 + 48, panelMiddleHeight(2000, 300, 200, scale = 1f, numberRow = false, toolbarPx = 48))
+        assertEquals(700 + 48, panelMiddleHeight(2000, 300, 200, scale = 1f, numberRow = true, toolbarPx = 48))
     }
 
     @Test

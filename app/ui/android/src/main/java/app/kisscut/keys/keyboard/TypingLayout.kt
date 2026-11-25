@@ -21,12 +21,12 @@ enum class TypingPage { LETTERS, SYMBOLS, MORE_SYMBOLS }
 
 /**
  * The rows of [page]: four, plus digits on top of the letters when [numberRow] is on. Letters are lower case;
- * the view applies Shift.
+ * the view applies Shift. With the [toolbar] on, the sticker key lives there instead of in the bottom row.
  */
-fun typingRows(page: TypingPage, numberRow: Boolean = false): List<List<Key>> {
+fun typingRows(page: TypingPage, numberRow: Boolean = false, toolbar: Boolean = false): List<List<Key>> {
     fun row(chars: String) = chars.map { Key.Text(it.toString()) }
     val bottom = { pageKey: Key.Page ->
-        listOf(pageKey, Key.Stickers, Key.Text(","), Key.Space, Key.Text("."), Key.Enter)
+        listOfNotNull(pageKey, if (toolbar) null else Key.Stickers, Key.Text(","), Key.Space, Key.Text("."), Key.Enter)
     }
     return when (page) {
         TypingPage.LETTERS -> listOfNotNull(
@@ -115,7 +115,7 @@ class CursorSlide(private val startSlop: Float, private val step: Float) {
 /**
  * Height of the panel's middle part (between the tabs and the bottom row): about [share] of [screenPx] less
  * [chromePx], times [scale], never under [minPx]. The number row adds one more row of the same size, so the
- * letters keep their key size.
+ * letters keep their key size. The toolbar adds its own height, [toolbarPx], on top.
  */
 fun panelMiddleHeight(
     screenPx: Int,
@@ -124,10 +124,14 @@ fun panelMiddleHeight(
     scale: Float,
     numberRow: Boolean,
     share: Float = 0.40f,
+    toolbarPx: Int = 0,
 ): Int {
     val base = maxOf(minPx, ((screenPx * share - chromePx) * scale).toInt())
-    return if (numberRow) base + (base + chromePx) / 4 else base
+    return (if (numberRow) base + (base + chromePx) / 4 else base) + toolbarPx
 }
+
+/** Height of the optional toolbar row above the letters (Settings, Toolbar). */
+const val TOOLBAR_DP = 48
 
 enum class ShiftState { OFF, ONCE, LOCKED }
 

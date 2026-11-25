@@ -111,10 +111,17 @@ class SettingsUiTest {
         rule.onNodeWithTag(SettingsTags.VIBRATION).performScrollTo().assertIsOn()
         rule.onNodeWithTag(SettingsTags.KEY_SOUND).performScrollTo().assertIsOff().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.NUMBER_ROW).performScrollTo().performClick().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.TOOLBAR).performScrollTo().assertIsOff().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.NORMAL)).performScrollTo().assertIsSelected()
         rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.LARGE)).performClick().assertIsSelected()
         assertEquals(
-            KeyboardSettings(keySound = true, vibration = true, numberRow = true, height = KeyboardHeight.LARGE),
+            KeyboardSettings(
+                keySound = true,
+                vibration = true,
+                numberRow = true,
+                height = KeyboardHeight.LARGE,
+                toolbar = true,
+            ),
             keyboard,
         )
     }

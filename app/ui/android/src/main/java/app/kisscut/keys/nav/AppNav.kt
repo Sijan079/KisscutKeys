@@ -1,6 +1,7 @@
 package app.kisscut.keys.nav
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -56,6 +57,8 @@ fun AppNav(
     setupScreen: @Composable (onLeave: () -> Unit) -> Unit = {},
     /** The real Settings screen with its view models; tests may leave it out for a plain one. */
     settingsScreen: (@Composable (onNavigate: (TopLevel) -> Unit, onKeyboardSetup: () -> Unit) -> Unit)? = null,
+    /** Each increase opens Settings (the keyboard toolbar's Settings button). */
+    settingsRequests: Int = 0,
 ) {
     fun go(top: TopLevel) = nav.navigate(Routes.of(top)) {
         popUpTo(Routes.LIBRARY) { saveState = true }
@@ -87,6 +90,10 @@ fun AppNav(
             onNavigate = { if (it == TopLevel.COLLECTIONS) toCollectionsRoot() else go(it) },
             onAdd = onAdd,
         )
+    }
+
+    LaunchedEffect(settingsRequests) {
+        if (settingsRequests > 0) go(TopLevel.SETTINGS)
     }
 
     NavHost(nav, startDestination = if (startAtSetup) Routes.SETUP else Routes.LIBRARY) {

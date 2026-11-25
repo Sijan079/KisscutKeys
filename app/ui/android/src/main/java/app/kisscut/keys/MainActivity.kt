@@ -71,6 +71,9 @@ class MainActivity : ComponentActivity() {
     /** Bumped on every new Save request, so the same URIs picked again get a fresh ViewModel. */
     private var session by mutableIntStateOf(0)
 
+    /** Bumped each time the keyboard's toolbar asks for the Settings screen ([EXTRA_OPEN_SETTINGS]). */
+    private var settingsRequests by mutableIntStateOf(0)
+
     private val pickImages = registerForActivityResult(PickMultipleVisualMedia(MAX_PICK)) { uris ->
         if (uris.isNotEmpty()) openSave(uris.map { it.toString() }, fromShare = false)
     }
@@ -99,7 +102,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) {
             takeShare(intent)
-            launchedByShare = pending.isNotEmpty() || takePack(intent)
+            launchedByShare = pending.isNotEmpty() || takePack(intent) || takeSettings(intent)
         } else {
             pending = savedInstanceState.getStringArrayList(KEY_PENDING).orEmpty()
             fromShare = savedInstanceState.getBoolean(KEY_FROM_SHARE)
@@ -136,6 +139,7 @@ class MainActivity : ComponentActivity() {
                             startAtSetup = start,
                             setupScreen = { leave -> Setup(container, addStickers, leave) },
                             settingsScreen = { go, openSetup -> Settings(container, go, openSetup) },
+                            settingsRequests = settingsRequests,
                         )
                     }
                 }
@@ -164,6 +168,14 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         takeShare(intent)
         takePack(intent)
+        takeSettings(intent)
+    }
+
+    private fun takeSettings(intent: Intent): Boolean {
+        if (!intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false)) return false
+        intent.removeExtra(EXTRA_OPEN_SETTINGS)
+        settingsRequests++
+        return true
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -266,17 +278,20 @@ class MainActivity : ComponentActivity() {
         if (fromShare) finish()
     }
 
-    private companion object {
-        const val MAX_PICK = 50
+    companion object {
+        /** Opens the app on its Settings screen (the keyboard toolbar's Settings button). */
+        const val EXTRA_OPEN_SETTINGS = "app.kisscut.keys.OPEN_SETTINGS"
+
+        private const val MAX_PICK = 50
 
         /** Packs have no registered type; other apps see a generic file. */
-        const val PACK_MIME = "application/octet-stream"
+        private const val PACK_MIME = "application/octet-stream"
 
-        fun backupFileName(): String =
+        private fun backupFileName(): String =
             "kisscut-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) +
                 AndroidPackBackend.EXTENSION
-        const val KEY_PENDING = "pending_uris"
-        const val KEY_FROM_SHARE = "from_share"
-        const val KEY_SESSION = "save_session"
+        private const val KEY_PENDING = "pending_uris"
+        private const val KEY_FROM_SHARE = "from_share"
+        private const val KEY_SESSION = "save_session"
     }
 }

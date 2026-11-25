@@ -262,6 +262,38 @@ class KeyboardTest {
     }
 
     @Test
+    fun toolbarOpensStickersAndEmojiAndKeepsKeySize() {
+        focus { it.plain }
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        fun keyHeight() = onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.key("q"))?.height }
+        val keyBefore = waitFor { keyHeight()?.takeIf { it > 0 } }
+        assertNull(onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.TOOLBAR) })
+
+        keyboardSettings.settings.value = KeyboardSettings(toolbar = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.toolbar } }
+        onMain { service().rebuildForTest() }
+        waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.TOOLBAR_SWITCH) } }
+        // The sticker key moved up to the toolbar, and the letters kept their height.
+        assertNull(onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.STICKERS) })
+        val keyAfter = waitFor { keyHeight()?.takeIf { it > 0 } }
+        assertTrue(kotlin.math.abs(keyAfter - keyBefore) <= 2, "$keyBefore -> $keyAfter")
+
+        var opened = 0
+        onMain { service().openPicker = { opened++ } }
+        click(KeyboardTags.TOOLBAR_SWITCH, inTyping = true)
+        waitFor { onMain { opened.takeIf { it == 1 } } }
+
+        click(KeyboardTags.TOOLBAR_EMOJI, inTyping = true)
+        waitFor { onMain { service().viewForTest.takeIf { it == KeyboardView.STICKERS } } }
+        val grid = waitFor { onMain { service().panelForTest?.findViewWithTag<View>(KeyboardTags.GRID_EMOJI) } }
+        waitFor { onMain { grid.isShown.takeIf { it } } }
+
+        click(KeyboardTags.LETTERS)
+        click(KeyboardTags.TOOLBAR_STICKERS, inTyping = true)
+        waitFor { onMain { service().viewForTest.takeIf { it == KeyboardView.STICKERS } } }
+    }
+
+    @Test
     fun accentsAreActionsForTalkBack() {
         focus { it.plain }
         if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)

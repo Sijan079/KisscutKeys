@@ -60,6 +60,7 @@ object SettingsTags {
     const val KEY_SOUND = "settings:kb-sound"
     const val VIBRATION = "settings:kb-vibration"
     const val NUMBER_ROW = "settings:kb-number-row"
+    const val TOOLBAR = "settings:kb-toolbar"
     fun height(height: KeyboardHeight) = "settings:kb-height:" + height.key
 }
 
@@ -196,7 +197,7 @@ private fun ThemeSegments(selected: ThemeMode, onPick: (ThemeMode) -> Unit) = Se
     onPick = onPick,
 )
 
-/** Key sound, vibration and number row switches, then the keyboard height. Applied at the next text field. */
+/** Key sound, vibration, number row and toolbar switches, then the keyboard height. Applied at the next text field. */
 @Composable
 private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSettings) -> Unit) {
     Group {
@@ -210,6 +211,10 @@ private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSetting
         HorizontalDivider(color = StickersTheme.colors.line)
         SwitchRow(R.string.settings_kb_number_row, settings.numberRow, SettingsTags.NUMBER_ROW) {
             onChange(settings.copy(numberRow = it))
+        }
+        HorizontalDivider(color = StickersTheme.colors.line)
+        SwitchRow(R.string.settings_kb_toolbar, settings.toolbar, SettingsTags.TOOLBAR) {
+            onChange(settings.copy(toolbar = it))
         }
         HorizontalDivider(color = StickersTheme.colors.line)
         Column(

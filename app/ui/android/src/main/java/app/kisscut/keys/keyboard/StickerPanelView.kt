@@ -41,6 +41,8 @@ class StickerPanelView(
     /** Height setting (Settings, Keyboard); the letters take the same height. */
     private val heightScale: Float = 1f,
     private val numberRow: Boolean = false,
+    /** The letters' toolbar is on: the panel grows by its height so the letters keep their key size. */
+    private val toolbar: Boolean = false,
 ) : LinearLayout(context) {
 
     interface Actions {
@@ -448,6 +450,7 @@ class StickerPanelView(
         scale = heightScale,
         numberRow = numberRow,
         share = PANEL_SHARE,
+        toolbarPx = if (toolbar) dp(TOOLBAR_DP) else 0,
     )
 
     private fun spanCount(): Int {

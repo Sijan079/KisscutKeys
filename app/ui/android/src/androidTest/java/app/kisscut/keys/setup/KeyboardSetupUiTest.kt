@@ -18,6 +18,9 @@ import app.kisscut.keys.settings.SettingsTags
 import app.kisscut.keys.common.PartTags
 import app.kisscut.keys.ui.theme.StickersTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import org.junit.After
@@ -46,6 +49,7 @@ class KeyboardSetupUiTest {
         override fun refresh() = Unit
     }
     private val actions = mutableListOf<SetupAction>()
+    private var settingsRequests by mutableIntStateOf(0)
 
     @After
     fun tearDown() = library.close()
@@ -64,6 +68,7 @@ class KeyboardSetupUiTest {
                             }
                             KeyboardSetupScreen(vm, onAction = { actions += it }, onLeave = leave)
                         },
+                        settingsRequests = settingsRequests,
                     )
                 }
             }
@@ -111,5 +116,13 @@ class KeyboardSetupUiTest {
         rule.onNodeWithTag(SetupTags.SKIP).performClick()
         rule.waitUntil(5_000) { store.dismissed.value }
         rule.onNodeWithTag(SettingsTags.KEYBOARD).assertIsDisplayed()
+    }
+
+    @Test
+    fun keyboardToolbarRequestOpensSettings() {
+        setContent(startAtSetup = false)
+        rule.onNodeWithTag(PartTags.NAV_LIBRARY).assertIsDisplayed()
+        settingsRequests++
+        rule.onNodeWithTag("settings").assertIsDisplayed()
     }
 }

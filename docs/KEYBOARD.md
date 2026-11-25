@@ -29,9 +29,10 @@ In the app's Settings screen, Keyboard group:
 - Sound on key press (default off): the system key-click sound, a little under media volume. Plays even when the phone's Touch sounds are off (this switch is the setting).
 - Vibrate on key press (default on): the light haptic tap.
 - Number row (default off): digits 1 to 0 above the letters. The panel grows by one key row, so keys keep their size.
+- Toolbar (default off, M6.7): a 48 dp row above the letters, on every page. Left: Stickers and Emoji (the sticker panel on its Emoji tab); both dimmed in password fields. Right: Keyboard settings (opens the app on Settings through `MainActivity.EXTRA_OPEN_SETTINGS`) and Switch keyboard (the system keyboard list). The sticker key leaves the bottom row; the panel grows by the toolbar's height, so keys keep their size. Design: "Space key" page, option B.
 - Keyboard height: Small (0.85x), Normal, Large (1.15x). The letters and the sticker panel share the height.
 
-Sound and vibration apply on the next tap (`KeyFeedback` reads them each time). Number row and height rebuild the views when the next field opens, like the theme. Not part of backups or shared packs.
+Sound and vibration apply on the next tap (`KeyFeedback` reads them each time). Number row, toolbar and height rebuild the views when the next field opens, like the theme. Not part of backups or shared packs.
 
 ### Emoji tab (M6)
 
