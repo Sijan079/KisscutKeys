@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Stroke icon in the Keyboard board's style; tinted at runtime. Toolbar: keyboard settings. -->
+<!-- Stroke icon in the Keyboard board's style; tinted at runtime. Toolbar: keyboard settings (a gear). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M12,9a3,3 0 1,0 0.001,0zM12,2v3M12,19v3M2,12h3M19,12h3M4.9,4.9l2.1,2.1M17,17l2.1,2.1M4.9,19.1L7,17M17,7l2.1,-2.1" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:fillColor="#00000000" android:pathData="M12,5.5a6.5,6.5 0 1,0 0.001,0zM12,9.5a2.5,2.5 0 1,0 0.001,0z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="3.2" android:strokeLineCap="butt" android:fillColor="#00000000" android:pathData="M12,6V3M12,18V21M6,12H3M18,12H21M16.24,7.76L18.36,5.64M7.76,16.24L5.64,18.36M7.76,7.76L5.64,5.64M16.24,16.24L18.36,18.36" />
 </vector>
