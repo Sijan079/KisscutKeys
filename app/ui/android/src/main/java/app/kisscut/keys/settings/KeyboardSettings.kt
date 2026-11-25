@@ -30,7 +30,16 @@ data class KeyboardSettings(
 
     /** A row above the letters with Stickers, Emoji, Settings and Switch keyboard. */
     val toolbar: Boolean = false,
-)
+
+    /** Fix the word on space or punctuation. Off until a Tagalog list lands, so Taglish isn't "fixed". */
+    val autocorrect: Boolean = false,
+
+    /** Words to tap above the letters; always on while [autocorrect] is (see [showsSuggestions]). */
+    val suggestions: Boolean = true,
+) {
+    /** Autocorrect on forces suggestions on, whatever their own switch says (user's call, 2026-11-25). */
+    val showsSuggestions: Boolean get() = autocorrect || suggestions
+}
 
 interface KeyboardSettingsStore {
     val settings: Flow<KeyboardSettings>
@@ -49,6 +58,8 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             numberRow = it[NUMBER_ROW] ?: defaults.numberRow,
             height = KeyboardHeight.of(it[HEIGHT]),
             toolbar = it[TOOLBAR] ?: defaults.toolbar,
+            autocorrect = it[AUTOCORRECT] ?: defaults.autocorrect,
+            suggestions = it[SUGGESTIONS] ?: defaults.suggestions,
         )
     }
 
@@ -59,6 +70,8 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             it[NUMBER_ROW] = settings.numberRow
             it[HEIGHT] = settings.height.key
             it[TOOLBAR] = settings.toolbar
+            it[AUTOCORRECT] = settings.autocorrect
+            it[SUGGESTIONS] = settings.suggestions
         }
     }
 
@@ -68,5 +81,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
         val NUMBER_ROW = booleanPreferencesKey("kb_number_row")
         val HEIGHT = stringPreferencesKey("kb_height")
         val TOOLBAR = booleanPreferencesKey("kb_toolbar")
+        val AUTOCORRECT = booleanPreferencesKey("kb_autocorrect")
+        val SUGGESTIONS = booleanPreferencesKey("kb_suggestions")
     }
 }

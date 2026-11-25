@@ -62,6 +62,10 @@ object KeyboardTags {
     const val TOOLBAR_EMOJI = "toolbar:emoji"
     const val TOOLBAR_SETTINGS = "toolbar:settings"
     const val TOOLBAR_SWITCH = "toolbar:switch"
+
+    // Suggestion strip, slots 0 to 2 left to right
+    const val STRIP = "strip"
+    fun suggestion(slot: Int) = "strip:$slot"
 }
 
 /**

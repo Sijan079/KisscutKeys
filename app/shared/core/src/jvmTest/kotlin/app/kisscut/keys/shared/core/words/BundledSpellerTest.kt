@@ -18,6 +18,7 @@ class BundledSpellerTest {
         val expected = mapOf(
             "teh" to "the", "dont" to "don't", "im" to "I'm", "i" to "I", "recieve" to "receive",
             "becuase" to "because", "tomorow" to "tomorrow", "alot" to "a lot", "wierd" to "weird",
+            "wlrld" to "world", "wlrdld" to "world",
             "thx" to null, "lol" to null, "idk" to null, "brb" to null, "haha" to null,
         )
         for ((typed, fix) in expected) assertEquals(fix, speller.autocorrect(typed), typed)

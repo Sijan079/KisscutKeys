@@ -24,8 +24,9 @@ import app.kisscut.keys.R
 /**
  * The typing keyboard (docs/KEYBOARD.md, Typing layout): letters, `?123` and `=\<` pages, Shift with caps lock,
  * Backspace that repeats while held, an Enter key that shows the field's action and a sticker key.
- * Holding Space opens the keyboard list. With [toolbar] on, a row above the keys holds Stickers, Emoji,
- * Settings and Switch keyboard, and the sticker key leaves the bottom row.
+ * Holding Space opens the keyboard list. With [topRow] on, a row above the keys shows suggestions while a word is
+ * being typed and, between words, the toolbar (Stickers, Emoji, Settings and Switch keyboard) if [toolbar] is on,
+ * else nothing; the row never changes height. With the toolbar, the sticker key leaves the bottom row.
  * It only reports key presses through [actions]; it never sees the field's text.
  */
 @SuppressLint("ViewConstructor")
@@ -36,6 +37,7 @@ class TypingView(
     private val feedback: KeyFeedback,
     private val numberRow: Boolean = false,
     private val toolbar: Boolean = false,
+    private val topRow: Boolean = toolbar,
 ) : LinearLayout(context) {
 
     interface Actions {
@@ -55,6 +57,9 @@ class TypingView(
 
         /** Toolbar: the app's Settings screen. */
         fun onSettings()
+
+        /** A tapped suggestion; [keep] when it is the word as typed, chosen over a correction. */
+        fun onSuggestion(word: String, keep: Boolean)
     }
 
     val shift = ShiftLogic()
@@ -66,6 +71,9 @@ class TypingView(
     private val letterLabels = mutableListOf<Pair<TextView, String>>()
     private var shiftIcon: ImageView? = null
     private val popups = KeyPopups(context, palette, this)
+    private var toolbarIcons: View? = null
+    private var strip: LinearLayout? = null
+    private var slots: List<StripSlot?> = emptyList()
 
     init {
         orientation = VERTICAL
@@ -133,7 +141,7 @@ class TypingView(
         removeAllViews()
         letterLabels.clear()
         shiftIcon = null
-        if (toolbar) addView(toolbarRow(), LayoutParams(MATCH, dp(TOOLBAR_DP)))
+        if (topRow) addView(topRowView(), LayoutParams(MATCH, dp(TOOLBAR_DP)))
         for (row in typingRows(page, numberRow, toolbar)) {
             val line = LinearLayout(context).apply {
                 orientation = HORIZONTAL
@@ -147,6 +155,82 @@ class TypingView(
             addView(line, LayoutParams(MATCH, 0).apply { weight = 1f })
         }
         refreshShift()
+        showSuggestions(slots)
+    }
+
+    /** The row above the keys: the toolbar icons (if on) under the suggestion strip, which covers them while shown. */
+    private fun topRowView() = FrameLayout(context).apply {
+        toolbarIcons = if (toolbar) toolbarRow().also { addView(it, FrameLayout.LayoutParams(MATCH, MATCH)) } else null
+        strip = LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            tag = KeyboardTags.STRIP
+            visibility = GONE
+        }.also { addView(it, FrameLayout.LayoutParams(MATCH, MATCH)) }
+    }
+
+    /** Shows [newSlots] (from [stripSlots]); an empty list shows the toolbar or a blank row. */
+    fun showSuggestions(newSlots: List<StripSlot?>) {
+        slots = newSlots
+        val strip = strip ?: return
+        strip.removeAllViews()
+        if (newSlots.isEmpty()) {
+            strip.visibility = GONE
+            toolbarIcons?.visibility = VISIBLE
+            return
+        }
+        toolbarIcons?.visibility = INVISIBLE
+        strip.visibility = VISIBLE
+        newSlots.forEachIndexed { i, slot ->
+            if (i > 0) {
+                strip.addView(
+                    View(context).apply { setBackgroundColor(palette.line) },
+                    LayoutParams(dp(1), dp(20)),
+                )
+            }
+            strip.addView(slotView(i, slot), LayoutParams(0, MATCH).apply { weight = 1f })
+        }
+    }
+
+    private fun slotView(index: Int, slot: StripSlot?) = FrameLayout(context).apply {
+        tag = KeyboardTags.suggestion(index)
+        if (slot == null) return@apply
+        addView(
+            TextView(context).apply {
+                text = slot.label
+                textSize = 16f
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                gravity = Gravity.CENTER
+                setTextColor(if (slot.kind == SlotKind.KEEP) palette.muted else palette.text)
+                applyFigtree(if (slot.kind == SlotKind.BEST || slot.kind == SlotKind.FIX) 800 else 600)
+                if (slot.kind == SlotKind.KEEP) setTypeface(typeface, android.graphics.Typeface.ITALIC)
+                importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+            },
+            FrameLayout.LayoutParams(MATCH, WRAP, Gravity.CENTER).apply { setMargins(dp(6), 0, dp(6), 0) },
+        )
+        if (slot.kind == SlotKind.FIX) {
+            addView(
+                View(context).apply { background = rounded(palette.lime, dp(2f)) },
+                FrameLayout.LayoutParams(dp(28), dp(3), Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM)
+                    .apply { bottomMargin = dp(6) },
+            )
+        }
+        contentDescription = if (slot.kind == SlotKind.KEEP) {
+            context.getString(R.string.kb_suggestion_keep, slot.word)
+        } else {
+            slot.word
+        }
+        background = StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_pressed), keyShape(palette.raised))
+            addState(intArrayOf(), null)
+        }
+        isClickable = true
+        isFocusable = true
+        setOnClickListener {
+            tap(it)
+            actions.onSuggestion(slot.word, keep = slot.kind == SlotKind.KEEP)
+        }
     }
 
     private fun keyView(key: Key): View = when (key) {

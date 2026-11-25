@@ -66,7 +66,8 @@ class Speller(lists: List<WordList>) {
      * The correction to apply when [typed] is finished (space or punctuation), or null to leave it alone.
      * Never touches: known words, words with digits or symbols, ALL CAPS or MixedCase, anything in [reverted]
      * (keys from [key]), or offensive targets. Applies a fix pair only when [typed] is not a real word. Otherwise
-     * only a one-typo correction with a clear lead; apostrophe and case-only fixes ("dont", "i") always apply.
+     * only a one-typo correction (two typos from six letters on) with a clear lead; apostrophe and case-only
+     * fixes ("dont", "i") always apply.
      */
     fun autocorrect(typed: String, reverted: Set<String> = emptySet()): String? {
         val k = key(typed)
@@ -74,7 +75,9 @@ class Speller(lists: List<WordList>) {
         if (typed.length > 1 && (isAllCaps(typed) || isMixedCase(typed))) return null
         if (knownAsTyped(typed) != null || k in CHAT_WORDS) return null
         fixes[typed.lowercase()]?.let { return withCase(typed, it) }
-        val candidates = corrections(k, MAX_AUTOCORRECT_COST)
+        // Two typos only in longer words: in short ones they turn almost anything into another real word.
+        val maxCost = if (k.length >= LONG_WORD) MAX_AUTOCORRECT_COST_LONG else MAX_AUTOCORRECT_COST
+        val candidates = corrections(k, maxCost)
             .filterNot { (e, _) -> e.word.offensive }
             .map { (e, cost) -> Triple(e, cost, e.word.frequency - COST_WEIGHT * cost) }
             .sortedWith(compareByDescending<Triple<Entry, Double, Double>> { it.third }.thenBy { it.first.word.text })
@@ -260,6 +263,10 @@ class Speller(lists: List<WordList>) {
         private const val COST_WEIGHT = 100.0
         private const val MAX_SUGGEST_COST = 2.0
         private const val MAX_AUTOCORRECT_COST = 1.0
+        private const val MAX_AUTOCORRECT_COST_LONG = 2.0
+
+        /** Words this long or longer may be autocorrected across two typos ("wlrdld" to "world"; user's call). */
+        private const val LONG_WORD = 6
         private const val FIX_SCORE = 1_000.0
         private const val COMPLETION_BASE = 20.0
         private const val COMPLETION_PER_CHAR = 6.0

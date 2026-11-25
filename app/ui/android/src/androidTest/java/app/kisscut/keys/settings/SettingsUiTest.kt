@@ -13,6 +13,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.kisscut.keys.backup.BackupDialogs
 import app.kisscut.keys.common.PartTags
@@ -33,6 +35,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /** Settings screen and the backup dialogs on the device (docs/UI_SPEC.md, Settings). */
 @RunWith(AndroidJUnit4::class)
@@ -113,7 +116,9 @@ class SettingsUiTest {
         rule.onNodeWithTag(SettingsTags.NUMBER_ROW).performScrollTo().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.TOOLBAR).performScrollTo().assertIsOff().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.NORMAL)).performScrollTo().assertIsSelected()
-        rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.LARGE)).performClick().assertIsSelected()
+        // The floating nav bar can cover this row on a tall list: press it directly, not by screen position.
+        rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.LARGE)).performScrollTo()
+            .performSemanticsAction(SemanticsActions.OnClick).assertIsSelected()
         assertEquals(
             KeyboardSettings(
                 keySound = true,
@@ -124,6 +129,30 @@ class SettingsUiTest {
             ),
             keyboard,
         )
+    }
+
+    @Test
+    fun suggestionsShowOnlyWhileAutocorrectIsOff() {
+        var keyboard by mutableStateOf(KeyboardSettings(suggestions = false))
+        rule.setContent {
+            StickersTheme {
+                SettingsScreen(
+                    SettingsUiState(keyboard = keyboard),
+                    SettingsActions(onKeyboard = { keyboard = it }),
+                    onNavigate = {},
+                )
+            }
+        }
+        rule.onNodeWithTag(SettingsTags.SUGGESTIONS).performScrollTo().assertIsOff().performClick().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.SUGGESTIONS).performClick().assertIsOff()
+        // Autocorrect on: suggestions always show, so their switch is hidden.
+        rule.onNodeWithTag(SettingsTags.AUTOCORRECT).performScrollTo().assertIsOff().performClick().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.SUGGESTIONS).assertDoesNotExist()
+        assertTrue(keyboard.showsSuggestions)
+        // Off again: the user's own choice is back.
+        rule.onNodeWithTag(SettingsTags.AUTOCORRECT).performClick().assertIsOff()
+        rule.onNodeWithTag(SettingsTags.SUGGESTIONS).assertIsOff()
+        assertEquals(KeyboardSettings(suggestions = false, autocorrect = false), keyboard)
     }
 
     @Test

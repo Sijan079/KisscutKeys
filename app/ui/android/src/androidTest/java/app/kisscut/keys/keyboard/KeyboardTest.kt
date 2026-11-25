@@ -22,6 +22,7 @@ import app.kisscut.keys.keyboard.StickerImeService.Companion.panelForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.typingForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.viewForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.rebuildForTest
+import app.kisscut.keys.keyboard.StickerImeService.Companion.spellerLoadedForTest
 import app.kisscut.keys.shared.core.ByteSource
 import app.kisscut.keys.shared.core.ImportResult
 import app.kisscut.keys.shared.db.Sticker
@@ -182,6 +183,123 @@ class KeyboardTest {
         assertEquals(KeyboardView.LETTERS, onMain { service().viewForTest })
         type(listOf("p", "w").map(::keyTag))
         waitFor { scenarioText { it.password }.takeIf { t -> t == "pw" } }
+    }
+
+    @Test
+    fun autocorrectFixesOnSpaceAndBackspaceUndoesIt() {
+        keyboardSettings.settings.value = KeyboardSettings(autocorrect = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.autocorrect } }
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "the " } }
+        click(KeyboardTags.KEY_BACKSPACE, inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "teh " } }
+        // Undone once, never corrected again in this field.
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "teh teh " } }
+        // A known word is left alone, and Backspace then deletes normally.
+        type(listOf("f", "o", "r", "m", KeyboardTags.SPACE).map(::keyTag))
+        click(KeyboardTags.KEY_BACKSPACE, inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "teh teh form" } }
+    }
+
+    @Test
+    fun autocorrectIsOffByDefaultAndNeverInPasswords() {
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "teh " } }
+
+        keyboardSettings.settings.value = KeyboardSettings(autocorrect = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.autocorrect } }
+        focus { it.password }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.password }.takeIf { t -> t == "teh " } }
+    }
+
+    @Test
+    fun undoNeverDeletesWhereTheUserMovedTheCursor() {
+        keyboardSettings.settings.value = KeyboardSettings(autocorrect = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.autocorrect } }
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("o", "k", KeyboardTags.SPACE, "t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "ok the " } }
+        // The user taps right after "ok" (the app moves the cursor), then presses Backspace.
+        scenario.onActivity { it.plain.setSelection(2) }
+        Thread.sleep(500)
+        click(KeyboardTags.KEY_BACKSPACE, inTyping = true)
+        // A normal Backspace at the new spot, not an undo of "the".
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "o the " } }
+    }
+
+    @Test
+    fun aFieldWithTextInItChecksTheCharacterBeforeANewWord() {
+        keyboardSettings.settings.value = KeyboardSettings(autocorrect = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.autocorrect } }
+        // A draft already in the box, like Discord keeps: the word after its space is corrected.
+        scenario.onActivity {
+            it.plain.setText("hello ")
+            it.plain.setSelection(6)
+        }
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("w", "l", "r", "l", "d", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "hello world " } }
+        // Glued to text that was already there: left alone.
+        scenario.onActivity {
+            it.plain.setText("john@")
+            it.plain.setSelection(5)
+        }
+        Thread.sleep(500)
+        type(listOf("g", "m", "i", "a", "l", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "john@gmial " } }
+    }
+
+    @Test
+    fun theStripSuggestsWhileTypingAndATapPutsTheWordIn() {
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("t", "o", "m", "o").map(::keyTag))
+        // The best word sits in the middle slot.
+        waitFor { onMain { slotText(1) }.takeIf { it == "tomorrow" } }
+        click(KeyboardTags.suggestion(1), inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "tomorrow " } }
+        // Between words the strip is gone; the row itself stays.
+        waitFor {
+            val strip = onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.STRIP) }
+            onMain { strip?.isShown == false }.takeIf { it }
+        }
+    }
+
+    @Test
+    fun withAutocorrectTheStripOffersTheFixAndTheTypedWordToKeep() {
+        keyboardSettings.settings.value = KeyboardSettings(autocorrect = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.autocorrect } }
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("t", "e", "h").map(::keyTag))
+        waitFor { onMain { slotText(1) }.takeIf { it == "the" } }
+        assertEquals("“teh”", onMain { slotText(0) })
+        // Keep what was typed: it goes in as is and is not corrected again in this field.
+        click(KeyboardTags.suggestion(0), inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "teh " } }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "teh teh " } }
+    }
+
+    @Test
+    fun anAppEndingTheWordNeverGetsItTypedTwice() {
+        focus { it.plain }
+        type(listOf("h", "e", "y").map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "hey" } }
+        // Some apps end the underlined word themselves (on Send, in search boxes) without moving the cursor.
+        scenario.onActivity { android.view.inputmethod.BaseInputConnection.removeComposingSpans(it.plain.text) }
+        Thread.sleep(500)
+        type(listOf("a").map(::keyTag))
+        Thread.sleep(500)
+        assertEquals("heya", scenarioText { it.plain })
     }
 
     @Test
@@ -445,6 +563,12 @@ class KeyboardTest {
     }
 
     /** Letters map to their key tag; other tags pass through. */
+    /** The text shown in suggestion slot [slot] (0 to 2), or null. Main thread. */
+    private fun slotText(slot: Int): String? {
+        val cell = service().typingForTest?.findViewWithTag<android.view.ViewGroup>(KeyboardTags.suggestion(slot))
+        return (cell?.getChildAt(0) as? android.widget.TextView)?.text?.toString()
+    }
+
     private fun keyTag(k: String) = if (k.length == 1) KeyboardTags.key(k) else k
 
     private fun scenarioText(field: (ImeTestActivity) -> EditText): String {

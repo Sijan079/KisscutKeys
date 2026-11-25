@@ -172,6 +172,7 @@
     <string name="kb_kind_gif">GIF</string>
     <string name="kb_switch_keyboard">Switch keyboard</string>
     <string name="kb_keyboard_settings">Keyboard settings</string>
+    <string name="kb_suggestion_keep">Keep %1$s</string>
     <string name="kb_backspace">Backspace</string>
     <string name="kb_empty_library_title">No stickers yet</string>
     <string name="kb_empty_library_body">Share an image to the Stickers app to save it, then send it from here.</string>
@@ -203,6 +204,8 @@
     <string name="settings_kb_vibration">Vibrate on key press</string>
     <string name="settings_kb_number_row">Number row</string>
     <string name="settings_kb_toolbar">Toolbar</string>
+    <string name="settings_kb_autocorrect">Autocorrect</string>
+    <string name="settings_kb_suggestions">Suggestions</string>
     <string name="settings_kb_height">Keyboard height</string>
     <string name="settings_kb_height_small">Small</string>
     <string name="settings_kb_height_normal">Normal</string>
@@ -225,7 +228,7 @@
     <string name="setup_step2_body">Pick it from the keyboard list, or tap the globe key in any chat.</string>
     <string name="setup_step3_title">Add your first stickers</string>
     <string name="setup_step3_body">Share an image to the app to save it.</string>
-    <string name="setup_privacy">Android will warn that keyboards can see what you type. This one sends your keys straight to the app and never stores, logs or shares them.</string>
+    <string name="setup_privacy">Android will warn that keyboards can see what you type. This one sends your keys straight to the app. It only holds the word you are typing, to suggest and fix it, and never stores, logs or shares what you type.</string>
     <string name="setup_open_settings">Open keyboard settings</string>
     <string name="setup_pick_keyboard">Choose Kisscut Keys</string>
     <string name="setup_add_stickers">Add stickers</string>

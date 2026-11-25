@@ -26,4 +26,27 @@ class InputFieldsTest {
         // 0x80 is the password variation only for text; on a number field it is not.
         assertFalse(isPasswordField(number or InputType.TYPE_TEXT_VARIATION_PASSWORD))
     }
+
+    @Test
+    fun typingAidsOnlyInPlainTextFields() {
+        assertTrue(allowsTypingAids(text))
+        val chat = text or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        assertTrue(allowsTypingAids(chat))
+        assertTrue(allowsTypingAids(text or InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE))
+        for (off in listOf(
+            InputType.TYPE_NULL,
+            text or InputType.TYPE_TEXT_VARIATION_PASSWORD,
+            text or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+            text or InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD,
+            text or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS,
+            text or InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS,
+            text or InputType.TYPE_TEXT_VARIATION_URI,
+            text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS,
+            number,
+            InputType.TYPE_CLASS_PHONE,
+            InputType.TYPE_CLASS_DATETIME,
+        )) {
+            assertFalse(allowsTypingAids(off), "inputType $off")
+        }
+    }
 }

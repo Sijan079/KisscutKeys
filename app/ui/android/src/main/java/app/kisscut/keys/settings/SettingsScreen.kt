@@ -34,6 +34,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -62,6 +65,8 @@ object SettingsTags {
     const val VIBRATION = "settings:kb-vibration"
     const val NUMBER_ROW = "settings:kb-number-row"
     const val TOOLBAR = "settings:kb-toolbar"
+    const val AUTOCORRECT = "settings:kb-autocorrect"
+    const val SUGGESTIONS = "settings:kb-suggestions"
     const val LICENSES = "settings:licenses"
     fun height(height: KeyboardHeight) = "settings:kb-height:" + height.key
 }
@@ -227,6 +232,17 @@ private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSetting
             onChange(settings.copy(numberRow = it))
         }
         HorizontalDivider(color = StickersTheme.colors.line)
+        SwitchRow(R.string.settings_kb_autocorrect, settings.autocorrect, SettingsTags.AUTOCORRECT) {
+            onChange(settings.copy(autocorrect = it))
+        }
+        // Suggestions sits under Autocorrect and only shows while it is off: Autocorrect always shows suggestions.
+        // The stored choice comes back when Autocorrect is turned off.
+        if (!settings.autocorrect) {
+            SwitchRow(R.string.settings_kb_suggestions, settings.suggestions, SettingsTags.SUGGESTIONS, nested = true) {
+                onChange(settings.copy(suggestions = it))
+            }
+        }
+        HorizontalDivider(color = StickersTheme.colors.line)
         SwitchRow(R.string.settings_kb_toolbar, settings.toolbar, SettingsTags.TOOLBAR) {
             onChange(settings.copy(toolbar = it))
         }
@@ -254,16 +270,43 @@ private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSetting
     }
 }
 
-/** A row with a title and a switch; the whole row toggles it. */
+/** Start indent of a setting that belongs to the one above it (Suggestions under Autocorrect). */
+private val NESTED_INDENT = 48.dp
+
+/** Where the tree line of a nested row runs down, and where it turns into the row. */
+private val BRANCH_X = 22.dp
+private val BRANCH_END = 38.dp
+
+/** The line starts this far up, inside the row above, so it hangs from that row's title. */
+private val BRANCH_REACH = 14.dp
+
+/**
+ * A row with a title and a switch; the whole row toggles it. A [nested] row is indented under the one above, with
+ * no divider between them: a line runs down from the row above and turns into this one, like a tree.
+ */
 @Composable
-private fun SwitchRow(title: Int, checked: Boolean, tag: String, onChange: (Boolean) -> Unit) {
+private fun SwitchRow(title: Int, checked: Boolean, tag: String, nested: Boolean = false, onChange: (Boolean) -> Unit) {
+    val branch = StickersTheme.colors.muted
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .then(
+                if (nested) {
+                    Modifier.drawBehind {
+                        val x = BRANCH_X.toPx()
+                        val mid = size.height / 2
+                        val stroke = 1.5.dp.toPx()
+                        drawLine(branch, Offset(x, -BRANCH_REACH.toPx()), Offset(x, mid), stroke, StrokeCap.Round)
+                        drawLine(branch, Offset(x, mid), Offset(BRANCH_END.toPx(), mid), stroke, StrokeCap.Round)
+                    }
+                } else {
+                    Modifier
+                },
+            )
             .heightIn(min = 56.dp)
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .padding(horizontal = 16.dp)
+            .padding(start = if (nested) NESTED_INDENT else 16.dp, end = 16.dp)
             .testTag(tag),
     ) {
         Text(

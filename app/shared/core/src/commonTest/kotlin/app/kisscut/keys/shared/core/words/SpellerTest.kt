@@ -105,9 +105,10 @@ class SpellerTest {
     fun autocorrectNeedsAClearLeadAndOneTypoAtMost() {
         // "helo" is as close to "hello" (a missed double letter) as to "help" (a neighbouring key): it stays.
         assertNull(speller.autocorrect("helo"))
-        // Two typos away is suggested, never applied.
-        assertTrue("tomorrow" in speller.suggest("tomorow") || "tomorrow" in speller.suggest("tmorow"))
-        assertNull(speller.autocorrect("tmorow"))
+        // Two typos: applied from six letters on, only suggested in shorter words.
+        assertEquals("tomorrow", speller.autocorrect("tmorow"))
+        assertTrue("help" in speller.suggest("hxkp"))
+        assertNull(speller.autocorrect("hxkp"))
         // Too short to guess.
         assertNull(speller.autocorrect("xz"))
     }
