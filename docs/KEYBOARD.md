@@ -50,6 +50,14 @@ English words for suggestions, autocorrect and swipe (used from M7 step 2 on). S
 
 Both files say in their header that they were changed from the source. `shared:core` `words.WordList` parses them (strict: a malformed line fails with its line number). The license text ships in `assets/licenses/` and shows on Settings, Open-source licenses.
 
+### Suggestions and autocorrect (M7)
+
+`shared:core` `words.Speller` works over a list of word lists at once (English now, Tagalog later; no language switch). It is pure: the keyboard passes in what was typed and what the user undid.
+- Matching ignores case and apostrophes ("dont" meets "don't"). Typo costs: 1 for a change, 0.6 for a neighbouring QWERTY key or two swapped letters, 0.4 for a missed or extra double letter ("helo", "helllo"). Suggestions reach 2, autocorrect 1. Only words whose first letter is the typed one, a neighbouring key or a swapped first pair are checked, and the letters used must be close, so a keystroke checks a few thousand words.
+- Suggestions (up to 3): a known word first as typed, then a fix pair, corrections (frequency minus 100 per unit of cost) and completions from the second letter on. Offensive words are never offered. The typed case carries over ("Teh" gives "The", "TEH" gives "THE").
+- Autocorrect never changes a known word, a word with digits or symbols, ALL CAPS, MixedCase, chat shorthand (`CHAT_WORDS`: lol, thx, idk and similar; "thx" otherwise became "the"), a word the user undid, or into an offensive word. A fix pair applies only when the typed word is not a real word ("bot" stays, "not" is suggested). Otherwise one typo at most, a target with frequency 60 or more, at least 3 letters, and a lead of 25 over the runner-up; apostrophe and case-only fixes ("dont", "i") always apply.
+- Speed (Redmi M2103K19G, debug build, `SpellerTimingTest`): 8 ms median and 14 ms at the 95th percentile per keystroke; loading the list takes about 2.5 s, so it loads off the main thread once per keyboard start.
+
 ## Components
 
 All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:
