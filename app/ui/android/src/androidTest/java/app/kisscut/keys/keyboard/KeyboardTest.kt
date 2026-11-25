@@ -228,6 +228,23 @@ class KeyboardTest {
     }
 
     @Test
+    fun holdingSpaceOpensTheKeyboardListAndTypesNothing() {
+        focus { it.plain }
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        var opened = 0
+        onMain { service().openPicker = { opened++ } }
+        val space = waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.SPACE) } }
+        val x = onMain { space.width / 2f }
+        val down = android.os.SystemClock.uptimeMillis()
+        touch(space, down, android.view.MotionEvent.ACTION_DOWN, x)
+        waitFor { onMain { opened.takeIf { it == 1 } } }
+        touch(space, down, android.view.MotionEvent.ACTION_UP, x)
+        type(listOf("a").map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "a" } }
+        assertEquals(1, opened)
+    }
+
+    @Test
     fun numberRowAndHeightRebuildTheKeyboard() {
         focus { it.plain }
         if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)

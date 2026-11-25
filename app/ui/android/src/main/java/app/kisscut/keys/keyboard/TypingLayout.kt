@@ -9,10 +9,9 @@ sealed class Key(val weight: Float) {
     data class Text(val text: String, val w: Float = 1f) : Key(w)
     data object Shift : Key(1.5f)
     data object Backspace : Key(1.5f)
-    data object Space : Key(4f)
+    data object Space : Key(5f)
     data object Enter : Key(1.5f)
     data object Stickers : Key(1f)
-    data object Globe : Key(1f)
 
     /** Switches to page [to]; the view labels it "?123", "ABC" or "=\<". */
     data class Page(val to: TypingPage, val w: Float = 1.5f) : Key(w)
@@ -27,7 +26,7 @@ enum class TypingPage { LETTERS, SYMBOLS, MORE_SYMBOLS }
 fun typingRows(page: TypingPage, numberRow: Boolean = false): List<List<Key>> {
     fun row(chars: String) = chars.map { Key.Text(it.toString()) }
     val bottom = { pageKey: Key.Page ->
-        listOf(pageKey, Key.Stickers, Key.Globe, Key.Text(","), Key.Space, Key.Text("."), Key.Enter)
+        listOf(pageKey, Key.Stickers, Key.Text(","), Key.Space, Key.Text("."), Key.Enter)
     }
     return when (page) {
         TypingPage.LETTERS -> listOfNotNull(

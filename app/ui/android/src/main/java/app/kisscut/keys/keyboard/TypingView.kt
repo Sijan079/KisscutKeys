@@ -23,7 +23,8 @@ import app.kisscut.keys.R
 
 /**
  * The typing keyboard (docs/KEYBOARD.md, Typing layout): letters, `?123` and `=\<` pages, Shift with caps lock,
- * Backspace that repeats while held, an Enter key that shows the field's action, a sticker key and a globe.
+ * Backspace that repeats while held, an Enter key that shows the field's action and a sticker key.
+ * Holding Space opens the keyboard list.
  * It only reports key presses through [actions]; it never sees the field's text.
  */
 @SuppressLint("ViewConstructor")
@@ -43,8 +44,9 @@ class TypingView(
         fun onMoveCursor(chars: Int)
         fun onEnter()
         fun onStickers()
-        fun onGlobe()
-        fun onGlobeLongPress()
+
+        /** Opens the system keyboard list (hold Space). */
+        fun onSwitchKeyboard()
     }
 
     val shift = ShiftLogic()
@@ -152,13 +154,17 @@ class TypingView(
                 pressWithPopups(cell, key.text, main)
             }
         }
-        Key.Space -> textKey(context.getString(R.string.kb_key_space_label), special = false, tag = KeyboardTags.SPACE)
+        Key.Space -> textKey(context.getString(R.string.kb_key_space), special = false, tag = KeyboardTags.SPACE)
             .apply {
-                (getChildAt(0) as TextView).textSize = 13f
+                (getChildAt(0) as TextView).textSize = 15f
                 contentDescription = context.getString(R.string.kb_key_space)
                 setOnClickListener {
                     tap(it)
                     actions.onText(" ")
+                }
+                ViewCompat.addAccessibilityAction(this, context.getString(R.string.kb_switch_keyboard)) { _, _ ->
+                    actions.onSwitchKeyboard()
+                    true
                 }
                 slideCursor(this)
             }
@@ -213,17 +219,6 @@ class TypingView(
                     actions.onStickers()
                 }
             }
-        Key.Globe -> iconKey(R.drawable.ic_kb_globe, R.string.kb_switch_keyboard, special = true, KeyboardTags.KEY_GLOBE)
-            .apply {
-                setOnClickListener {
-                    tap(it)
-                    actions.onGlobe()
-                }
-                setOnLongClickListener {
-                    actions.onGlobeLongPress()
-                    true
-                }
-            }
     }
 
     /**
@@ -268,19 +263,32 @@ class TypingView(
         }
     }
 
-    /** Space: a tap types a space, a slide moves the cursor and types nothing. TalkBack taps type a space. */
+    /**
+     * Space: a tap types a space, a slide moves the cursor and types nothing, and holding still opens the
+     * keyboard list and types nothing. TalkBack taps type a space; its actions menu has "Switch keyboard".
+     */
     @SuppressLint("ClickableViewAccessibility")
     private fun slideCursor(view: View) {
         val slide = CursorSlide(ViewConfiguration.get(context).scaledTouchSlop.toFloat(), dp(SLIDE_STEP_DP).toFloat())
+        var held = false
+        val hold = Runnable {
+            held = true
+            view.isPressed = false
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            actions.onSwitchKeyboard()
+        }
         view.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     v.isPressed = true
+                    held = false
                     tap(v)
                     slide.down(e.x)
+                    v.postDelayed(hold, SPACE_HOLD_MS)
                 }
-                MotionEvent.ACTION_MOVE -> {
+                MotionEvent.ACTION_MOVE -> if (!held) {
                     val chars = slide.move(e.x)
+                    if (slide.sliding) v.removeCallbacks(hold)
                     if (chars != 0) {
                         v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                         actions.onMoveCursor(chars)
@@ -288,9 +296,13 @@ class TypingView(
                 }
                 MotionEvent.ACTION_UP -> {
                     v.isPressed = false
-                    if (!slide.sliding) actions.onText(" ")
+                    v.removeCallbacks(hold)
+                    if (!slide.sliding && !held) actions.onText(" ")
                 }
-                MotionEvent.ACTION_CANCEL -> v.isPressed = false
+                MotionEvent.ACTION_CANCEL -> {
+                    v.isPressed = false
+                    v.removeCallbacks(hold)
+                }
             }
             true
         }
@@ -385,6 +397,9 @@ class TypingView(
         const val FIRST_REPEAT_MS = 400L
         const val REPEAT_MS = 60L
         const val LONG_PRESS_MS = 350L
+
+        /** Longer than a letter's accents: a slow tap on Space must still type a space. */
+        const val SPACE_HOLD_MS = 500L
         const val SLIDE_STEP_DP = 12
     }
 }

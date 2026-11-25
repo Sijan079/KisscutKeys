@@ -2,7 +2,6 @@ package app.kisscut.keys.keyboard
 
 import android.content.Intent
 import android.inputmethodservice.InputMethodService
-import android.os.Build
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -179,18 +178,11 @@ class StickerImeService : InputMethodService() {
         }
     }
 
-    private fun switchBack() {
-        val switched = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            switchToPreviousInputMethod()
-        } else {
-            val token = window?.window?.attributes?.token
-            @Suppress("DEPRECATION")
-            token != null && getSystemService(InputMethodManager::class.java).switchToLastInputMethod(token)
-        }
-        if (!switched) showPicker()
-    }
+    private fun showPicker() = openPicker()
 
-    private fun showPicker() = getSystemService(InputMethodManager::class.java).showInputMethodPicker()
+    /** Opens the system keyboard list; tests swap it so no system dialog covers the test screen. */
+    @VisibleForTesting
+    internal var openPicker: () -> Unit = { getSystemService(InputMethodManager::class.java).showInputMethodPicker() }
 
     /** Key presses from the letters. Text goes straight to the field; nothing is kept. */
     private inner class Keys : TypingView.Actions {
@@ -223,8 +215,7 @@ class StickerImeService : InputMethodService() {
             if (!password) show(KeyboardView.STICKERS)
         }
 
-        override fun onGlobe() = switchBack()
-        override fun onGlobeLongPress() = showPicker()
+        override fun onSwitchKeyboard() = showPicker()
     }
 
     private inner class Actions(private val model: KeyboardModel) : StickerPanelView.Actions {
@@ -239,7 +230,7 @@ class StickerImeService : InputMethodService() {
             currentInputConnection?.commitText(emoji, 1)
         }
         override fun onLetters() = show(KeyboardView.LETTERS)
-        override fun onGlobeLongPress() = showPicker()
+        override fun onSwitchKeyboard() = showPicker()
         override fun onBackspace() = sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
         override fun onOpenApp() {
             startActivity(Intent(this@StickerImeService, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

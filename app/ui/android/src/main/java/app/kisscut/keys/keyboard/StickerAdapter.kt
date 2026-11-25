@@ -55,7 +55,6 @@ object KeyboardTags {
     const val KEY_BACKSPACE = "key:backspace"
     const val ENTER = "key:enter"
     const val STICKERS = "key:stickers"
-    const val KEY_GLOBE = "key:globe"
 }
 
 /**

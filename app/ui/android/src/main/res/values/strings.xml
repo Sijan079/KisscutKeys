@@ -186,7 +186,6 @@
     <string name="kb_page_more_symbols">=\\&lt;</string>
     <string name="kb_key_letters">Letters</string>
     <string name="kb_key_space">Space</string>
-    <string name="kb_key_space_label">Kisscut Keys</string>
     <string name="kb_key_shift">Shift</string>
     <string name="kb_key_shift_on">Shift, on for one letter</string>
     <string name="kb_key_caps_lock">Caps lock</string>

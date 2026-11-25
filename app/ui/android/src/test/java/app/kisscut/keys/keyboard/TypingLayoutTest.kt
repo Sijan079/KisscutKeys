@@ -16,8 +16,10 @@ class TypingLayoutTest {
         assertEquals(listOf("qwertyuiop", "asdfghjkl", "zxcvbnm", ",."), rows.map(::texts))
         assertEquals(Key.Shift, rows[2].first())
         assertEquals(Key.Backspace, rows[2].last())
+        // No globe (holding Space opens the keyboard list); Space took its width, so the row keeps 11 units.
+        assertEquals(11f, rows[3].sumOf { it.weight.toDouble() }.toFloat())
         assertEquals(
-            listOf(Key.Page(TypingPage.SYMBOLS), Key.Stickers, Key.Globe, Key.Text(","), Key.Space, Key.Text("."), Key.Enter),
+            listOf(Key.Page(TypingPage.SYMBOLS), Key.Stickers, Key.Text(","), Key.Space, Key.Text("."), Key.Enter),
             rows[3],
         )
     }
@@ -52,10 +54,10 @@ class TypingLayoutTest {
     }
 
     @Test
-    fun everyPageHasStickersGlobeSpaceEnterAndBackspace() {
+    fun everyPageHasStickersSpaceEnterAndBackspace() {
         for (page in TypingPage.entries) {
             val keys = typingRows(page).flatten()
-            for (k in listOf(Key.Stickers, Key.Globe, Key.Space, Key.Enter, Key.Backspace)) {
+            for (k in listOf(Key.Stickers, Key.Space, Key.Enter, Key.Backspace)) {
                 assertTrue(k in keys, "$page lacks $k")
             }
         }

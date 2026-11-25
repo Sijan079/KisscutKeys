@@ -28,7 +28,7 @@ import kotlin.math.max
 
 /**
  * The sticker panel (docs/KEYBOARD.md, Keyboard board): tabs, subcollection chips, a sticker grid, and a
- * bottom row with the globe key, the All/Static/GIF switch and Backspace. Plain Views, built in code so it
+ * bottom row with the ABC key, the All/Static/GIF switch and Backspace. Plain Views, built in code so it
  * can read the theme tokens. Visuals follow the board; every touch area is at least 48dp.
  */
 @SuppressLint("ViewConstructor")
@@ -51,7 +51,7 @@ class StickerPanelView(
         fun onEmojiCategory(category: EmojiCategory)
         fun onEmoji(emoji: String)
         fun onLetters()
-        fun onGlobeLongPress()
+        fun onSwitchKeyboard()
         fun onBackspace()
         fun onOpenApp()
     }
@@ -343,7 +343,7 @@ class StickerPanelView(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(10), 0, dp(10), 0)
         }
-        // ABC returns to the letters; holding it opens the system keyboard list (the letters have the globe).
+        // ABC returns to the letters; holding it opens the system keyboard list (on the letters, hold Space).
         val letters = TextView(context).apply {
             tag = KeyboardTags.LETTERS
             text = context.getString(R.string.kb_page_letters)
@@ -356,7 +356,7 @@ class StickerPanelView(
             isClickable = true
             isFocusable = true
             setOnClickListener { actions.onLetters() }
-            setOnLongClickListener { actions.onGlobeLongPress(); true }
+            setOnLongClickListener { actions.onSwitchKeyboard(); true }
         }
         val backspace = key(R.drawable.ic_kb_backspace, R.string.kb_backspace, KeyboardTags.BACKSPACE).apply {
             setOnClickListener { actions.onBackspace() }
