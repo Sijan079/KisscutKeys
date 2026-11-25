@@ -19,7 +19,9 @@ import app.kisscut.keys.shared.core.KeyboardTab
 import app.kisscut.keys.shared.core.StickerKind
 import app.kisscut.keys.shared.core.words.Composer
 import app.kisscut.keys.shared.core.words.Edit
+import app.kisscut.keys.shared.core.words.KeyLayout
 import app.kisscut.keys.shared.core.words.Speller
+import app.kisscut.keys.shared.core.words.SwipeMatcher
 import app.kisscut.keys.shared.core.words.WordList
 import app.kisscut.keys.shared.db.Sticker
 import kotlinx.coroutines.CoroutineScope
@@ -73,9 +75,18 @@ class StickerImeService : InputMethodService() {
     @Volatile
     private var speller: Speller? = null
 
+    /** Null until the word list is loaded; no swipes until then. */
+    @Volatile
+    private var swiper: SwipeMatcher? = null
+
+    /** Other matches of the last swipe, shown in the strip until the next key. */
+    private var swipeChoices: Pair<String, List<String>>? = null
+
+    /** Bumped on every key, so a swipe result that arrives after the user typed on is dropped. */
+    private var keystrokes = 0
     private val composer = Composer(
         corrector = { typed, reverted -> speller?.autocorrect(typed, reverted) },
-        startsAtBoundary = ::wordStartsHere,
+        charBefore = ::charBeforeCursor,
     )
     private val cursor = CursorTracker()
 
@@ -90,13 +101,19 @@ class StickerImeService : InputMethodService() {
         super.onCreate()
         active = WeakReference(this)
         loader = MainScope().also { scope ->
-            scope.launch { speller = withContext(Dispatchers.Default) { loadSpeller() } }
+            scope.launch {
+                withContext(Dispatchers.Default) {
+                    val lists = listOf(loadWords())
+                    speller = Speller(lists)
+                    swiper = SwipeMatcher(lists)
+                }
+            }
         }
     }
 
-    private fun loadSpeller(): Speller {
+    private fun loadWords(): WordList {
         fun read(name: String) = assets.open("words/$name").bufferedReader().use { it.readText() }
-        return Speller(listOf(WordList.parse(read("en_US.txt"), read("en_US_fixes.txt"))))
+        return WordList.parse(read("en_US.txt"), read("en_US_fixes.txt"))
     }
 
     override fun onCreateInputView(): View {
@@ -267,13 +284,13 @@ class StickerImeService : InputMethodService() {
     }
 
     /**
-     * Whether a word typed at the cursor stands on its own: the field starts there or a space or new line comes
-     * before it. Reads that one character only, and only when a word starts where this keyboard didn't put the
-     * cursor itself; nothing is kept.
+     * The one character before the cursor, or null at the start of the field: whether a new word stands on its own,
+     * and whether a swiped word needs a space first. Read only when a word starts where this keyboard didn't put
+     * the cursor itself; nothing is kept. When the field can't say, a letter is assumed (no correction, a space).
      */
-    private fun wordStartsHere(): Boolean {
-        val before = currentInputConnection?.getTextBeforeCursor(1, 0) ?: return false
-        return before.isEmpty() || before[0].isWhitespace()
+    private fun charBeforeCursor(): Char? {
+        val before = currentInputConnection?.getTextBeforeCursor(1, 0) ?: return 'x'
+        return before.firstOrNull()
     }
 
     /** Keeps the word being typed as it is (before Enter, stickers, emoji, a cursor slide or leaving the field). */
@@ -314,6 +331,8 @@ class StickerImeService : InputMethodService() {
      */
     private inner class Keys : TypingView.Actions {
         override fun onText(text: String) {
+            keystrokes++
+            swipeChoices = null
             if (aids) {
                 val autocorrect = (application as App).container.keyboardSettings.value.autocorrect
                 apply(composer.type(text, autocorrect))
@@ -325,7 +344,40 @@ class StickerImeService : InputMethodService() {
         }
 
         override fun onBackspace() {
+            keystrokes++
+            swipeChoices = null
             if (aids) apply(composer.backspace()) else sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+        }
+
+        override fun trailWidthDp(): Float = (application as App).container.keyboardSettings.value.trail.dp
+
+        override fun canSwipe(): Boolean =
+            aids && swiper != null && (application as App).container.keyboardSettings.value.swipe
+
+        /**
+         * Matches the swipe off the main thread; the best word goes in underlined (a space first where needed) and
+         * the other matches wait in the strip. Shift applies as for typing: one capital, or all caps when locked.
+         */
+        override fun onSwipe(path: FloatArray, layout: KeyLayout) {
+            val swiper = swiper ?: return
+            val scope = scope ?: return
+            val stamp = ++keystrokes
+            scope.launch {
+                val words = withContext(Dispatchers.Default) { swiper.match(path, layout) }
+                if (words.isEmpty() || stamp != keystrokes) return@launch
+                val typing = typing ?: return@launch
+                val cased = words.map {
+                    when (typing.shift.state) {
+                        ShiftState.OFF -> it
+                        ShiftState.ONCE -> it.replaceFirstChar { c -> c.uppercaseChar() }
+                        ShiftState.LOCKED -> it.uppercase()
+                    }
+                }
+                swipeChoices = cased.first() to cased.drop(1)
+                apply(composer.swipe(cased.first()))
+                typing.shift.typed()
+                updateAutoCaps()
+            }
         }
 
         /** Arrow key events, like a hardware keyboard: the field moves its own cursor; nothing is read. */
@@ -363,6 +415,8 @@ class StickerImeService : InputMethodService() {
         }
 
         override fun onSuggestion(word: String, keep: Boolean) {
+            keystrokes++
+            swipeChoices = null
             apply(composer.pick(word, keep))
             typing?.shift?.typed()
             updateAutoCaps()
@@ -396,6 +450,12 @@ class StickerImeService : InputMethodService() {
         if (!aids || word.isEmpty() || speller == null) {
             typing.showSuggestions(emptyList())
             return
+        }
+        swipeChoices?.let { (swiped, choices) ->
+            if (swiped == word) {
+                typing.showSuggestions(stripSlots(word, choices, fix = null))
+                return
+            }
         }
         val autocorrect = (application as App).container.keyboardSettings.value.autocorrect && composer.mayCorrect
         val reverted = composer.revertedWords
@@ -445,7 +505,7 @@ class StickerImeService : InputMethodService() {
         internal val StickerImeService.typingForTest: TypingView? get() = typing
 
         @VisibleForTesting
-        internal val StickerImeService.spellerLoadedForTest: Boolean get() = speller != null
+        internal val StickerImeService.spellerLoadedForTest: Boolean get() = speller != null && swiper != null
 
         @VisibleForTesting
         internal val StickerImeService.viewForTest: KeyboardView get() = view

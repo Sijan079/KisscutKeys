@@ -75,6 +75,14 @@ Both files say in their header that they were changed from the source. `shared:c
 - Tapping a slot puts its word in with a space (`Composer.pick`); the quoted word also stops that word being corrected again in the field. Slots are 1/3 of the width and 48 dp high; TalkBack reads the word, or "Keep teh".
 - The lookup runs off the main thread on each keystroke and a result for a word that has changed since is dropped, so typing never waits on it.
 
+### Swipe typing (M7)
+
+- Settings, Keyboard, "Swipe typing" (default on, `kb_swipe`; user's call). Read when a finger goes down, so a change applies at once. Only on the letters page of plain text fields (never in passwords, email or web address fields), with one finger, the accents closed and TalkBack not exploring by touch.
+- Gesture (`TypingView.onInterceptTouchEvent`, `SwipeTracker`): a finger that goes down on a letter and travels 0.8 of a key width onto another key becomes a swipe; the key gets CANCEL and types nothing; a second finger cancels it. A lime trail follows the finger; only its last 250 ms show, fading and thinning toward the tail, and it fades out the same way after the finger lifts (`SwipeTrail`; user's call). Its width at the head is "Trail thickness" in Settings: Thin 8 dp, Medium 12 dp (default), Thick 18 dp (user's call), read when a swipe starts. Key centres are read from the live views when the finger goes down (number row, height and the top row move them).
+- Matching (`shared:core` `words.SwipeMatcher`, off the main thread): only words whose first and last letters are near where the finger went down and lifted; doubled letters trace one key; offensive words never. The finger path is smoothed (points closer than a quarter key dropped, as jitter stretches it) and every letter must lie within 1.3 keys of it; both paths are resampled to 32 points and compared with dynamic time warping in a band (order kept, jitter absorbed), dropping a word early once it can't win; score = frequency - 220 per key of mean distance - 70 per key between the finger's start or end and the word's first or last key ("hello" over the more common "help").
+- Text (`Composer.swipe`): the best word goes in underlined, with a space first unless the cursor follows a space, a new line, the field start or an opening character (`@ # ( / [ { < " ' -`); a word being typed is kept, with a space after it. Shift applies as for typing. The other matches show in the strip until the next key. Backspace removes a swiped word whole.
+- Speed (Redmi M2103K19G, debug build, `SpellerTimingTest`): 16 ms median and 31 ms at worst per swipe; the first version took 179 and 490 ms, fixed by the "letters near the path" check, the band and giving up early.
+
 ## Components
 
 All in `app/ui/android/src/main/java/app/kisscut/keys/keyboard/`:

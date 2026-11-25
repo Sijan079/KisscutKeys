@@ -1,6 +1,9 @@
 package app.kisscut.keys.keyboard
 
 import android.annotation.SuppressLint
+import app.kisscut.keys.shared.core.words.KeyLayout
+import android.graphics.Paint
+import android.graphics.Canvas
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
@@ -60,6 +63,15 @@ class TypingView(
 
         /** A tapped suggestion; [keep] when it is the word as typed, chosen over a correction. */
         fun onSuggestion(word: String, keep: Boolean)
+
+        /** Swipe typing is on and allowed in this field (asked when a finger goes down on a letter). */
+        fun canSwipe(): Boolean
+
+        /** A finished swipe: [path] is x0, y0, x1, y1, ... in this view's coordinates, over [layout]. */
+        fun onSwipe(path: FloatArray, layout: KeyLayout)
+
+        /** The swipe trail's width at its head, in dp (Settings, Trail thickness); asked when a swipe starts. */
+        fun trailWidthDp(): Float
     }
 
     val shift = ShiftLogic()
@@ -71,6 +83,16 @@ class TypingView(
     private val letterLabels = mutableListOf<Pair<TextView, String>>()
     private var shiftIcon: ImageView? = null
     private val popups = KeyPopups(context, palette, this)
+    private val swipe = SwipeTracker()
+    private val trail = SwipeTrail()
+    private val trailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        color = palette.lime
+        alpha = 200
+        strokeWidth = context.dp(12f).toFloat()
+    }
     private var toolbarIcons: View? = null
     private var strip: LinearLayout? = null
     private var slots: List<StripSlot?> = emptyList()
@@ -156,6 +178,118 @@ class TypingView(
         }
         refreshShift()
         showSuggestions(slots)
+    }
+
+    /**
+     * Swipe typing: watches every touch on its way to the keys. A finger that goes down on a letter and travels
+     * most of a key away (and has left that key) becomes a swipe: the key gets CANCEL (it types nothing), the trail
+     * is drawn and the path goes to [Actions.onSwipe]. Never with a second finger, on other pages, with the
+     * accents open, with TalkBack exploring by touch, or where [Actions.canSwipe] says no.
+     */
+    override fun onInterceptTouchEvent(e: MotionEvent): Boolean {
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                swipe.reset()
+                val start = letterAt(e.x, e.y)
+                if (start != null && page == TypingPage.LETTERS && !popups.alternatesShown && !touchExploring() &&
+                    actions.canSwipe()
+                ) {
+                    swipe.arm(e.x, e.y, start, keyLayout())
+                }
+            }
+            MotionEvent.ACTION_MOVE -> if (swipe.armed && !swipe.active && swipe.leftStartKey(e.x, e.y)) {
+                if (popups.alternatesShown) {
+                    swipe.reset()
+                } else {
+                    swipe.start(e.x, e.y)
+                    popups.dismissAll()
+                    trail.clear()
+                    trailPaint.strokeWidth = context.dp(actions.trailWidthDp()).toFloat()
+                    trail.add(swipe.startX, swipe.startY, e.downTime)
+                    trail.add(e.x, e.y, e.eventTime)
+                    invalidate()
+                    return true
+                }
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> swipe.reset()
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (!swipe.active) swipe.reset()
+        }
+        return swipe.active
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (!swipe.active) return super.onTouchEvent(e)
+        when (e.actionMasked) {
+            MotionEvent.ACTION_MOVE -> {
+                for (h in 0 until e.historySize) {
+                    add(e.getHistoricalX(h), e.getHistoricalY(h), e.getHistoricalEventTime(h))
+                }
+                add(e.x, e.y, e.eventTime)
+                invalidate()
+            }
+            MotionEvent.ACTION_UP -> {
+                add(e.x, e.y, e.eventTime)
+                val layout = swipe.layout
+                val path = swipe.path()
+                swipe.reset()
+                // The trail fades out on its own (see dispatchDraw).
+                invalidate()
+                if (layout != null) actions.onSwipe(path, layout)
+            }
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_CANCEL -> {
+                swipe.reset()
+                trail.clear()
+                invalidate()
+            }
+        }
+        return true
+    }
+
+    private fun add(x: Float, y: Float, time: Long) {
+        swipe.add(x, y)
+        trail.add(x, y, time)
+    }
+
+    override fun dispatchDraw(canvas: Canvas) {
+        super.dispatchDraw(canvas)
+        // Only the last moments of the swipe show, fading toward the tail; keep redrawing until all of it is gone.
+        if (trail.draw(canvas, trailPaint, android.os.SystemClock.uptimeMillis())) postInvalidateOnAnimation()
+    }
+
+    private fun touchExploring(): Boolean = context
+        .getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+        ?.isTouchExplorationEnabled == true
+
+    /** The letter key under (x, y), from the live key views. */
+    private fun letterAt(x: Float, y: Float): Char? {
+        val r = android.graphics.Rect()
+        for ((label, letter) in letterLabels) {
+            val cell = label.parent as View
+            cell.getDrawingRect(r)
+            offsetDescendantRectToMyCoords(cell, r)
+            if (r.contains(x.toInt(), y.toInt())) return letter[0]
+        }
+        return null
+    }
+
+    /** Where every letter key is right now (number row, height and top row all move them). */
+    private fun keyLayout(): KeyLayout {
+        val r = android.graphics.Rect()
+        val letters = CharArray(letterLabels.size)
+        val xs = FloatArray(letterLabels.size)
+        val ys = FloatArray(letterLabels.size)
+        var width = 0f
+        letterLabels.forEachIndexed { i, (label, letter) ->
+            val cell = label.parent as View
+            cell.getDrawingRect(r)
+            offsetDescendantRectToMyCoords(cell, r)
+            letters[i] = letter[0]
+            xs[i] = r.exactCenterX()
+            ys[i] = r.exactCenterY()
+            width += r.width()
+        }
+        return KeyLayout(letters, xs, ys, keyWidth = if (letters.isEmpty()) 1f else width / letters.size)
     }
 
     /** The row above the keys: the toolbar icons (if on) under the suggestion strip, which covers them while shown. */

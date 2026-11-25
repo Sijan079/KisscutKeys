@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.kisscut.keys.shared.core.words.Speller
+import app.kisscut.keys.shared.core.words.SwipeMatcher
+import app.kisscut.keys.shared.core.words.KeyLayout
 import app.kisscut.keys.shared.core.words.WordList
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,5 +51,33 @@ class SpellerTimingTest {
         Log.i("SpellerTiming", report)
         assertTrue(loadMs < 3_000, report)
         assertTrue(p95 < 16.0, report)
+    }
+
+    @Test
+    fun aSwipeIsMatchedWellUnderAQuarterSecond() {
+        val list = WordList.parse(read("en_US.txt"), read("en_US_fixes.txt"))
+        val matcher = SwipeMatcher(listOf(list))
+        // A QWERTY grid like the keyboard's: keys 100 px wide, rows 150 px apart.
+        val rows = listOf("qwertyuiop" to 0f, "asdfghjkl" to 0.5f, "zxcvbnm" to 1.5f)
+        val letters = rows.flatMap { it.first.toList() }.toCharArray()
+        val xs = rows.flatMap { (keys, offset) -> keys.indices.map { (it + offset + 0.5f) * 100f } }.toFloatArray()
+        val ys = rows.flatMapIndexed { r, (keys, _) -> keys.map { (r + 0.5f) * 150f } }.toFloatArray()
+        val layout = KeyLayout(letters, xs, ys, keyWidth = 100f)
+        fun path(word: String): FloatArray = word.zipWithNext().flatMap { (a, b) ->
+            val (ax, ay) = layout.x(a) to layout.y(a)
+            val (bx, by) = layout.x(b) to layout.y(b)
+            (0 until 8).flatMap { s -> listOf(ax + (bx - ax) * s / 8f, ay + (by - ay) * s / 8f) }
+        }.toFloatArray() + floatArrayOf(layout.x(word.last()), layout.y(word.last()))
+
+        val words = listOf("hello", "world", "tomorrow", "because", "the", "people", "really", "thanks")
+        repeat(2) { for (w in words) matcher.match(path(w), layout) }
+        val times = words.map { w ->
+            val start = System.nanoTime()
+            matcher.match(path(w), layout)
+            (System.nanoTime() - start) / 1e6
+        }.sorted()
+        val report = "swipe median=${"%.1f".format(times[times.size / 2])}ms max=${"%.1f".format(times.last())}ms"
+        Log.i("SpellerTiming", report)
+        assertTrue(times.last() < 250.0, report)
     }
 }

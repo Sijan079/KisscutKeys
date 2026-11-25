@@ -290,6 +290,47 @@ class KeyboardTest {
     }
 
     @Test
+    fun swipingTypesWordsWithASpaceBetween() {
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        swipe("hello")
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "hello" } }
+        swipe("world")
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "hello world" } }
+        // Backspace takes the swiped word back whole.
+        click(KeyboardTags.KEY_BACKSPACE, inTyping = true)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "hello " } }
+    }
+
+    @Test
+    fun aTapThatDriftsALittleIsStillATap() {
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        val (x, y, w) = keyCentre('q')
+        val down = android.os.SystemClock.uptimeMillis()
+        dispatch(down, android.view.MotionEvent.ACTION_DOWN, x, y)
+        dispatch(down, android.view.MotionEvent.ACTION_MOVE, x + w * 0.3f, y)
+        dispatch(down, android.view.MotionEvent.ACTION_UP, x + w * 0.3f, y)
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "q" } }
+    }
+
+    @Test
+    fun noSwipeInPasswordsOrWhenSwitchedOff() {
+        focus { it.password }
+        swipe("hello")
+        Thread.sleep(800)
+        assertTrue(scenarioText { it.password }.length <= 1, scenarioText { it.password })
+
+        keyboardSettings.settings.value = KeyboardSettings(swipe = false)
+        waitFor { container.keyboardSettings.value.takeIf { !it.swipe } }
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        swipe("hello")
+        Thread.sleep(800)
+        assertTrue(scenarioText { it.plain }.length <= 1, scenarioText { it.plain })
+    }
+
+    @Test
     fun anAppEndingTheWordNeverGetsItTypedTwice() {
         focus { it.plain }
         type(listOf("h", "e", "y").map(::keyTag))
@@ -567,6 +608,40 @@ class KeyboardTest {
     private fun slotText(slot: Int): String? {
         val cell = service().typingForTest?.findViewWithTag<android.view.ViewGroup>(KeyboardTags.suggestion(slot))
         return (cell?.getChildAt(0) as? android.widget.TextView)?.text?.toString()
+    }
+
+    /** Centre of letter [c]'s key in the letters view, and the key's width. Main thread inside. */
+    private fun keyCentre(c: Char): Triple<Float, Float, Float> = onMain {
+        val typing = service().typingForTest!!
+        val key = typing.findViewWithTag<View>(KeyboardTags.key(c.toString()))
+        val r = android.graphics.Rect()
+        key.getDrawingRect(r)
+        typing.offsetDescendantRectToMyCoords(key, r)
+        Triple(r.exactCenterX(), r.exactCenterY(), r.width().toFloat())
+    }
+
+    private fun dispatch(down: Long, action: Int, x: Float, y: Float) = onMain {
+        val e = android.view.MotionEvent.obtain(down, android.os.SystemClock.uptimeMillis(), action, x, y, 0)
+        service().typingForTest!!.dispatchTouchEvent(e)
+        e.recycle()
+    }
+
+    /** Traces [word] across the letter keys with a real finger's events: down, moves between keys, up. */
+    private fun swipe(word: String) {
+        if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
+        val keys = word.map { keyCentre(it) }
+        val down = android.os.SystemClock.uptimeMillis()
+        dispatch(down, android.view.MotionEvent.ACTION_DOWN, keys[0].first, keys[0].second)
+        for (i in 0 until keys.size - 1) {
+            for (s in 1..6) {
+                val t = s / 6f
+                val x = keys[i].first + (keys[i + 1].first - keys[i].first) * t
+                val y = keys[i].second + (keys[i + 1].second - keys[i].second) * t
+                dispatch(down, android.view.MotionEvent.ACTION_MOVE, x, y)
+                Thread.sleep(8)
+            }
+        }
+        dispatch(down, android.view.MotionEvent.ACTION_UP, keys.last().first, keys.last().second)
     }
 
     private fun keyTag(k: String) = if (k.length == 1) KeyboardTags.key(k) else k

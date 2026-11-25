@@ -21,6 +21,19 @@ enum class KeyboardHeight(val key: String, val scale: Float) {
     }
 }
 
+/** Swipe trail thickness choices (Settings, Keyboard, under Swipe typing). [dp] is the trail's width at its head. */
+enum class TrailThickness(val key: String, val dp: Float) {
+    THIN("thin", 8f),
+    MEDIUM("medium", 12f),
+    THICK("thick", 18f),
+    ;
+
+    companion object {
+        /** Unknown or missing values mean [MEDIUM]. */
+        fun of(key: String?): TrailThickness = entries.firstOrNull { it.key == key } ?: MEDIUM
+    }
+}
+
 /** How the keyboard feels and looks (docs/KEYBOARD.md, Keyboard settings). Not part of backups. */
 data class KeyboardSettings(
     val keySound: Boolean = false,
@@ -36,6 +49,12 @@ data class KeyboardSettings(
 
     /** Words to tap above the letters; always on while [autocorrect] is (see [showsSuggestions]). */
     val suggestions: Boolean = true,
+
+    /** Trace across the letters to type a word. Read when a swipe starts, so a change applies at once. */
+    val swipe: Boolean = true,
+
+    /** How thick the swipe trail is; read when a swipe starts. */
+    val trail: TrailThickness = TrailThickness.MEDIUM,
 ) {
     /** Autocorrect on forces suggestions on, whatever their own switch says (user's call, 2026-11-25). */
     val showsSuggestions: Boolean get() = autocorrect || suggestions
@@ -60,6 +79,8 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             toolbar = it[TOOLBAR] ?: defaults.toolbar,
             autocorrect = it[AUTOCORRECT] ?: defaults.autocorrect,
             suggestions = it[SUGGESTIONS] ?: defaults.suggestions,
+            swipe = it[SWIPE] ?: defaults.swipe,
+            trail = TrailThickness.of(it[TRAIL]),
         )
     }
 
@@ -72,6 +93,8 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             it[TOOLBAR] = settings.toolbar
             it[AUTOCORRECT] = settings.autocorrect
             it[SUGGESTIONS] = settings.suggestions
+            it[SWIPE] = settings.swipe
+            it[TRAIL] = settings.trail.key
         }
     }
 
@@ -83,5 +106,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
         val TOOLBAR = booleanPreferencesKey("kb_toolbar")
         val AUTOCORRECT = booleanPreferencesKey("kb_autocorrect")
         val SUGGESTIONS = booleanPreferencesKey("kb_suggestions")
+        val SWIPE = booleanPreferencesKey("kb_swipe")
+        val TRAIL = stringPreferencesKey("kb_swipe_trail")
     }
 }

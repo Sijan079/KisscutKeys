@@ -25,12 +25,13 @@ sealed interface Edit {
  * field, so it is not corrected again. Only a word that starts at a word boundary is ever corrected: "gmail" in
  * "john@gmail.com" or "teh" in "#teh" is not a word of its own. After this keyboard's own space or new line the
  * boundary is known; where it isn't (a new field with text in it, after the cursor moved, Enter, a sticker or a
- * Backspace) [startsAtBoundary] is asked once, when the next word starts: the keyboard checks the one character
- * before the cursor (user's call, 2026-11-25).
+ * Backspace) [charBefore] is asked once, when the next word starts: the keyboard checks the one character before
+ * the cursor, or null at the start of the field (user's call, 2026-11-25). A swiped word ([swipe]) gets a space
+ * before it when it needs one, and Backspace removes it whole.
  */
 class Composer(
     private val corrector: (typed: String, reverted: Set<String>) -> String?,
-    private val startsAtBoundary: () -> Boolean = { false },
+    private val charBefore: () -> Char? = { 'x' },
 ) {
     private data class Undo(val typed: String, val fixed: String, val separator: String)
 
@@ -43,6 +44,12 @@ class Composer(
 
     /** Whether the word being typed started at such a boundary. */
     private var wordAtBoundary = false
+
+    /** The last character this keyboard committed, while it is still right before the cursor; null if unknown. */
+    private var lastCommitted: Char? = null
+
+    /** The word being typed came from a swipe (Backspace removes it whole). */
+    private var swiped = false
 
     /** The word being typed, or "" between words. */
     val current: String get() = word.toString()
@@ -60,7 +67,8 @@ class Composer(
     fun type(text: String, autocorrect: Boolean): List<Edit> {
         if (text.isNotEmpty() && text.all(::isWordChar)) {
             undo = null
-            if (word.isEmpty()) wordAtBoundary = atBoundary ?: startsAtBoundary()
+            swiped = false
+            if (word.isEmpty()) wordAtBoundary = atBoundary ?: charBefore().let { it == null || it.isWhitespace() }
             word.append(text)
             return listOf(Edit.Compose(current))
         }
@@ -71,12 +79,14 @@ class Composer(
     fun backspace(): List<Edit> {
         if (word.isNotEmpty()) {
             undo = null
-            word.deleteAt(word.length - 1)
+            if (swiped) word.clear() else word.deleteAt(word.length - 1)
+            swiped = false
             return listOf(Edit.Compose(current))
         }
         val last = undo ?: run {
             // The field deletes something this keyboard can't see: what comes before the cursor is unknown.
             atBoundary = null
+            lastCommitted = null
             return listOf(Edit.DeleteKey)
         }
         undo = null
@@ -93,9 +103,40 @@ class Composer(
         if (word.isEmpty()) return emptyList()
         if (keep) reverted += Speller.key(current)
         word.clear()
+        swiped = false
         undo = null
         atBoundary = true
+        lastCommitted = ' '
         return listOf(Edit.Commit("$text "))
+    }
+
+    /**
+     * A swiped word: a word still being typed is kept, with a space after it; otherwise a space goes first unless
+     * the cursor already follows a space, a new line, the field start or an opening character ("@", "#", "(").
+     * The swiped word is then the word being typed (underlined), so the strip can offer the other matches.
+     */
+    fun swipe(text: String): List<Edit> {
+        undo = null
+        val edits = ArrayList<Edit>()
+        if (word.isNotEmpty()) {
+            // The word being typed must be in this commit: a commit replaces the underlined word.
+            edits += Edit.Commit("$current ")
+            word.clear()
+        } else {
+            val before = when {
+                atBoundary == true -> null
+                lastCommitted != null -> lastCommitted
+                else -> charBefore()
+            }
+            if (before != null && !before.isWhitespace() && before !in OPENERS) edits += Edit.Commit(" ")
+        }
+        lastCommitted = null
+        atBoundary = true
+        word.append(text)
+        wordAtBoundary = true
+        swiped = true
+        edits += Edit.Compose(current)
+        return edits
     }
 
     /**
@@ -105,6 +146,8 @@ class Composer(
     fun finish(): List<Edit> {
         undo = null
         atBoundary = null
+        lastCommitted = null
+        swiped = false
         if (word.isEmpty()) return emptyList()
         word.clear()
         return listOf(Edit.FinishComposing)
@@ -115,6 +158,8 @@ class Composer(
         word.clear()
         undo = null
         atBoundary = null
+        lastCommitted = null
+        swiped = false
     }
 
     /** A new field: also forget which words the user undid. [atStart]: the cursor is at the very start of it. */
@@ -127,7 +172,9 @@ class Composer(
     private fun endWord(separator: String, correct: Boolean): List<Edit> {
         undo = null
         val startedAtBoundary = wordAtBoundary
+        swiped = false
         atBoundary = separator.isNotEmpty() && separator.last().isWhitespace()
+        lastCommitted = separator.lastOrNull()
         if (word.isEmpty()) return listOf(Edit.Commit(separator))
         val typed = current
         word.clear()
@@ -141,5 +188,9 @@ class Composer(
         val CORRECTING = setOf(" ", ".", ",", "!", "?", ";", ":", "\n")
 
         fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '\'' || c == '’'
+
+        /** Characters a swiped word follows with no space ("@name", "#tag", "(word"). */
+        const val OPENERS = "@#(/[{<\"'-“‘"
+
     }
 }

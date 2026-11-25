@@ -114,6 +114,14 @@ class SettingsUiTest {
         rule.onNodeWithTag(SettingsTags.VIBRATION).performScrollTo().assertIsOn()
         rule.onNodeWithTag(SettingsTags.KEY_SOUND).performScrollTo().assertIsOff().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.NUMBER_ROW).performScrollTo().performClick().assertIsOn()
+        rule.onNodeWithTag(SettingsTags.SWIPE).performScrollTo().assertIsOn()
+        // Trail thickness sits under Swipe typing and only shows while it is on.
+        rule.onNodeWithTag(SettingsTags.trail(TrailThickness.MEDIUM)).performScrollTo().assertIsSelected()
+        rule.onNodeWithTag(SettingsTags.trail(TrailThickness.THICK)).performScrollTo()
+            .performSemanticsAction(SemanticsActions.OnClick).assertIsSelected()
+        rule.onNodeWithTag(SettingsTags.SWIPE).performScrollTo().performClick().assertIsOff()
+        rule.onNodeWithTag(SettingsTags.trail(TrailThickness.THICK)).assertDoesNotExist()
+        rule.onNodeWithTag(SettingsTags.SWIPE).performScrollTo().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.TOOLBAR).performScrollTo().assertIsOff().performClick().assertIsOn()
         rule.onNodeWithTag(SettingsTags.height(KeyboardHeight.NORMAL)).performScrollTo().assertIsSelected()
         // The floating nav bar can cover this row on a tall list: press it directly, not by screen position.
@@ -126,6 +134,7 @@ class SettingsUiTest {
                 numberRow = true,
                 height = KeyboardHeight.LARGE,
                 toolbar = true,
+                trail = TrailThickness.THICK,
             ),
             keyboard,
         )

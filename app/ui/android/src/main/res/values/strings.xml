@@ -206,6 +206,11 @@
     <string name="settings_kb_toolbar">Toolbar</string>
     <string name="settings_kb_autocorrect">Autocorrect</string>
     <string name="settings_kb_suggestions">Suggestions</string>
+    <string name="settings_kb_swipe">Swipe typing</string>
+    <string name="settings_kb_trail">Trail thickness</string>
+    <string name="settings_kb_trail_thin">Thin</string>
+    <string name="settings_kb_trail_medium">Medium</string>
+    <string name="settings_kb_trail_thick">Thick</string>
     <string name="settings_kb_height">Keyboard height</string>
     <string name="settings_kb_height_small">Small</string>
     <string name="settings_kb_height_normal">Normal</string>

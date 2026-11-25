@@ -10,15 +10,16 @@ class ComposerTest {
 
     /** What the character before the cursor says when the keyboard has to check; counts the checks. */
     private var boundaryBefore = false
+    private var charBeforeCursor: Char? = 'x'
     private var checks = 0
     private val composer = Composer(
         corrector = { typed, reverted ->
             seenReverted += reverted.toSet()
             if (typed.lowercase() == "teh" && "teh" !in reverted) "the" else null
         },
-        startsAtBoundary = {
+        charBefore = {
             checks++
-            boundaryBefore
+            if (boundaryBefore) ' ' else charBeforeCursor
         },
     )
 
@@ -162,5 +163,52 @@ class ComposerTest {
         assertEquals(setOf("teh"), composer.revertedWords)
         typeAll("teh")
         assertEquals(listOf(Edit.Commit("teh ")), composer.type(" ", true))
+    }
+
+    @Test
+    fun aSwipedWordGetsASpaceOnlyWhereItNeedsOne() {
+        composer.newField(atStart = true)
+        assertEquals(listOf(Edit.Compose("hello")), composer.swipe("hello"), "field start")
+        assertEquals(listOf(Edit.Commit("hello "), Edit.Compose("world")), composer.swipe("world"), "after a swipe")
+        composer.type(" ", true)
+        assertEquals(listOf(Edit.Compose("again")), composer.swipe("again"), "after our own space")
+        composer.type("@", true)
+        assertEquals(listOf(Edit.Compose("name")), composer.swipe("name"), "after an opening character")
+        composer.type(".", true)
+        assertEquals(listOf(Edit.Commit(" "), Edit.Compose("so")), composer.swipe("so"), "after a full stop")
+    }
+
+    @Test
+    fun aSwipeAfterTypedLettersKeepsThemAsAWord() {
+        composer.newField(atStart = true)
+        typeAll("ok")
+        assertEquals(listOf(Edit.Commit("ok "), Edit.Compose("thanks")), composer.swipe("thanks"))
+    }
+
+    @Test
+    fun whereTheCursorWasMovedTheCharacterBeforeDecidesTheSpace() {
+        composer.reset()
+        charBeforeCursor = 'k'
+        assertEquals(listOf(Edit.Commit(" "), Edit.Compose("yes")), composer.swipe("yes"))
+        composer.reset()
+        charBeforeCursor = null
+        assertEquals(listOf(Edit.Compose("yes")), composer.swipe("yes"), "the field start")
+    }
+
+    @Test
+    fun backspaceRemovesASwipedWordWholeButTypedLettersOneByOne() {
+        composer.newField(atStart = true)
+        composer.swipe("hello")
+        assertEquals(listOf(Edit.Compose("")), composer.backspace())
+        composer.swipe("hello")
+        composer.type("s", true)
+        assertEquals(listOf(Edit.Compose("hello")), composer.backspace(), "typed after the swipe: one letter")
+    }
+
+    @Test
+    fun aSwipedWordEndsLikeATypedOneAndIsNotCorrected() {
+        composer.newField(atStart = true)
+        composer.swipe("teh")
+        assertEquals(listOf(Edit.Commit("the ")), composer.type(" ", true), "the corrector decides, as for typing")
     }
 }

@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -46,6 +47,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.kisscut.keys.R
 import app.kisscut.keys.common.FloatingNav
@@ -67,6 +69,8 @@ object SettingsTags {
     const val TOOLBAR = "settings:kb-toolbar"
     const val AUTOCORRECT = "settings:kb-autocorrect"
     const val SUGGESTIONS = "settings:kb-suggestions"
+    const val SWIPE = "settings:kb-swipe"
+    fun trail(thickness: TrailThickness) = "settings:kb-trail:" + thickness.key
     const val LICENSES = "settings:licenses"
     fun height(height: KeyboardHeight) = "settings:kb-height:" + height.key
 }
@@ -243,6 +247,35 @@ private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSetting
             }
         }
         HorizontalDivider(color = StickersTheme.colors.line)
+        SwitchRow(R.string.settings_kb_swipe, settings.swipe, SettingsTags.SWIPE) {
+            onChange(settings.copy(swipe = it))
+        }
+        // Trail thickness belongs to Swipe typing: indented under it and shown only while it is on.
+        if (settings.swipe) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .branch(StickersTheme.colors.muted, turnAt = BRANCH_TITLE_MID)
+                    .padding(start = NESTED_INDENT, end = 16.dp, top = 8.dp, bottom = 12.dp),
+            ) {
+                Text(
+                    stringResource(R.string.settings_kb_trail),
+                    style = StickerType.Body,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Segments(
+                    options = listOf(
+                        TrailThickness.THIN to R.string.settings_kb_trail_thin,
+                        TrailThickness.MEDIUM to R.string.settings_kb_trail_medium,
+                        TrailThickness.THICK to R.string.settings_kb_trail_thick,
+                    ),
+                    selected = settings.trail,
+                    tag = SettingsTags::trail,
+                    onPick = { onChange(settings.copy(trail = it)) },
+                )
+            }
+        }
+        HorizontalDivider(color = StickersTheme.colors.line)
         SwitchRow(R.string.settings_kb_toolbar, settings.toolbar, SettingsTags.TOOLBAR) {
             onChange(settings.copy(toolbar = it))
         }
@@ -280,6 +313,21 @@ private val BRANCH_END = 38.dp
 /** The line starts this far up, inside the row above, so it hangs from that row's title. */
 private val BRANCH_REACH = 14.dp
 
+/** Where the line turns into a nested block whose title sits at its top (not its middle). */
+private val BRANCH_TITLE_MID = 20.dp
+
+/**
+ * The tree line of a nested setting: it runs down from the row above and turns right into this one, at [turnAt]
+ * from the top, or halfway down when null.
+ */
+private fun Modifier.branch(color: Color, turnAt: Dp? = null) = drawBehind {
+    val x = BRANCH_X.toPx()
+    val turn = turnAt?.toPx() ?: (size.height / 2)
+    val stroke = 1.5.dp.toPx()
+    drawLine(color, Offset(x, -BRANCH_REACH.toPx()), Offset(x, turn), stroke, StrokeCap.Round)
+    drawLine(color, Offset(x, turn), Offset(BRANCH_END.toPx(), turn), stroke, StrokeCap.Round)
+}
+
 /**
  * A row with a title and a switch; the whole row toggles it. A [nested] row is indented under the one above, with
  * no divider between them: a line runs down from the row above and turns into this one, like a tree.
@@ -291,19 +339,7 @@ private fun SwitchRow(title: Int, checked: Boolean, tag: String, nested: Boolean
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (nested) {
-                    Modifier.drawBehind {
-                        val x = BRANCH_X.toPx()
-                        val mid = size.height / 2
-                        val stroke = 1.5.dp.toPx()
-                        drawLine(branch, Offset(x, -BRANCH_REACH.toPx()), Offset(x, mid), stroke, StrokeCap.Round)
-                        drawLine(branch, Offset(x, mid), Offset(BRANCH_END.toPx(), mid), stroke, StrokeCap.Round)
-                    }
-                } else {
-                    Modifier
-                },
-            )
+            .then(if (nested) Modifier.branch(branch) else Modifier)
             .heightIn(min = 56.dp)
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
             .padding(start = if (nested) NESTED_INDENT else 16.dp, end = 16.dp)
