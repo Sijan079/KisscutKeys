@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="23 26 62 64" width="124" height="128" role="img" aria-label="Kisscut Keys logo: a lime keycap with a smiling face">
+  <!-- The launcher icon's foreground layers (docs/BRAND.md), on a transparent background. -->
+  <path d="M40,32H68A15,15 0,0 1 83,47V73A15,15 0,0 1 68,88H40A15,15 0,0 1 25,73V47A15,15 0,0 1 40,32Z" fill="#000000" fill-opacity="0.4"/>
+  <path d="M40,28H68A15,15 0,0 1 83,43V69A15,15 0,0 1 68,84H40A15,15 0,0 1 25,69V43A15,15 0,0 1 40,28Z" fill="#8DB10F"/>
+  <path d="M42,31H66A11,11 0,0 1 77,42V62A11,11 0,0 1 66,73H42A11,11 0,0 1 31,62V42A11,11 0,0 1 42,31Z" fill="#C8F23D"/>
+  <path d="M43,34.5H65A8,8 0,0 1 73,42.5V61.5A8,8 0,0 1 65,69.5H43A8,8 0,0 1 35,61.5V42.5A8,8 0,0 1 43,34.5Z" fill="#D9F76A"/>
+  <path d="M38,36.5H60" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M45.6,48.8a2.4,2.4 0,1 0,4.8,0a2.4,2.4 0,1 0,-4.8,0ZM57.6,48.8a2.4,2.4 0,1 0,4.8,0a2.4,2.4 0,1 0,-4.8,0Z" fill="#14131C"/>
+  <path d="M46.8,53.6Q54,60.8 61.2,53.6" stroke="#14131C" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+</svg>

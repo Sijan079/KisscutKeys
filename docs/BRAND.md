@@ -17,13 +17,13 @@ Kotlin namespace follows the package ID: `app.kisscut.keys`, with `app.kisscut.k
 
 ## Icon: the keycap
 
-A lime keycap with a sticker face on a dark ink background. No text, no cut line.
+A lime keycap with a sticker face. No text, no cut line. On the phone it has no background (transparent); the Play Store icon keeps the Ink background, because Play shows a full square.
 
 Colors: Ink `#0F0E15` (background), Lime `#C8F23D` (top face), Side `#8DB10F` (key wall), Dish `#D9F76A` (inset), Face `#14131C`, highlight white at 70%.
 
 ### Adaptive icon (108 x 108 viewport, visible window 72, safe zone 66, so keep shapes inside 21..87)
 
-`res/drawable/ic_launcher_background.xml`: solid `#0F0E15` rectangle covering 0..108.
+`res/drawable/ic_launcher_background.xml`: transparent (`#00000000`) covering 0..108, so the keycap stands on its own like the README logo (user's call, 2026-11-26; was solid Ink `#0F0E15`). Launchers mask it to their shape, which shows the wallpaper or their own backing behind the keycap.
 
 `res/drawable/ic_launcher_foreground.xml`, in this order (all coordinates in the 108 viewport):
 
@@ -50,6 +50,7 @@ Rounded rects become paths with arcs in the vector drawable (`android:pathData`)
 - Wordmark: "Kisscut Keys" in Bricolage Grotesque 800, tight tracking (-1.5px at 44), in Text color on dark or Ink on light.
 - Onboarding and the keyboard setup screen may show the icon at 72dp. Use the same vector drawable.
 - Do not use the logo as a sticker or put a cut line around it.
+- README and web: `docs/media/logo.svg`, the foreground layers only (keycap, shadow, face) on a transparent background, so it sits on GitHub's light and dark themes alike. Keep it in step with `ic_launcher_foreground.xml`.
 
 ## Do not
 
