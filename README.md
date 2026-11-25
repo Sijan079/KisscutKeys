@@ -1,19 +1,40 @@
 # Kisscut Keys
 
-A sticker manager and keyboard for Android. Save stickers from any app, sort them into collections, and send them
-from a keyboard panel without leaving the chat.
+**Your stickers, one tap away in any chat.**
 
-Everything stays on the device: no internet permission, no accounts, no analytics.
+Kisscut Keys is a sticker manager and keyboard for Android. Save stickers from any app, sort them into collections,
+and send them from your keyboard without leaving the conversation. It types like a normal keyboard too.
+
+Everything stays on your phone: no internet permission, no accounts, no ads, no analytics.
+
+> **Coming soon to Google Play.** The store link goes here when the app is published.
+
+## See it in action
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/media/demo-type-and-send.gif" width="240" alt="Typing a message, then opening the sticker panel and sending a sticker"></td>
+    <td align="center" width="33%"><img src="docs/media/demo-save-from-any-app.gif" width="240" alt="Sharing an image to Kisscut Keys and saving it to a collection"></td>
+    <td align="center" width="33%"><img src="docs/media/demo-library.gif" width="240" alt="Filtering the sticker library by collection and by animated stickers"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>One keyboard</b><br>Type as usual, then tap the sticker key and send a sticker</td>
+    <td align="center"><b>Save from anywhere</b><br>Share any image to Kisscut Keys and pick a collection</td>
+    <td align="center"><b>Your library</b><br>Browse by collection, favorites, or just the animated ones</td>
+  </tr>
+</table>
+
+<sub>Design previews of the real flows. Screens in the app may differ slightly.</sub>
 
 ## Features
 
-- **Save** stickers from the share sheet or an in-app picker (PNG, JPEG, WebP, GIF, animated WebP)
-- **Library** with favorites, recents and "Unsorted"
-- **Collections**, nestable up to 3 levels, with bulk move, favorite and delete
-- **Keyboard** with basic typing (QWERTY, numbers, symbols), key popups with accents, a space bar that slides the cursor, an Emoji tab and a sticker panel; it never stores or sends what you type
-- **Keyboard settings**: key sound, vibration, number row and height
-- **Insert** stickers into chat apps, with a clipboard fallback when an app does not accept images
-- **Backup and share** as `.stickerpack` files
+- **Send stickers in any chat** from the keyboard's sticker panel. If an app doesn't accept images, the sticker is copied so you can paste it
+- **Save** stickers from the share sheet or an in-app picker: PNG, JPEG, WebP, GIF and animated WebP
+- **Collections**, up to 3 levels deep, plus Favorites, Recents and Unsorted
+- **A real keyboard**: QWERTY, numbers and symbols, accents on long-press, a space bar that slides the cursor, and an Emoji tab. Hold Space to switch keyboards
+- **Make it yours**: key sound, vibration, number row, keyboard height, an optional toolbar, and dark or light theme
+- **Back up and share** your stickers as `.stickerpack` files
+- **Private by design**: the keyboard never stores, logs or sends what you type
 
 ## Status
 
