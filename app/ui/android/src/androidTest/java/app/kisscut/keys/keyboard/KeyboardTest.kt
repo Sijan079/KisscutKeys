@@ -266,7 +266,19 @@ class KeyboardTest {
         focus { it.plain }
         if (onMain { service().viewForTest } == KeyboardView.STICKERS) click(KeyboardTags.LETTERS)
         fun keyHeight() = onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.key("q"))?.height }
-        val keyBefore = waitFor { keyHeight()?.takeIf { it > 0 } }
+
+        // A new keyboard lays out once before the nav bar inset arrives: wait until the size holds still.
+        fun settledKeyHeight(): Int {
+            var last = -1
+            repeat(20) {
+                Thread.sleep(300)
+                val now = keyHeight() ?: 0
+                if (now > 0 && now == last) return now
+                last = now
+            }
+            fail("key height never settled (last $last)")
+        }
+        val keyBefore = settledKeyHeight()
         assertNull(onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.TOOLBAR) })
 
         keyboardSettings.settings.value = KeyboardSettings(toolbar = true)
@@ -275,7 +287,7 @@ class KeyboardTest {
         waitFor { onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.TOOLBAR_SWITCH) } }
         // The sticker key moved up to the toolbar, and the letters kept their height.
         assertNull(onMain { service().typingForTest?.findViewWithTag<View>(KeyboardTags.STICKERS) })
-        val keyAfter = waitFor { keyHeight()?.takeIf { it > 0 } }
+        val keyAfter = settledKeyHeight()
         assertTrue(kotlin.math.abs(keyAfter - keyBefore) <= 2, "$keyBefore -> $keyAfter")
 
         var opened = 0
