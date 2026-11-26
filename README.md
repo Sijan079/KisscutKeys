@@ -28,6 +28,7 @@ Everything stays on your phone: no internet permission, no accounts, no ads, no 
 - **Collections**, up to 3 levels deep, plus Favorites, Recents and Unsorted
 - **A real keyboard**: QWERTY, numbers and symbols, accents on long-press, a space bar that slides the cursor, and an Emoji tab. Hold Space to switch keyboards
 - **Suggestions, autocorrect and swipe typing** in English, worked out on your phone. Autocorrect starts off, so Taglish isn't "fixed"; the row above the keys shows what it would do
+- **Learns your words**: names, slang and Taglish you use become known, kept on your phone only and never from password or incognito fields. Turn it off or clear them in Settings
 - **Make it yours**: key sound, vibration, number row, keyboard height, an optional toolbar, and dark or light theme
 - **Back up and share** your stickers as `.stickerpack` files
 - **Private by design**: the keyboard never stores, logs or sends what you type; it only holds the word you are typing

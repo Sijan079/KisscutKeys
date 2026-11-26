@@ -38,7 +38,7 @@ Sound and vibration apply on the next tap (`KeyFeedback` reads them each time). 
 
 - First tab of the sticker panel (user's call, 2026-11-23: a tab, not a key on the letters). Never the tab the panel opens on.
 - Category chips in the chip row: Smileys, People, Animals and nature, Food and drink, Activities, Travel and places, Objects, Symbols. The chosen category is kept while the keyboard runs.
-- A tap types the emoji as text, like a key. No recent emoji (user's call: nothing typed is stored), no search, no skin tones.
+- A tap types the emoji as text, like a key. No recent emoji (user's call, M6: nothing typed was stored then; learned words since M7a did not change this), no search, no skin tones.
 - The All/Static/GIF switch is hidden (kept in place, so the row does not jump). Works with an empty library.
 - The list lives in code (UI strings carry no emoji); emoji the phone cannot draw are left out, so older phones show no empty boxes. Symbols that default to text style (heart, plane, arrows) carry U+FE0F so they show and send in color; a JVM test checks this.
 

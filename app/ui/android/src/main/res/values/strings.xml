@@ -245,7 +245,7 @@
     <string name="setup_step2_body">Pick it from the keyboard list, or tap the globe key in any chat.</string>
     <string name="setup_step3_title">Add your first stickers</string>
     <string name="setup_step3_body">Share an image to the app to save it.</string>
-    <string name="setup_privacy">Android will warn that keyboards can see what you type. This one sends your keys straight to the app. It only holds the word you are typing, to suggest and fix it, and never stores, logs or shares what you type.</string>
+    <string name="setup_privacy">Android will warn that keyboards can see what you type. This one sends your keys straight to the app. It holds the word you are typing to suggest and fix it, and remembers new words you use, like names, on this phone only. Never from password or incognito fields, and never shared.</string>
     <string name="setup_open_settings">Open keyboard settings</string>
     <string name="setup_pick_keyboard">Choose Kisscut Keys</string>
     <string name="setup_add_stickers">Add stickers</string>

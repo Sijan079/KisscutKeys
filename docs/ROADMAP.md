@@ -137,7 +137,7 @@ Planned 2026-11-26; one commit per step, each after the user's OK. Words seen on
 2. [x] Storage: one small file in `noBackupFilesDir` (not the Room database: Android copies app data, the database included, to a new phone even with `allowBackup="false"`, and `no_backup` is never copied). Never in `.stickerpack` files (test). Not a second database (rule 3)
 3. [x] Keyboard: suggestions and autocorrect use learned words. No learning in password, number, phone, email, URL and no-suggestion fields, or with `IME_FLAG_NO_PERSONALIZED_LEARNING` (incognito tabs; new check, device test). Timed on the phone. Device tests pass on the user's phone (KeyboardTest 29/29 with the two learning tests, SpellerTimingTest: keystroke median 3.6 ms, p95 8.8 ms, 2026-11-26)
 4. [x] Settings: "Learn new words" switch and "Clear learned words"; clearing applies to the running keyboard at once (device test). (Planned: "Delete everything" clears them too; dropped, it only deletes one collection and there is no app-wide reset)
-5. [ ] Privacy text: setup screen, KEYBOARD, PRODUCT, README, DATA_MODEL ("only words you type, kept on this phone, never shared"); a note for M9's Play data-safety draft. No recent emoji (scope)
+5. [x] Privacy text: setup screen, KEYBOARD, PRODUCT, README, DATA_MODEL ("only words you type, kept on this phone, never shared"); a note for M9's Play data-safety draft. No recent emoji (scope)
 6. [ ] Revisit Autocorrect starting off (user's call). Full device suite on the user's phone
 
 ## M7b: Word-pair context
@@ -161,7 +161,7 @@ Done when: new and old stickers get tags on the emulator, search finds them in t
 - [ ] Animated sticker playback (app and keyboard) and the Settings animation toggle (`animateStickers`), moved from M5
 - [ ] Release build config: minify, shrink, signing config read from user-provided properties (never commit secrets)
 - [ ] App icon, name, Play listing assets (final: see `docs/BRAND.md`)
-- [ ] Privacy statement text for the listing (draft for the user to review)
+- [ ] Privacy statement text for the listing (draft for the user to review). Include the learned words (M7a): kept on the phone only, never collected or shared, off and clear in Settings; Play data safety treats on-device-only data as not collected (PRODUCT, Privacy position)
 - [ ] Entitlements interface and $1 unlock plumbing, behind a flag (ask the user for free-tier limits first)
 - [ ] Manual test checklist for real chat apps (for the user)
 

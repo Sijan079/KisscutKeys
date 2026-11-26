@@ -38,6 +38,8 @@ Free with a one-time ~$1 in-app unlock, preferred over paid-upfront. Free tier l
 
 Everything stays on the device. No internet permission, no analytics. State this in the Play listing. Requires a privacy policy page on Play (the user will write it).
 
+The keyboard keeps one thing from typing (ROADMAP M7a): new words the user types, so names, slang and Taglish stop being "fixed". They stay on the phone in a file Android never backs up or moves to a new phone, are never in packs, are never learned from password, email, web address, no-suggestion or incognito fields, and can be turned off or cleared in Settings (KEYBOARD, Learned words). For Play's data safety form this is on-device processing, not collection, since nothing leaves the phone.
+
 ## Release facts (for later)
 
 - Google Play developer account: $25 one-time.
