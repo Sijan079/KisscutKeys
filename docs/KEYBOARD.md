@@ -58,6 +58,12 @@ Both files say in their header that they were changed from the source. `shared:c
 - Autocorrect never changes a known word, a word with digits or symbols, ALL CAPS, MixedCase, chat shorthand (`CHAT_WORDS`: lol, thx, idk and similar; "thx" otherwise became "the"), a word the user undid, or into an offensive word. A fix pair applies only when the typed word is not a real word ("bot" stays, "not" is suggested). Otherwise one typo at most (two from 6 letters on), a target with frequency 60 or more, at least 3 letters, and a lead of 25 over the runner-up; apostrophe and case-only fixes ("dont", "i") always apply.
 - Speed (Redmi M2103K19G, debug build, `SpellerTimingTest`): 8 ms median and 14 ms at the 95th percentile per keystroke; loading the list takes about 2.5 s, so it loads off the main thread once per keyboard start.
 
+### Learned words (M7a)
+`shared:core` `words.PersonalWords` holds names, slang and Taglish the bundled lists lack. Pure and immutable; the keyboard decides which words reach it.
+- A word typed twice (`LEARN_COUNT`) and left alone by autocorrect is learned; a word whose autocorrection the user undid is learned at once. Counting ignores case; once typed in lower case the word stays lower case ("Kain" at a sentence start, then "kain").
+- Never kept: digits or symbols, fewer than two letters, more than 32 characters. A word seen once is dropped 30 days after it was last seen (user's call: kept across days, not just one sitting). At most 5,000 learned and 2,000 not-yet-learned words; the least recently seen go first.
+- `Speller.withLearned` adds the learned words as a second, small index (frequency 150) next to the bundled one: known (never corrected), suggested, and usable as corrections. The bundled index is shared, so nothing big is rebuilt when a word is learned.
+
 ### Typing pipeline (M7)
 
 - Privacy: the keyboard reads nothing from the field except, when a word starts where it did not put the cursor itself (a box that already has text, after a tap, Enter, a sticker or a Backspace), the one character before the cursor, to see whether that word stands on its own; it keeps nothing (user's call, 2026-11-25, after Discord kept drafts and the first word never got corrected). In plain text fields it holds only the word being typed, built from its own key presses (`shared:core` `words.Composer`), and shows it underlined with `setComposingText`; the word is dropped when it ends. Nothing typed is stored, learned or sent. The setup screen says so.

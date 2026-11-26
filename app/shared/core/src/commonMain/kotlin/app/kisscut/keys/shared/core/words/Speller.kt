@@ -7,30 +7,57 @@ import kotlin.math.min
  * Suggestions and the autocorrect decision for the word being typed (docs/KEYBOARD.md, Suggestions and
  * autocorrect). Works over several [lists] at once (English now, Tagalog later), with no language switch.
  * Pure and stateless: the keyboard passes in what was typed and what the user reverted.
+ *
+ * Words the user taught the keyboard ([withLearned]; docs/KEYBOARD.md, Learned words) sit in a second, small
+ * index next to the bundled one, so learning a word never rebuilds the big index.
  */
-class Speller(lists: List<WordList>) {
+class Speller private constructor(
+    private val bundled: Index,
+    private val fixes: Map<String, String>,
+    private val learned: Index,
+) {
+    constructor(lists: List<WordList>) : this(
+        bundled = Index(lists.flatMap { it.words }),
+        fixes = lists.fold(emptyMap()) { all, list -> list.fixes + all },
+        learned = Index(emptyList()),
+    )
+
     private class Entry(val word: Word, val key: String) {
         val mask = letterMask(key)
     }
 
-    private val entries: List<Entry>
-    /** Entries by key length and first letter: `length * 128 + first char` (letters a to z only). */
-    private val byLengthAndFirst: Map<Int, List<Entry>>
-    private val sortedKeys: List<Entry>
-    private val byLower: Map<String, List<Word>>
-    private val fixes: Map<String, String>
+    private class Index(words: List<Word>) {
+        /** Entries by key length and first letter: `length * 128 + first char` (letters a to z only). */
+        val byLengthAndFirst: Map<Int, List<Entry>>
+        val sortedKeys: List<Entry>
+        val byLower: Map<String, List<Word>>
 
-    init {
-        val seen = HashSet<String>()
-        entries = lists.flatMap { it.words }
-            .filter { seen.add(it.text) }
-            .map { Entry(it, key(it.text)) }
-            .filter { it.key.isNotEmpty() }
-        byLengthAndFirst = entries.filter { it.key[0] in 'a'..'z' }.groupBy { bucket(it.key.length, it.key[0]) }
-        sortedKeys = entries.sortedBy { it.key }
-        byLower = entries.groupBy({ it.word.text.lowercase() }, { it.word })
-        fixes = lists.fold(emptyMap()) { all, list -> list.fixes + all }
+        init {
+            val seen = HashSet<String>()
+            val entries = words
+                .filter { seen.add(it.text) }
+                .map { Entry(it, key(it.text)) }
+                .filter { it.key.isNotEmpty() }
+            byLengthAndFirst = entries.filter { it.key[0] in 'a'..'z' }.groupBy { bucket(it.key.length, it.key[0]) }
+            sortedKeys = entries.sortedBy { it.key }
+            byLower = entries.groupBy({ it.word.text.lowercase() }, { it.word })
+        }
     }
+
+    private val indexes = listOf(bundled, learned)
+
+    /**
+     * This speller with [words] (the user's learned words, [PersonalWords.known]) known too: never corrected,
+     * offered in suggestions and usable as corrections. Words the bundled lists already have are skipped. Shares
+     * the bundled index, so it is cheap enough to call after each learned word.
+     */
+    fun withLearned(words: Collection<String>): Speller {
+        val extra = words.filter { bundled.byLower[it.lowercase()] == null }.map { Word(it, LEARNED_FREQUENCY) }
+        return Speller(bundled, fixes, Index(extra))
+    }
+
+    /** True if [typed] is a known word, bundled or learned (case aside; "i" is not the acronym-like "I"). */
+    fun isKnown(typed: String): Boolean = knownAsTyped(typed) != null
 
     /**
      * Up to [limit] words for [typed], best first, in the typed word's case. A known word comes first as typed;
@@ -92,23 +119,28 @@ class Speller(lists: List<WordList>) {
     }
 
     /** A known word matching [typed]: same letters ignoring case, except "i" is not the acronym-like "I". */
-    private fun knownAsTyped(typed: String): Word? = byLower[typed.lowercase()]?.firstOrNull { w ->
-        typed == w.text || !(isAllCaps(w.text) && typed.none { it.isUpperCase() })
+    private fun knownAsTyped(typed: String): Word? = indexes.firstNotNullOfOrNull { index ->
+        index.byLower[typed.lowercase()]?.firstOrNull { w ->
+            typed == w.text || !(isAllCaps(w.text) && typed.none { it.isUpperCase() })
+        }
     }
 
     private fun completions(k: String): List<Entry> {
         if (k.length < MIN_COMPLETION_PREFIX) return emptyList()
-        var lo = 0
-        var hi = sortedKeys.size
-        while (lo < hi) {
-            val mid = (lo + hi) ushr 1
-            if (sortedKeys[mid].key < k) lo = mid + 1 else hi = mid
-        }
         val out = ArrayList<Entry>()
-        var i = lo
-        while (i < sortedKeys.size && sortedKeys[i].key.startsWith(k)) {
-            if (sortedKeys[i].key.length > k.length) out += sortedKeys[i]
-            i++
+        for (index in indexes) {
+            val sortedKeys = index.sortedKeys
+            var lo = 0
+            var hi = sortedKeys.size
+            while (lo < hi) {
+                val mid = (lo + hi) ushr 1
+                if (sortedKeys[mid].key < k) lo = mid + 1 else hi = mid
+            }
+            var i = lo
+            while (i < sortedKeys.size && sortedKeys[i].key.startsWith(k)) {
+                if (sortedKeys[i].key.length > k.length) out += sortedKeys[i]
+                i++
+            }
         }
         return out.sortedByDescending { it.word.frequency }.take(COMPLETIONS_KEPT)
     }
@@ -129,11 +161,11 @@ class Speller(lists: List<WordList>) {
         val second = k.getOrNull(1)?.takeIf { it in 'a'..'z' }
         val starts = (NEIGHBOURS[first - 'a'] + first + listOfNotNull(second)).distinct()
         val rows = Array(3) { IntArray(k.length + span + 2) }
-        for (len in (k.length - span).coerceAtLeast(1)..(k.length + span)) {
+        for (index in indexes) for (len in (k.length - span).coerceAtLeast(1)..(k.length + span)) {
             for (start in starts) {
                 // A word starting with the typed second letter only counts as a swap ("hte" for "the").
                 val swapOnly = start == second && start != first && !areNeighbours(start, first)
-                for (e in byLengthAndFirst[bucket(len, start)] ?: continue) {
+                for (e in index.byLengthAndFirst[bucket(len, start)] ?: continue) {
                     if (swapOnly && e.key.getOrNull(1) != first) continue
                     if ((mask xor e.mask).countOneBits() > maxMaskBits) continue
                     val cost = typoTenths(k, e.key, limit, rows)
@@ -228,7 +260,8 @@ class Speller(lists: List<WordList>) {
         fun areNeighbours(x: Char, y: Char): Boolean =
             x in 'a'..'z' && y in 'a'..'z' && NEIGHBOUR_TABLE[(x - 'a') * 26 + (y - 'a')]
 
-        private fun looksLikeAWord(text: String): Boolean =
+        /** Letters, with apostrophes or hyphens, and at least one letter: no digits or other symbols. */
+        internal fun looksLikeAWord(text: String): Boolean =
             text.all { it.isLetter() || it == '\'' || it == '’' || it == '-' } && text.any { it.isLetter() }
 
         private fun isAllCaps(text: String): Boolean = text.any { it.isLetter() } && text.none { it.isLowerCase() }
@@ -275,5 +308,8 @@ class Speller(lists: List<WordList>) {
         private const val MIN_CORRECT_LENGTH = 3
         private const val MIN_TARGET_FREQUENCY = 60
         private const val MIN_LEAD = 25.0
+
+        /** Learned words rank like fairly common words (bundled scores run 0 to 255). */
+        const val LEARNED_FREQUENCY = 150
     }
 }

@@ -121,4 +121,25 @@ class SpellerTest {
         assertEquals("pero", both.suggest("pro").first())
         assertEquals("the", both.autocorrect("teh"))
     }
+
+    @Test
+    fun learnedWordsAreKnownSuggestedAndUsedAsCorrections() {
+        val learned = speller.withLearned(listOf("charot", "Juan"))
+        assertFalse(speller.isKnown("charot"))
+        assertTrue(learned.isKnown("charot"))
+        assertTrue(learned.isKnown("juan"))
+        assertNull(learned.autocorrect("charot"), "a learned word is never corrected")
+        assertEquals("charot", learned.autocorrect("chraot"), "a swap fixes to a learned word")
+        assertEquals("Juan", learned.suggest("Jua").first(), "completes to a learned word")
+        assertEquals("the", learned.autocorrect("teh"), "bundled words still work")
+    }
+
+    @Test
+    fun learningAgainReplacesTheLearnedWordsAndSkipsBundledOnes() {
+        val first = speller.withLearned(listOf("charot"))
+        val second = first.withLearned(listOf("sana", "hello"))
+        assertFalse(second.isKnown("charot"))
+        assertTrue(second.isKnown("sana"))
+        assertEquals(1, second.suggest("hello").count { it.equals("hello", ignoreCase = true) })
+    }
 }
