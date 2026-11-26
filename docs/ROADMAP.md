@@ -141,6 +141,7 @@ Planned 2026-11-26; one commit per step, each after the user's OK. Words seen on
 6. [x] Revisit Autocorrect starting off (user's call, 2026-11-26: stays off until a Tagalog list lands; common Tagalog words would be "fixed" until each is undone once). Full device suite on the user's phone: 94/94 (2026-11-26). Speed with the full 5,000 learned words (`SpellerTimingTest`): keystroke p95 14.5 ms against 12.8 ms with none, rebuild 55 ms off the main thread
 
 ## M7b: Word-pair context
+On hold (user's call, 2026-11-26) after measuring the source: Google Books Ngram v3 2-grams are about 324 GB for all English, 93 GB for British English and 29 GB for English fiction (the smallest and most chat-like; the pick if this resumes). The script would stream one file at a time and keep only pairs of the bundled words.
 Researched 2026-11-25; after M7a. Google Books Ngram (CC BY 3.0, commercial use with credit) is the source: our own table trimmed to pairs of the 50,000 bundled words, a few MB. Ready-made sets were too big (nextword-data, CC BY 4.0, 490 MB+) or share-alike (BERT bigrams, wordfreq). Book English, not chat: personal learning covers slang. Not needed for swipe typing.
 - [ ] Build the trimmed pair table with a script in `tools/`, credit on the licenses screen
 - [ ] The previous words come from this keyboard's own typing, in memory only
