@@ -4,6 +4,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import app.kisscut.keys.shared.core.words.PersonalWords
 import app.kisscut.keys.shared.core.words.Speller
 import app.kisscut.keys.shared.core.words.SwipeMatcher
 import app.kisscut.keys.shared.core.words.KeyLayout
@@ -50,6 +51,39 @@ class SpellerTimingTest {
             "p95=${"%.1f".format(p95)}ms max=${"%.1f".format(times.last())}ms"
         Log.i("SpellerTiming", report)
         assertTrue(loadMs < 3_000, report)
+        assertTrue(p95 < 16.0, report)
+    }
+
+    @Test
+    fun aFullLearnedListKeepsKeystrokesWithinAFrame() {
+        val list = WordList.parse(read("en_US.txt"), read("en_US_fixes.txt"))
+        val bundled = Speller(listOf(list))
+        // The cap's worth of learned words, each one letter off a common word: the most matching work per key.
+        val learned = list.words.asSequence().map { it.text }.filter { w -> w.all { it in 'a'..'z' } }
+            .map { it + "z" }.take(PersonalWords.MAX_LEARNED).toList()
+        val buildStart = SystemClock.elapsedRealtime()
+        val speller = bundled.withLearned(learned)
+        val buildMs = SystemClock.elapsedRealtime() - buildStart
+
+        val sentence = "teh weather tomorow looks grate so lets meet at the beach becuase its been a long weak"
+        repeat(3) { for (w in sentence.split(' ')) speller.suggest(w) }
+        val times = ArrayList<Double>()
+        for (word in sentence.split(' ')) {
+            for (end in 1..word.length) {
+                val start = System.nanoTime()
+                speller.suggest(word.substring(0, end))
+                times += (System.nanoTime() - start) / 1e6
+            }
+            val start = System.nanoTime()
+            speller.autocorrect(word)
+            times += (System.nanoTime() - start) / 1e6
+        }
+        times.sort()
+        val p95 = times[(times.size * 95) / 100]
+        val report = "learned=${learned.size} rebuild=${buildMs}ms median=${"%.1f".format(times[times.size / 2])}ms " +
+            "p95=${"%.1f".format(p95)}ms max=${"%.1f".format(times.last())}ms"
+        Log.i("SpellerTiming", report)
+        assertTrue(buildMs < 500, report)
         assertTrue(p95 < 16.0, report)
     }
 
