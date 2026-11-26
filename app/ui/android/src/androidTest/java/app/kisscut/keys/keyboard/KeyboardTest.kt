@@ -69,7 +69,7 @@ class KeyboardTest {
         realContainer = app.container
         db = Room.inMemoryDatabaseBuilder(app, StickerDatabase::class.java).buildStickerDatabase()
         dir = File(app.filesDir, "ime-test").apply { deleteRecursively(); mkdirs() }
-        container = AppContainer(app, db, dir, keyboardSettings)
+        container = AppContainer(app, db, dir, keyboardSettings, learnedWordsDir = File(dir, "no_backup"))
         app.container = container
 
         reactionsId = container.collections.create("Reactions", null).id
@@ -216,6 +216,40 @@ class KeyboardTest {
         focus { it.password }
         type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
         waitFor { scenarioText { it.password }.takeIf { t -> t == "teh " } }
+    }
+
+    @Test
+    fun anUndoneCorrectionIsLearnedAndNotCorrectedInTheNextField() {
+        keyboardSettings.settings.value = KeyboardSettings(autocorrect = true)
+        waitFor { container.keyboardSettings.value.takeIf { it.autocorrect } }
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "the " } }
+        click(KeyboardTags.KEY_BACKSPACE, inTyping = true)
+        waitFor { container.learnedWords.words.value.takeIf { it.isLearned("teh") } }
+        // A new field forgets this field's undo; only learning keeps "teh" now.
+        focus { it.send }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.send }.takeIf { t -> t == "teh " } }
+        assertTrue(File(dir, "no_backup/learned_words.txt").readText().contains("teh	"), "saved to the file")
+    }
+
+    @Test
+    fun wordsTypedTwiceAreLearnedButNeverInIncognitoOrPasswordFields() {
+        focus { it.plain }
+        waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        focus { it.incognito }
+        type("vrolp vrolp ".map { keyTag(if (it == ' ') KeyboardTags.SPACE else it.toString()) })
+        waitFor { scenarioText { it.incognito }.takeIf { t -> t == "vrolp vrolp " } }
+        focus { it.password }
+        type("zinth zinth ".map { keyTag(if (it == ' ') KeyboardTags.SPACE else it.toString()) })
+        waitFor { scenarioText { it.password }.takeIf { t -> t == "zinth zinth " } }
+        focus { it.plain }
+        type("kwamp kwamp ".map { keyTag(if (it == ' ') KeyboardTags.SPACE else it.toString()) })
+        // Changes apply in order, so once "kwamp" is in, the earlier fields' words would be too.
+        val words = waitFor { container.learnedWords.words.value.takeIf { it.isLearned("kwamp") } }
+        assertEquals(listOf("kwamp"), words.entries.map { it.text })
     }
 
     @Test

@@ -23,6 +23,7 @@ import app.kisscut.keys.shared.core.StickerKind
 import app.kisscut.keys.shared.core.words.Composer
 import app.kisscut.keys.shared.core.words.Edit
 import app.kisscut.keys.shared.core.words.KeyLayout
+import app.kisscut.keys.shared.core.words.LearnedWordsRepository
 import app.kisscut.keys.shared.core.words.Speller
 import app.kisscut.keys.shared.core.words.SwipeMatcher
 import app.kisscut.keys.shared.core.words.WordList
@@ -44,7 +45,8 @@ import java.lang.ref.WeakReference
  * The word being typed comes only from its own key presses ([Composer]), and the cursor is followed from the
  * lengths of its own edits ([CursorTracker]). The only thing it ever reads is the one character before the cursor
  * when a word starts where it didn't put the cursor, to see whether that word stands on its own (a space, a new
- * line or the field start); it keeps nothing. Nothing typed is stored, learned or sent.
+ * line or the field start). The only typing it keeps is new words for the personal word list, on this phone, in
+ * fields that allow learning ([allowsLearning]); nothing typed is sent anywhere.
  */
 class StickerImeService : InputMethodService() {
     private var scope: CoroutineScope? = null
@@ -76,9 +78,18 @@ class StickerImeService : InputMethodService() {
     /** Loads the word list once per keyboard start, off the main thread (about 2.5 s on a mid-range phone). */
     private var loader: CoroutineScope? = null
 
-    /** Null until the word list is loaded; typing works meanwhile, just without corrections. */
+    /**
+     * Null until the word list is loaded; typing works meanwhile, just without corrections. Includes the learned
+     * words, replaced whenever they change.
+     */
     @Volatile
     private var speller: Speller? = null
+
+    /** The bundled lists alone, once loaded; [speller] adds the learned words to it. */
+    @Volatile
+    private var bundledSpeller: Speller? = null
+    private var watchedLearned: LearnedWordsRepository? = null
+    private var learnedJob: Job? = null
 
     /** Null until the word list is loaded; no swipes until then. */
     @Volatile
@@ -92,11 +103,15 @@ class StickerImeService : InputMethodService() {
     private val composer = Composer(
         corrector = { typed, reverted -> speller?.autocorrect(typed, reverted) },
         charBefore = ::charBeforeCursor,
+        learner = ::learn,
     )
     private val cursor = CursorTracker()
 
     /** The underlined word and autocorrect run in this field (plain text, and the Settings allow it). */
     private var aids = false
+
+    /** New words typed in this field may be learned ([allowsLearning]). */
+    private var learning = false
 
     /** Last result of a sticker tap (tests read it). */
     @VisibleForTesting
@@ -113,12 +128,42 @@ class StickerImeService : InputMethodService() {
                 container.keyboardSettingsStore.settings.first()
             }
             scope.launch {
-                withContext(Dispatchers.Default) {
+                val bundled = withContext(Dispatchers.Default) {
                     val lists = listOf(loadWords())
-                    speller = Speller(lists)
                     swiper = SwipeMatcher(lists)
+                    Speller(lists)
                 }
+                bundledSpeller = bundled
+                speller = bundled
+                watchLearnedWords()
             }
+        }
+    }
+
+    /**
+     * Keeps [speller] in step with the learned words of the current container (keyboard tests swap it), so a word
+     * learned or cleared in Settings applies at once. Main thread.
+     */
+    private fun watchLearnedWords() {
+        val base = bundledSpeller ?: return
+        val learned = (application as App).container.learnedWords
+        if (learned === watchedLearned) return
+        watchedLearned = learned
+        learnedJob?.cancel()
+        learnedJob = loader?.launch {
+            learned.words.collect { words ->
+                speller = withContext(Dispatchers.Default) { base.withLearned(words.known) }
+            }
+        }
+    }
+
+    /** [allowsLearning] said yes for this field: count [word], or learn it at once if the user [meant] it. */
+    private fun learn(word: String, meant: Boolean) {
+        if (!learning) return
+        val learned = (application as App).container.learnedWords
+        when {
+            meant -> learned.undidAutocorrect(word)
+            speller?.isKnown(word) == false -> learned.typed(word)
         }
     }
 
@@ -189,6 +234,8 @@ class StickerImeService : InputMethodService() {
         refreshStrip()
         cursor.forget(info?.initialSelStart ?: -1, info?.initialSelEnd ?: -1)
         aids = info != null && allowsTypingAids(info.inputType) && container.keyboardSettings.value.showsSuggestions
+        learning = aids && info != null && allowsLearning(info.inputType, info.imeOptions)
+        watchLearnedWords()
         val start = fieldStart(info?.inputType ?: 0, view)
         typing?.apply {
             showPage(start.page)

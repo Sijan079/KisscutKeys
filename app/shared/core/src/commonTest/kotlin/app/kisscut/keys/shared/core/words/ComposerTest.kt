@@ -21,7 +21,11 @@ class ComposerTest {
             checks++
             if (boundaryBefore) ' ' else charBeforeCursor
         },
+        learner = { word, meant -> learned += word to meant },
     )
+
+    /** What the learner heard: word and whether the user meant it over a correction. */
+    private val learned = mutableListOf<Pair<String, Boolean>>()
 
     private fun typeAll(text: String, autocorrect: Boolean = true) =
         text.map { composer.type(it.toString(), autocorrect) }.last()
@@ -210,5 +214,46 @@ class ComposerTest {
         composer.newField(atStart = true)
         composer.swipe("teh")
         assertEquals(listOf(Edit.Commit("the ")), composer.type(" ", true), "the corrector decides, as for typing")
+    }
+
+    @Test
+    fun wordsKeptAsTypedReachTheLearner() {
+        composer.newField(atStart = true)
+        typeAll("kain ")
+        typeAll("sana.")
+        typeAll(" tayo")
+        composer.finish()
+        assertEquals(listOf("kain" to false, "sana" to false, "tayo" to false), learned)
+    }
+
+    @Test
+    fun correctedWordsAreNotLearnedButUndoingOrKeepingThemIs() {
+        composer.newField(atStart = true)
+        typeAll("teh ")
+        assertEquals(emptyList(), learned, "autocorrect changed it")
+        composer.backspace()
+        assertEquals(listOf("teh" to true), learned)
+
+        composer.newField(atStart = true)
+        learned.clear()
+        typeAll("Teh")
+        composer.pick("Teh", keep = true)
+        composer.pick("x", keep = false)
+        assertEquals(listOf("Teh" to true), learned)
+    }
+
+    @Test
+    fun swipedWordsAndWordsThatDontStandAloneAreNotLearned() {
+        composer.newField(atStart = true)
+        composer.swipe("hello")
+        composer.type(" ", true)
+        composer.swipe("world")
+        composer.finish()
+        typeAll("john@")
+        typeAll("gmail ")
+        charBeforeCursor = '#'
+        composer.reset()
+        typeAll("tag ")
+        assertEquals(emptyList(), learned)
     }
 }

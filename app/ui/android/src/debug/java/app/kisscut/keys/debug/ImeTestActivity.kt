@@ -33,6 +33,10 @@ class ImeTestActivity : Activity() {
     lateinit var send: EditText
         private set
 
+    /** Asks for no personalized learning, like an incognito browser tab. */
+    lateinit var incognito: EditText
+        private set
+
     /** Editor actions the Send field received (Enter key). */
     val actions: MutableList<Int> = java.util.Collections.synchronizedList(mutableListOf())
 
@@ -60,8 +64,13 @@ class ImeTestActivity : Activity() {
                 true
             }
         }
+        incognito = EditText(this).apply {
+            tag = FIELD_INCOGNITO
+            hint = FIELD_INCOGNITO
+            imeOptions = EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+        }
         column.addView(TextView(this).apply { text = "Keyboard test" })
-        listOf(anyImage, pngOnly, plain, password, send).forEach { column.addView(it) }
+        listOf(anyImage, pngOnly, plain, password, send, incognito).forEach { column.addView(it) }
         setContentView(column)
     }
 
@@ -95,6 +104,7 @@ class ImeTestActivity : Activity() {
         const val FIELD_PLAIN = "plain"
         const val FIELD_PASSWORD = "password"
         const val FIELD_SEND = "send"
+        const val FIELD_INCOGNITO = "incognito"
 
         /** Everything the image fields received, oldest first. */
         val received: MutableList<Received> = java.util.Collections.synchronizedList(mutableListOf())

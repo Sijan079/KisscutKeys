@@ -28,10 +28,16 @@ sealed interface Edit {
  * Backspace) [charBefore] is asked once, when the next word starts: the keyboard checks the one character before
  * the cursor, or null at the start of the field (user's call, 2026-11-25). A swiped word ([swipe]) gets a space
  * before it when it needs one, and Backspace removes it whole.
+ *
+ * [learner] hears about words for the personal word list (docs/KEYBOARD.md, Learned words): a word that stood on
+ * its own and was kept as typed (ended by a space, punctuation, Enter or a sticker), with `meant` false; and a word
+ * the user chose over its correction (undo, or the quoted word in the strip), with `meant` true. Never a swiped
+ * word. The keyboard decides whether the field allows learning.
  */
 class Composer(
     private val corrector: (typed: String, reverted: Set<String>) -> String?,
     private val charBefore: () -> Char? = { 'x' },
+    private val learner: (word: String, meant: Boolean) -> Unit = { _, _ -> },
 ) {
     private data class Undo(val typed: String, val fixed: String, val separator: String)
 
@@ -91,6 +97,7 @@ class Composer(
         }
         undo = null
         reverted += Speller.key(last.typed)
+        learner(last.typed, true)
         val written = last.fixed.length + last.separator.length
         return listOf(Edit.DeleteBefore(written), Edit.Commit(last.typed + last.separator))
     }
@@ -101,7 +108,10 @@ class Composer(
      */
     fun pick(text: String, keep: Boolean): List<Edit> {
         if (word.isEmpty()) return emptyList()
-        if (keep) reverted += Speller.key(current)
+        if (keep) {
+            reverted += Speller.key(current)
+            learner(current, true)
+        }
         word.clear()
         swiped = false
         undo = null
@@ -147,8 +157,10 @@ class Composer(
         undo = null
         atBoundary = null
         lastCommitted = null
+        val wasSwiped = swiped
         swiped = false
         if (word.isEmpty()) return emptyList()
+        if (wordAtBoundary && !wasSwiped) learner(current, false)
         word.clear()
         return listOf(Edit.FinishComposing)
     }
@@ -172,6 +184,7 @@ class Composer(
     private fun endWord(separator: String, correct: Boolean): List<Edit> {
         undo = null
         val startedAtBoundary = wordAtBoundary
+        val wasSwiped = swiped
         swiped = false
         atBoundary = separator.isNotEmpty() && separator.last().isWhitespace()
         lastCommitted = separator.lastOrNull()
@@ -180,6 +193,7 @@ class Composer(
         word.clear()
         val fixed = if (correct && startedAtBoundary) corrector(typed, reverted)?.takeIf { it != typed } else null
         if (fixed != null) undo = Undo(typed, fixed, separator)
+        if (fixed == null && startedAtBoundary && !wasSwiped && separator in CORRECTING) learner(typed, false)
         return listOf(Edit.Commit((fixed ?: typed) + separator))
     }
 

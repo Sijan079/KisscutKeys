@@ -1,6 +1,7 @@
 package app.kisscut.keys.keyboard
 
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
 
 /** Password and PIN fields: the keyboard never sends or copies anything into them. */
 fun isPasswordField(inputType: Int): Boolean {
@@ -31,3 +32,10 @@ fun allowsTypingAids(inputType: Int): Boolean {
         else -> true
     }
 }
+
+/**
+ * Fields where the keyboard may learn new words (docs/KEYBOARD.md, Learned words): those with typing aids, unless
+ * the app asks for no personalized learning (incognito tabs set `IME_FLAG_NO_PERSONALIZED_LEARNING`).
+ */
+fun allowsLearning(inputType: Int, imeOptions: Int): Boolean =
+    allowsTypingAids(inputType) && imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING == 0

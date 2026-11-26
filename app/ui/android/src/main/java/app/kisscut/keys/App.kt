@@ -27,6 +27,8 @@ import app.kisscut.keys.shared.core.StickerImporter
 import app.kisscut.keys.shared.core.StickerRepository
 import app.kisscut.keys.shared.core.pack.PackExporter
 import app.kisscut.keys.shared.core.pack.PackImporter
+import app.kisscut.keys.shared.core.words.DiskLearnedWordsFile
+import app.kisscut.keys.shared.core.words.LearnedWordsRepository
 import app.kisscut.keys.shared.db.Sticker
 import app.kisscut.keys.shared.db.StickerDatabase
 import app.kisscut.keys.shared.db.createStickerDatabase
@@ -60,6 +62,8 @@ class AppContainer(
     private val filesDir: File = context.applicationContext.filesDir,
     /** Tests only: keyboard settings kept in memory, so the real settings file is never written. */
     keyboardSettingsOverride: KeyboardSettingsStore? = null,
+    /** Where the learned words file lives: `no_backup`, never backed up or moved to a new phone. Tests pass another. */
+    private val learnedWordsDir: File = context.applicationContext.noBackupFilesDir,
 ) {
     private val appContext = context.applicationContext
     private val clock: () -> Long = { System.currentTimeMillis() }
@@ -91,6 +95,11 @@ class AppContainer(
     /** Keyboard settings as last read, for the keyboard (read when a field opens). */
     val keyboardSettings: StateFlow<KeyboardSettings> by lazy {
         keyboardSettingsStore.settings.stateIn(scope, SharingStarted.Eagerly, KeyboardSettings())
+    }
+
+    /** The keyboard's learned words (docs/KEYBOARD.md, Learned words); the Settings screen can clear them. */
+    val learnedWords: LearnedWordsRepository by lazy {
+        LearnedWordsRepository(DiskLearnedWordsFile(learnedWordsDir), clock, scope)
     }
 
     val appVersion: String by lazy {

@@ -1,6 +1,7 @@
 package app.kisscut.keys.keyboard
 
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
 import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -48,5 +49,14 @@ class InputFieldsTest {
         )) {
             assertFalse(allowsTypingAids(off), "inputType $off")
         }
+    }
+
+    @Test
+    fun learningOnlyWhereTypingAidsRunAndNotInIncognito() {
+        assertTrue(allowsLearning(text, EditorInfo.IME_ACTION_SEND))
+        assertFalse(allowsLearning(text, EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING))
+        assertFalse(allowsLearning(text or InputType.TYPE_TEXT_VARIATION_PASSWORD, 0))
+        assertFalse(allowsLearning(text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS, 0))
+        assertFalse(allowsLearning(number, 0))
     }
 }
