@@ -31,4 +31,4 @@ Everything stays on your phone: no internet permission, no accounts, no ads, no 
 - **Learns your words**: names, slang and Taglish you use become known, kept on your phone only and never from password or incognito fields. Turn it off or clear them in Settings
 - **Make it yours**: key sound, vibration, number row, keyboard height, an optional toolbar, and dark or light theme
 - **Back up and share** your stickers as `.stickerpack` files
-- **Private by design**: the keyboard never stores, logs or sends what you type; it only holds the word you are typing
+- **Private by design**: the keyboard never logs or sends what you type. It holds the word you are typing, and the only thing it keeps is the new words it learns, on your phone
