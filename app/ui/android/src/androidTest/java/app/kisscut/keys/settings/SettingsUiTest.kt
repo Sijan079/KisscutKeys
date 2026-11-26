@@ -165,6 +165,41 @@ class SettingsUiTest {
     }
 
     @Test
+    fun learnNewWordsSwitchesAndClearingAsksFirst() {
+        var keyboard by mutableStateOf(KeyboardSettings())
+        var learned by mutableStateOf(0)
+        var confirming by mutableStateOf(false)
+        rule.setContent {
+            StickersTheme {
+                SettingsScreen(
+                    SettingsUiState(keyboard = keyboard, learnedWords = learned, confirmClearLearned = confirming),
+                    SettingsActions(
+                        onKeyboard = { keyboard = it },
+                        onClearLearned = { confirming = true },
+                        onConfirmClearLearned = {
+                            learned = 0
+                            confirming = false
+                        },
+                        onDismissClearLearned = { confirming = false },
+                    ),
+                    onNavigate = {},
+                )
+            }
+        }
+        rule.onNodeWithTag(SettingsTags.LEARN_WORDS).performScrollTo().assertIsOn().performClick().assertIsOff()
+        assertEquals(KeyboardSettings(learnWords = false), keyboard)
+        // Nothing learned: no Clear row.
+        rule.onNodeWithTag(SettingsTags.CLEAR_LEARNED).assertDoesNotExist()
+        learned = 12
+        rule.onNodeWithText("12 words learned").performScrollTo()
+        rule.onNodeWithTag(SettingsTags.CLEAR_LEARNED).performSemanticsAction(SemanticsActions.OnClick)
+        rule.onNodeWithText("Clear learned words?").assertExists()
+        rule.onNodeWithTag(SettingsTags.CLEAR_LEARNED_CONFIRM).performClick()
+        rule.onNodeWithText("Clear learned words?").assertDoesNotExist()
+        rule.onNodeWithTag(SettingsTags.CLEAR_LEARNED).assertDoesNotExist()
+    }
+
+    @Test
     fun importShowsASummaryAndFailuresSayWhy() {
         val backend = Backend()
         val vm = BackupViewModel(backend, Themes(), flowOf(emptyList()))

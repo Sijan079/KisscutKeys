@@ -234,7 +234,8 @@ class StickerImeService : InputMethodService() {
         refreshStrip()
         cursor.forget(info?.initialSelStart ?: -1, info?.initialSelEnd ?: -1)
         aids = info != null && allowsTypingAids(info.inputType) && container.keyboardSettings.value.showsSuggestions
-        learning = aids && info != null && allowsLearning(info.inputType, info.imeOptions)
+        learning = aids && info != null && allowsLearning(info.inputType, info.imeOptions) &&
+            container.keyboardSettings.value.learnWords
         watchLearnedWords()
         val start = fieldStart(info?.inputType ?: 0, view)
         typing?.apply {
@@ -576,6 +577,10 @@ class StickerImeService : InputMethodService() {
 
         @VisibleForTesting
         internal val StickerImeService.spellerLoadedForTest: Boolean get() = speller != null && swiper != null
+
+        /** Whether the keyboard's current speller knows [word] (learned words included). */
+        @VisibleForTesting
+        internal fun StickerImeService.spellerKnowsForTest(word: String): Boolean = speller?.isKnown(word) == true
 
         @VisibleForTesting
         internal val StickerImeService.viewForTest: KeyboardView get() = view

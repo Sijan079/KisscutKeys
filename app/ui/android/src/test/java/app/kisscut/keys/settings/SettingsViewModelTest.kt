@@ -75,6 +75,40 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun clearingLearnedWordsAsksFirstThenForgetsThem() = runTest(dispatcher) {
+        val learned = MutableStateFlow(7)
+        var cleared = 0
+        val vm = SettingsViewModel(
+            FakeThemes(),
+            FakeKeyboard(),
+            MutableStateFlow(0),
+            learnedCount = learned,
+            forgetLearned = {
+                cleared++
+                learned.value = 0
+            },
+        ) { 0L }
+        advanceUntilIdle()
+        assertEquals(7, vm.state.value.learnedWords)
+        assertTrue(vm.state.value.keyboard.learnWords, "learning is on by default")
+
+        vm.askClearLearned()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.confirmClearLearned)
+        vm.dismissClearLearned()
+        advanceUntilIdle()
+        assertFalse(vm.state.value.confirmClearLearned)
+        assertEquals(0, cleared)
+
+        vm.askClearLearned()
+        vm.clearLearned()
+        advanceUntilIdle()
+        assertEquals(1, cleared)
+        assertEquals(0, vm.state.value.learnedWords)
+        assertFalse(vm.state.value.confirmClearLearned)
+    }
+
+    @Test
     fun keyboardHeights() {
         assertEquals(KeyboardHeight.SMALL, KeyboardHeight.of("small"))
         assertEquals(KeyboardHeight.NORMAL, KeyboardHeight.of("huge"))

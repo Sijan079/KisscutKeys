@@ -19,6 +19,7 @@ import app.kisscut.keys.settings.KeyboardSettingsStore
 import app.kisscut.keys.keyboard.StickerImeService.Companion.inserterForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.loadedForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.panelForTest
+import app.kisscut.keys.keyboard.StickerImeService.Companion.spellerKnowsForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.typingForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.viewForTest
 import app.kisscut.keys.keyboard.StickerImeService.Companion.rebuildForTest
@@ -36,6 +37,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -232,13 +234,27 @@ class KeyboardTest {
         focus { it.send }
         type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
         waitFor { scenarioText { it.send }.takeIf { t -> t == "teh " } }
-        assertTrue(File(dir, "no_backup/learned_words.txt").readText().contains("teh	"), "saved to the file")
+        assertTrue(File(dir, "no_backup/learned_words.txt").readText().contains("teh\t"), "saved to the file")
+
+        // Clear learned words (Settings) applies to the running keyboard at once, in the same field.
+        container.learnedWords.clear()
+        waitFor { container.learnedWords.words.value.takeIf { it.entries.isEmpty() } }
+        waitFor { onMain { service().spellerKnowsForTest("teh") }.takeIf { !it } }
+        type(listOf("t", "e", "h", KeyboardTags.SPACE).map(::keyTag))
+        waitFor { scenarioText { it.send }.takeIf { t -> t == "teh the " } }
+        assertFalse(File(dir, "no_backup/learned_words.txt").exists(), "the file is gone")
     }
 
     @Test
-    fun wordsTypedTwiceAreLearnedButNeverInIncognitoOrPasswordFields() {
+    fun wordsTypedTwiceAreLearnedButNeverInIncognitoOrPasswordFieldsOrWithLearningOff() {
+        keyboardSettings.settings.value = KeyboardSettings(learnWords = false)
+        waitFor { container.keyboardSettings.value.takeIf { !it.learnWords } }
         focus { it.plain }
         waitFor { onMain { service().spellerLoadedForTest }.takeIf { it } }
+        type("blorf blorf ".map { keyTag(if (it == ' ') KeyboardTags.SPACE else it.toString()) })
+        waitFor { scenarioText { it.plain }.takeIf { t -> t == "blorf blorf " } }
+        keyboardSettings.settings.value = KeyboardSettings()
+        waitFor { container.keyboardSettings.value.takeIf { it.learnWords } }
         focus { it.incognito }
         type("vrolp vrolp ".map { keyTag(if (it == ' ') KeyboardTags.SPACE else it.toString()) })
         waitFor { scenarioText { it.incognito }.takeIf { t -> t == "vrolp vrolp " } }

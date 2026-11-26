@@ -2,6 +2,7 @@ package app.kisscut.keys.settings
 
 import android.text.format.Formatter
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,12 +26,14 @@ import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.SdStorage
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +72,9 @@ object SettingsTags {
     const val TOOLBAR = "settings:kb-toolbar"
     const val AUTOCORRECT = "settings:kb-autocorrect"
     const val SUGGESTIONS = "settings:kb-suggestions"
+    const val LEARN_WORDS = "settings:kb-learn-words"
+    const val CLEAR_LEARNED = "settings:kb-clear-learned"
+    const val CLEAR_LEARNED_CONFIRM = "settings:kb-clear-learned:confirm"
     const val SWIPE = "settings:kb-swipe"
     fun trail(thickness: TrailThickness) = "settings:kb-trail:" + thickness.key
     const val LICENSES = "settings:licenses"
@@ -80,6 +86,9 @@ data class SettingsActions(
     val onTheme: (ThemeMode) -> Unit = {},
     val onKeyboard: (KeyboardSettings) -> Unit = {},
     val onKeyboardSetup: () -> Unit = {},
+    val onClearLearned: () -> Unit = {},
+    val onConfirmClearLearned: () -> Unit = {},
+    val onDismissClearLearned: () -> Unit = {},
     val onBackUp: () -> Unit = {},
     val onShare: () -> Unit = {},
     val onImport: () -> Unit = {},
@@ -113,7 +122,7 @@ fun SettingsScreen(
             ThemeSegments(state.theme, actions.onTheme)
 
             SectionTitle(stringResource(R.string.settings_keyboard))
-            KeyboardGroup(state.keyboard, actions.onKeyboard)
+            KeyboardGroup(state.keyboard, state.learnedWords, actions.onKeyboard, actions.onClearLearned)
 
             SectionTitle(stringResource(R.string.settings_backup))
             Group {
@@ -168,7 +177,26 @@ fun SettingsScreen(
         }
         FloatingNav(TopLevel.SETTINGS, onNavigate, onAdd = null)
     }
+    if (state.confirmClearLearned) ClearLearnedDialog(state.learnedWords, actions)
 }
+
+@Composable
+private fun ClearLearnedDialog(count: Int, actions: SettingsActions) = AlertDialog(
+    onDismissRequest = actions.onDismissClearLearned,
+    title = { Text(stringResource(R.string.settings_kb_clear_title)) },
+    text = { Text(pluralStringResource(R.plurals.settings_kb_clear_body, count, count), style = StickerType.Body) },
+    confirmButton = {
+        TextButton(
+            onClick = actions.onConfirmClearLearned,
+            modifier = Modifier.testTag(SettingsTags.CLEAR_LEARNED_CONFIRM),
+        ) {
+            Text(stringResource(R.string.settings_kb_clear_confirm), color = StickersTheme.colors.danger)
+        }
+    },
+    dismissButton = {
+        TextButton(onClick = actions.onDismissClearLearned) { Text(stringResource(R.string.cancel)) }
+    },
+)
 
 @Composable
 private fun SectionTitle(text: String) = Text(
@@ -220,9 +248,17 @@ private fun ThemeSegments(selected: ThemeMode, onPick: (ThemeMode) -> Unit) = Se
     onPick = onPick,
 )
 
-/** Key sound, vibration, number row and toolbar switches, then the keyboard height. Applied at the next text field. */
+/**
+ * Key sound, vibration, number row, autocorrect, learning, swipe and toolbar switches, then the keyboard height.
+ * Applied at the next text field. "Clear learned words" hangs under Learn new words while any are learned.
+ */
 @Composable
-private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSettings) -> Unit) {
+private fun KeyboardGroup(
+    settings: KeyboardSettings,
+    learnedWords: Int,
+    onChange: (KeyboardSettings) -> Unit,
+    onClearLearned: () -> Unit,
+) {
     Group {
         SwitchRow(R.string.settings_kb_sound, settings.keySound, SettingsTags.KEY_SOUND) {
             onChange(settings.copy(keySound = it))
@@ -246,6 +282,11 @@ private fun KeyboardGroup(settings: KeyboardSettings, onChange: (KeyboardSetting
                 onChange(settings.copy(suggestions = it))
             }
         }
+        HorizontalDivider(color = StickersTheme.colors.line)
+        SwitchRow(R.string.settings_kb_learn, settings.learnWords, SettingsTags.LEARN_WORDS) {
+            onChange(settings.copy(learnWords = it))
+        }
+        if (learnedWords > 0) ClearLearnedRow(learnedWords, onClearLearned)
         HorizontalDivider(color = StickersTheme.colors.line)
         SwitchRow(R.string.settings_kb_swipe, settings.swipe, SettingsTags.SWIPE) {
             onChange(settings.copy(swipe = it))
@@ -353,6 +394,32 @@ private fun SwitchRow(title: Int, checked: Boolean, tag: String, nested: Boolean
         )
         // The row handles the tap and TalkBack; the switch only shows the state.
         Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** "Clear learned words" and how many there are, nested under Learn new words; asks before clearing. */
+@Composable
+private fun ClearLearnedRow(count: Int, onClick: () -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .branch(StickersTheme.colors.muted)
+            .heightIn(min = 56.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = NESTED_INDENT, end = 16.dp, top = 8.dp, bottom = 8.dp)
+            .testTag(SettingsTags.CLEAR_LEARNED),
+    ) {
+        Text(
+            stringResource(R.string.settings_kb_clear_learned),
+            style = StickerType.Body,
+            color = StickersTheme.colors.danger,
+        )
+        Text(
+            pluralStringResource(R.plurals.settings_kb_learned_count, count, count),
+            style = StickerType.Label,
+            color = StickersTheme.colors.muted,
+        )
     }
 }
 

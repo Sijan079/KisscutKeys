@@ -221,7 +221,9 @@ class MainActivity : ComponentActivity() {
                         container.themeStore,
                         container.keyboardSettingsStore,
                         container.stickers.observeAll().map { it.size },
-                        container::storageBytes,
+                        learnedCount = container.learnedWords.words.map { it.known.size },
+                        forgetLearned = container.learnedWords::clear,
+                        storageBytes = container::storageBytes,
                     )
                 }
             },
@@ -233,6 +235,9 @@ class MainActivity : ComponentActivity() {
                 onTheme = vm::setTheme,
                 onKeyboard = vm::setKeyboard,
                 onKeyboardSetup = openSetup,
+                onClearLearned = vm::askClearLearned,
+                onConfirmClearLearned = vm::clearLearned,
+                onDismissClearLearned = vm::dismissClearLearned,
                 onBackUp = { createBackup.launch(backupFileName()) },
                 onShare = backups::chooseCollectionToShare,
                 onImport = { openPack.launch(arrayOf("*/*")) },

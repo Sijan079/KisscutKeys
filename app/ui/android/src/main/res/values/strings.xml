@@ -206,6 +206,18 @@
     <string name="settings_kb_toolbar">Toolbar</string>
     <string name="settings_kb_autocorrect">Autocorrect</string>
     <string name="settings_kb_suggestions">Suggestions</string>
+    <string name="settings_kb_learn">Learn new words</string>
+    <string name="settings_kb_clear_learned">Clear learned words</string>
+    <plurals name="settings_kb_learned_count">
+        <item quantity="one">%d word learned</item>
+        <item quantity="other">%d words learned</item>
+    </plurals>
+    <string name="settings_kb_clear_title">Clear learned words?</string>
+    <plurals name="settings_kb_clear_body">
+        <item quantity="one">The keyboard forgets the %d word it learned. Your stickers stay.</item>
+        <item quantity="other">The keyboard forgets the %d words it learned. Your stickers stay.</item>
+    </plurals>
+    <string name="settings_kb_clear_confirm">Clear</string>
     <string name="settings_kb_swipe">Swipe typing</string>
     <string name="settings_kb_trail">Trail thickness</string>
     <string name="settings_kb_trail_thin">Thin</string>

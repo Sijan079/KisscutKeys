@@ -50,6 +50,9 @@ data class KeyboardSettings(
     /** Words to tap above the letters; always on while [autocorrect] is (see [showsSuggestions]). */
     val suggestions: Boolean = true,
 
+    /** Learn words the user types that the word list lacks (docs/KEYBOARD.md, Learned words). Next field. */
+    val learnWords: Boolean = true,
+
     /** Trace across the letters to type a word. Read when a swipe starts, so a change applies at once. */
     val swipe: Boolean = true,
 
@@ -79,6 +82,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             toolbar = it[TOOLBAR] ?: defaults.toolbar,
             autocorrect = it[AUTOCORRECT] ?: defaults.autocorrect,
             suggestions = it[SUGGESTIONS] ?: defaults.suggestions,
+            learnWords = it[LEARN_WORDS] ?: defaults.learnWords,
             swipe = it[SWIPE] ?: defaults.swipe,
             trail = TrailThickness.of(it[TRAIL]),
         )
@@ -93,6 +97,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
             it[TOOLBAR] = settings.toolbar
             it[AUTOCORRECT] = settings.autocorrect
             it[SUGGESTIONS] = settings.suggestions
+            it[LEARN_WORDS] = settings.learnWords
             it[SWIPE] = settings.swipe
             it[TRAIL] = settings.trail.key
         }
@@ -106,6 +111,7 @@ class DataStoreKeyboardSettingsStore(context: Context) : KeyboardSettingsStore {
         val TOOLBAR = booleanPreferencesKey("kb_toolbar")
         val AUTOCORRECT = booleanPreferencesKey("kb_autocorrect")
         val SUGGESTIONS = booleanPreferencesKey("kb_suggestions")
+        val LEARN_WORDS = booleanPreferencesKey("kb_learn_words")
         val SWIPE = booleanPreferencesKey("kb_swipe")
         val TRAIL = stringPreferencesKey("kb_swipe_trail")
     }
