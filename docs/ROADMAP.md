@@ -132,9 +132,13 @@ Done when: swipe and autocorrect work on the phone, JVM tests cover matching and
 
 ## M7a: Personal word list (learning)
 Agreed 2026-11-25 as the next milestone after M7 (user's call); plan the steps with the user first. Changes the privacy promise ("nothing typed is stored or learned"), so the setup text, README and Play privacy form change in the same milestone.
-- [ ] On the phone only: words the user keeps typing, or undoes autocorrect on, become known (Taglish, names, slang). Never from password fields; never in backups or packs; never sent
-- [ ] "Clear learned words" in Settings (clearing app storage would also wipe the stickers)
-- [ ] With learning in place, revisit Autocorrect starting off
+Planned 2026-11-26; one commit per step, each after the user's OK. Words seen once are kept until seen again (user's call), capped, and dropped after 30 days.
+1. [ ] Learning rules in `shared:core` commonMain, JVM-tested: a word typed twice and not changed by autocorrect becomes known; undoing an autocorrect teaches the word at once; words with digits or symbols are skipped; seen-once words expire after 30 days; at most 5,000 learned words, oldest dropped first. A small personal list next to the bundled one, so learning never rebuilds the 50k index
+2. [ ] Storage: one small file in `noBackupFilesDir` (not the Room database: Android copies app data, the database included, to a new phone even with `allowBackup="false"`, and `no_backup` is never copied). Never in `.stickerpack` files (test). Not a second database (rule 3)
+3. [ ] Keyboard: suggestions and autocorrect use learned words. No learning in password, number, phone, email, URL and no-suggestion fields, or with `IME_FLAG_NO_PERSONALIZED_LEARNING` (incognito tabs; new check, device test). Timed on the phone
+4. [ ] Settings: "Learn new words" switch and "Clear learned words"; clearing applies to the running keyboard at once (device test). "Delete everything" clears them too
+5. [ ] Privacy text: setup screen, KEYBOARD, PRODUCT, README, DATA_MODEL ("only words you type, kept on this phone, never shared"); a note for M9's Play data-safety draft. No recent emoji (scope)
+6. [ ] Revisit Autocorrect starting off (user's call). Full device suite on the user's phone
 
 ## M7b: Word-pair context
 Researched 2026-11-25; after M7a. Google Books Ngram (CC BY 3.0, commercial use with credit) is the source: our own table trimmed to pairs of the 50,000 bundled words, a few MB. Ready-made sets were too big (nextword-data, CC BY 4.0, 490 MB+) or share-alike (BERT bigrams, wordfreq). Book English, not chat: personal learning covers slang. Not needed for swipe typing.
