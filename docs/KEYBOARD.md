@@ -63,6 +63,7 @@ Both files say in their header that they were changed from the source. `shared:c
 - A word typed twice (`LEARN_COUNT`) and left alone by autocorrect is learned; a word whose autocorrection the user undid is learned at once. Counting ignores case; once typed in lower case the word stays lower case ("Kain" at a sentence start, then "kain").
 - Never kept: digits or symbols, fewer than two letters, more than 32 characters. A word seen once is dropped 30 days after it was last seen (user's call: kept across days, not just one sitting). At most 5,000 learned and 2,000 not-yet-learned words; the least recently seen go first.
 - `Speller.withLearned` adds the learned words as a second, small index (frequency 150) next to the bundled one: known (never corrected), suggested, and usable as corrections. The bundled index is shared, so nothing big is rebuilt when a word is learned.
+- Storage (`LearnedWordsRepository`, `DiskLearnedWordsFile`): one text file, `learned_words.txt` in `noBackupFilesDir`, a header line then `word<TAB>count<TAB>lastSeen` lines. Not the Room database: Android copies app data, the database included, to a new phone even with `allowBackup="false"`, and `no_backup` is never copied or backed up. Written through a temporary file, so a crash leaves the old or the new list. Changes apply in order and are saved once per batch; an unreadable file starts an empty list. Never in `.stickerpack` files (`PackRoundTripTest`).
 
 ### Typing pipeline (M7)
 

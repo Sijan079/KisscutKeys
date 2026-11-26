@@ -17,6 +17,8 @@ import app.kisscut.keys.shared.core.TestClock
 import app.kisscut.keys.shared.core.TestImages
 import app.kisscut.keys.shared.core.inMemoryStickerDatabase
 import app.kisscut.keys.shared.core.sha256Hex
+import app.kisscut.keys.shared.core.words.LearnedWordsFile
+import app.kisscut.keys.shared.core.words.LearnedWordsRepository
 import app.kisscut.keys.shared.db.StickerDatabase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
@@ -27,11 +29,13 @@ import kotlinx.coroutines.test.runTest
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -106,6 +110,32 @@ class PackRoundTripTest {
         save(png(4), dogs.id)
         save(png(5), null)
         stickers.setFavorite(listOf(fav.id), true)
+    }
+
+    @Test
+    fun learnedWordsAreNeverInAPack() = runTest {
+        val file = object : LearnedWordsFile {
+            var text: String? = null
+            override suspend fun read() = text
+            override suspend fun write(text: String) { this.text = text }
+            override suspend fun delete() { text = null }
+        }
+        val learned = LearnedWordsRepository(file, a.clock, backgroundScope)
+        learned.undidAutocorrect("zorbcharot")
+        a.fill()
+        testScheduler.runCurrent()
+        assertTrue(learned.words.value.isLearned("zorbcharot"))
+
+        val names = ArrayList<String>()
+        val contents = StringBuilder()
+        ZipInputStream(ByteArrayInputStream(a.export())).use { zip ->
+            while (true) {
+                names += (zip.nextEntry ?: break).name
+                contents.append(String(zip.readBytes(), Charsets.ISO_8859_1))
+            }
+        }
+        assertFalse("zorbcharot" in contents, "a learned word inside the pack")
+        assertFalse(names.any { "learned" in it }, "a learned-words entry: $names")
     }
 
     @Test

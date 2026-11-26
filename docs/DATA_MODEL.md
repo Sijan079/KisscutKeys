@@ -91,6 +91,10 @@ Deleting stickers always removes the files from disk in the same operation. If a
 - Version 1 is the first release shape above. If `parentId` or `hasAlpha` are added after an early build, write a real migration; never use destructive fallback.
 - Each migration has a test using `MigrationTestHelper` with old data.
 
+## Learned words (not in Room)
+
+Since M7a: the keyboard's learned words live in `no_backup/learned_words.txt`, never in the database, backups or packs. Format and rules: KEYBOARD.md, Learned words.
+
 ## Settings (not in Room)
 
 DataStore (file `settings`) keys: `keyboard_setup_dismissed` (bool, since M4: setup was finished or skipped). `theme` (string: system, dark, light; since M5). Keyboard settings (since M6): `kb_key_sound` (bool, default false), `kb_vibration` (bool, default true), `kb_number_row` (bool, default false), `kb_toolbar` (bool, default false; since M6.7), `kb_autocorrect` (bool, default false; M7), `kb_suggestions` (bool, default true; M7; ignored while autocorrect is on), `kb_swipe` (bool, default true; M7), `kb_swipe_trail` (string: thin, medium, thick; unknown means medium; M7), `kb_height` (string: small, normal, large; unknown means normal); never exported. `animateStickers` (bool) comes in M9 with playback. "Back up everything" always includes the theme (user's own backup); shared collections never include settings; `keyboard_setup_dismissed` is never exported. Importing a pack with a theme applies it. All keys live in one DataStore file through one delegate (`setup/AndroidKeyboardSetup.kt`); a second delegate on the same file would crash.
