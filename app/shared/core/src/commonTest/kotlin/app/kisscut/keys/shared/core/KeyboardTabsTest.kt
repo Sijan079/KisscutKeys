@@ -41,7 +41,8 @@ class KeyboardTabsTest {
 
     @Test
     fun chipsAreDirectChildrenOfACollectionTab() {
-        assertEquals(listOf("Cats", "Memes"), keyboardChips(all, KeyboardTab.Collection(1, "Reactions")).map { it.name })
+        val chips = keyboardChips(all, KeyboardTab.Collection(1, "Reactions"))
+        assertEquals(listOf("Cats", "Memes"), chips.map { it.name })
         assertEquals(emptyList(), keyboardChips(all, KeyboardTab.Collection(2, "Work")))
         assertEquals(emptyList(), keyboardChips(all, KeyboardTab.Recents))
     }

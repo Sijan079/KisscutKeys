@@ -149,7 +149,10 @@ fun KeyboardSetupScreen(vm: KeyboardSetupViewModel, onAction: (SetupAction) -> U
                 contentColor = colors.onLime,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag(SetupTags.ACTION),
             ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                ) {
                     Text(stringResource(label), style = StickerType.Button.copy(fontSize = 17.sp))
                 }
             }

@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.os.Build
+import androidx.core.graphics.createBitmap
 import app.kisscut.keys.AppContainer
 import app.kisscut.keys.shared.core.ByteSource
 import app.kisscut.keys.shared.core.CollectionRepository
@@ -93,7 +94,7 @@ object SeedData {
 
     /** Transparent round face: the cut line comes from the importer. */
     fun face(seed: Int, size: Int = 512, webp: Boolean = false): ByteArray {
-        val b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val b = createBitmap(size, size)
         val cv = Canvas(b)
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
         val s = size / 48f
@@ -125,7 +126,7 @@ object SeedData {
 
     /** Transparent star-ish blob, to show the cut line following a shape. */
     fun blob(seed: Int, size: Int = 512): ByteArray {
-        val b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val b = createBitmap(size, size)
         val cv = Canvas(b)
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = palette[(seed + 3) % palette.size] }
         val path = Path()
@@ -145,7 +146,7 @@ object SeedData {
 
     /** Opaque "photo": flat sky, sun, two hills. Gets a plain rounded tile. */
     fun photo(seed: Int, w: Int = 640, h: Int = 480): ByteArray {
-        val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val b = createBitmap(w, h)
         val cv = Canvas(b)
         val p = Paint(Paint.ANTI_ALIAS_FLAG)
         cv.drawColor(if (seed % 2 == 0) 0xFF3DDBB0.toInt() else 0xFF5CC8FF.toInt())

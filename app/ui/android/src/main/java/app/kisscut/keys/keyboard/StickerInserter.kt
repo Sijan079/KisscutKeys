@@ -121,7 +121,8 @@ class StickerInserter(
         lastCopied = clip
     }.isSuccess
 
-    private fun uriOf(file: File): Uri? = runCatching { FileProvider.getUriForFile(context, authority, file) }.getOrNull()
+    private fun uriOf(file: File): Uri? =
+        runCatching { FileProvider.getUriForFile(context, authority, file) }.getOrNull()
 
     /**
      * The clipboard's PNG copy. Named apart from the send copies so the next send does not delete what the

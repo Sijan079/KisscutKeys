@@ -53,7 +53,9 @@ class AndroidFileStoreTest {
     fun rejectsPathsThatEscapeTheAreaFolder() = runTest {
         File(root, "secret.txt").writeText("keep")
         for (bad in listOf("../secret.txt", "..", ".", "", "sub/a.png", "sub\\a.png", "/abs.png")) {
-            assertFailsWith<IllegalArgumentException>("write '$bad'") { store.write(FileArea.STICKERS, bad, byteArrayOf(1)) }
+            assertFailsWith<IllegalArgumentException>("write '$bad'") {
+                store.write(FileArea.STICKERS, bad, byteArrayOf(1))
+            }
             assertFailsWith<IllegalArgumentException>("delete '$bad'") { store.delete(FileArea.STICKERS, bad) }
             assertFailsWith<IllegalArgumentException>("exists '$bad'") { store.exists(FileArea.STICKERS, bad) }
         }

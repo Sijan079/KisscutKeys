@@ -7,6 +7,8 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+import android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
 import androidx.annotation.VisibleForTesting
 import androidx.core.view.WindowCompat
 import app.kisscut.keys.App
@@ -163,11 +165,13 @@ class StickerImeService : InputMethodService() {
         this.typing = typing
         // The sticker panel sets the height; the letters fill the same space on top of it.
         val root = PanelFrame(this).apply {
-            addView(panel, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT))
-            addView(typing, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            addView(panel, FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+            addView(typing, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         }
         // Dark system buttons under a light panel, light ones under a dark panel.
-        window?.window?.let { WindowCompat.getInsetsController(it, root).isAppearanceLightNavigationBars = !palette.dark }
+        window?.window?.let {
+            WindowCompat.getInsetsController(it, root).isAppearanceLightNavigationBars = !palette.dark
+        }
         scope.launch { model.state.collect { panel.render(it, password) } }
         show(view)
         return root
@@ -505,7 +509,9 @@ class StickerImeService : InputMethodService() {
         }
 
         override fun onOpenApp() {
-            startActivity(Intent(this@StickerImeService, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            startActivity(
+                Intent(this@StickerImeService, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
         }
     }
 

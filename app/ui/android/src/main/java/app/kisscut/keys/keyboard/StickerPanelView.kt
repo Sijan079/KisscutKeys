@@ -17,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import app.kisscut.keys.R
@@ -242,7 +243,7 @@ class StickerPanelView(
     }
 
     /** The text of the hint on screen, or null (for tests). */
-    val hintText: CharSequence? get() = hint.text.takeIf { hint.visibility == VISIBLE }
+    val hintText: CharSequence? get() = hint.text.takeIf { hint.isVisible }
 
     // ---------------------------------------------------------------------------------------------
 
@@ -280,7 +281,8 @@ class StickerPanelView(
         scaleType = android.widget.ImageView.ScaleType.CENTER
     }
 
-    private fun textTab(name: String, on: Boolean) = text(14f, if (on) 800 else 700, if (on) palette.onLime else palette.muted)
+    private fun textTab(name: String, on: Boolean) =
+        text(14f, if (on) 800 else 700, if (on) palette.onLime else palette.muted)
         .apply {
             text = name
             maxLines = 1

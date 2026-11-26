@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import app.kisscut.keys.shared.core.pack.ExportResult
 import app.kisscut.keys.shared.core.pack.ExportScope
 import app.kisscut.keys.shared.core.pack.ImportSummary
@@ -49,7 +50,7 @@ class AndroidPackBackend(
     private val exportDir = File(appContext.cacheDir, EXPORT_DIR)
 
     override suspend fun backUp(uri: String, settings: PackSettings, onProgress: Progress): ExportResult {
-        val target = Uri.parse(uri)
+        val target = uri.toUri()
         return try {
             withContext(Dispatchers.IO) {
                 val out = resolver.openOutputStream(target, "wt") ?: throw FileNotFoundException(uri)
@@ -86,7 +87,7 @@ class AndroidPackBackend(
     }
 
     override suspend fun import(uri: String, onProgress: Progress): ImportSummary {
-        val source = Uri.parse(uri)
+        val source = uri.toUri()
         val size = withContext(Dispatchers.IO) { sizeOf(source) }
         val reader = PackZipReader({ resolver.openInputStream(source) ?: throw FileNotFoundException(uri) })
         return importer.import(reader, packSize = size, freeSpace = filesDir.usableSpace, onProgress = onProgress)

@@ -714,7 +714,9 @@ class KeyboardTest {
         @JvmStatic
         @org.junit.AfterClass
         fun restoreKeyboard() {
-            if (previousIme.isNotEmpty() && previousIme != "null" && previousIme != IME_ID) shell("ime set $previousIme")
+            if (previousIme.isNotEmpty() && previousIme != "null" && previousIme != IME_ID) {
+                shell("ime set $previousIme")
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 package app.kisscut.keys.save
 
 import android.content.ContentResolver
-import android.net.Uri
+import androidx.core.net.toUri
 import app.kisscut.keys.shared.core.ByteSource
 import app.kisscut.keys.shared.core.CollectionRepository
 import app.kisscut.keys.shared.core.ImageSniffer
@@ -39,7 +39,7 @@ class AppSaveBackend(
 
     private fun source(uri: String) = ByteSource { max ->
         withContext(Dispatchers.IO) {
-            val stream = resolver.openInputStream(Uri.parse(uri)) ?: throw IOException("cannot open $uri")
+            val stream = resolver.openInputStream(uri.toUri()) ?: throw IOException("cannot open $uri")
             stream.use { it.readCapped(max) }
         }
     }

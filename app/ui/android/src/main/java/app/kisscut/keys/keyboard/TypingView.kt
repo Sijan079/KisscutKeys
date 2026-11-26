@@ -420,7 +420,8 @@ class TypingView(
                     refreshShift()
                 }
             }
-        Key.Backspace -> iconKey(R.drawable.ic_kb_backspace, R.string.kb_backspace, special = true, KeyboardTags.KEY_BACKSPACE)
+        Key.Backspace ->
+            iconKey(R.drawable.ic_kb_backspace, R.string.kb_backspace, special = true, KeyboardTags.KEY_BACKSPACE)
             .apply { repeatWhileHeld(this) }
         Key.Enter -> {
             val (icon, label) = when (enterActionId) {
@@ -438,7 +439,8 @@ class TypingView(
                     }
                 }
         }
-        Key.Stickers -> iconKey(R.drawable.ic_kb_sticker, R.string.kb_key_stickers, special = true, KeyboardTags.STICKERS)
+        Key.Stickers ->
+            iconKey(R.drawable.ic_kb_sticker, R.string.kb_key_stickers, special = true, KeyboardTags.STICKERS)
             .apply {
                 isEnabled = stickersAllowed
                 alpha = if (stickersAllowed) 1f else 0.4f

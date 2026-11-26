@@ -199,7 +199,10 @@ class TypingLayoutTest {
     @Test
     fun fieldsOpenOnTheRightView() {
         val text = InputType.TYPE_CLASS_TEXT
-        assertEquals(FieldStart(KeyboardView.STICKERS, TypingPage.LETTERS, true), fieldStart(text, KeyboardView.STICKERS))
+        assertEquals(
+            FieldStart(KeyboardView.STICKERS, TypingPage.LETTERS, true),
+            fieldStart(text, KeyboardView.STICKERS),
+        )
         assertEquals(FieldStart(KeyboardView.LETTERS, TypingPage.LETTERS, true), fieldStart(text, KeyboardView.LETTERS))
         assertEquals(
             FieldStart(KeyboardView.LETTERS, TypingPage.SYMBOLS, true),
@@ -208,7 +211,10 @@ class TypingLayoutTest {
         val password = fieldStart(text or InputType.TYPE_TEXT_VARIATION_PASSWORD, KeyboardView.STICKERS)
         assertEquals(KeyboardView.LETTERS, password.view)
         assertFalse(password.stickersAllowed)
-        val pin = fieldStart(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD, KeyboardView.LETTERS)
+        val pin = fieldStart(
+            InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD,
+            KeyboardView.LETTERS,
+        )
         assertEquals(TypingPage.SYMBOLS, pin.page)
         assertFalse(pin.stickersAllowed)
     }

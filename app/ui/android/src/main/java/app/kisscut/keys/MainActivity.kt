@@ -1,7 +1,6 @@
 package app.kisscut.keys
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -202,7 +202,7 @@ class MainActivity : ComponentActivity() {
     private fun sharePack(uri: String) {
         val send = Intent(Intent.ACTION_SEND)
             .setType(PACK_MIME)
-            .putExtra(Intent.EXTRA_STREAM, Uri.parse(uri))
+            .putExtra(Intent.EXTRA_STREAM, uri.toUri())
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         startActivity(Intent.createChooser(send, null))
     }

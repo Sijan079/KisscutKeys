@@ -99,11 +99,17 @@ class CollectionDaoTest {
         assertEquals("Puppies", dao.getById(t.getValue("Dogs"))?.name)
 
         dao.move(t.getValue("Dogs"), newParentId = null, newSortOrder = 2)
-        assertEquals(listOf("Animals", "Memes", "Puppies"), dao.observeChildren(null).first().map { it.collection.name })
+        assertEquals(
+            listOf("Animals", "Memes", "Puppies"),
+            dao.observeChildren(null).first().map { it.collection.name },
+        )
 
         dao.setSortOrder(t.getValue("Memes"), 0)
         dao.setSortOrder(t.getValue("Animals"), 1)
-        assertEquals(listOf("Memes", "Animals", "Puppies"), dao.observeChildren(null).first().map { it.collection.name })
+        assertEquals(
+            listOf("Memes", "Animals", "Puppies"),
+            dao.observeChildren(null).first().map { it.collection.name },
+        )
     }
 
     @Test

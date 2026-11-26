@@ -30,7 +30,9 @@ fun summarizeCollections(
     val children = all.groupBy { it.collection.parentId }
         .mapValues { (_, list) -> list.sortedWith(compareBy({ it.collection.sortOrder }, { it.collection.id })) }
     val ownPreviews = previews.groupBy { it.collectionId }
-        .mapValues { (_, list) -> list.sortedWith(compareByDescending<Sticker> { it.addedAt }.thenByDescending { it.id }) }
+        .mapValues { (_, list) ->
+            list.sortedWith(compareByDescending<Sticker> { it.addedAt }.thenByDescending { it.id })
+        }
     val result = mutableMapOf<Long, CollectionSummary>()
 
     fun visit(node: CollectionWithCount, depth: Int, seen: Set<Long>): CollectionSummary {
@@ -106,7 +108,8 @@ fun librarySections(stickers: List<Sticker>, seed: Long): LibrarySections? {
         .take(LibrarySections.NEW_COUNT)
     new.mapTo(taken) { it.id }
     val rest = stickers.filter { it.id !in taken }
-    val cutoff = rest.map { it.useCount }.sorted().let { it.getOrNull(LibrarySections.LEAST_USED_COUNT - 1) ?: it.lastOrNull() }
+    val cutoff = rest.map { it.useCount }.sorted()
+        .let { it.getOrNull(LibrarySections.LEAST_USED_COUNT - 1) ?: it.lastOrNull() }
     val leastUsed = rest.filter { cutoff != null && it.useCount <= cutoff }
         .sortedWith(compareBy<Sticker> { mix(it.id xor seed) }.thenBy { it.id })
         .take(LibrarySections.LEAST_USED_COUNT)

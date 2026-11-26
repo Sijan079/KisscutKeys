@@ -114,7 +114,14 @@ class SaveSheetTest {
         compose.setContent {
             StickersTheme {
                 Box(Modifier.height(ShortScreen).testTag("short_screen")) {
-                    SaveSheetContent(state, onToggle = {}, onSelect = {}, onNewCollection = {}, onSave = {}, onDone = {})
+                    SaveSheetContent(
+                        state,
+                        onToggle = {},
+                        onSelect = {},
+                        onNewCollection = {},
+                        onSave = {},
+                        onDone = {},
+                    )
                 }
             }
         }
@@ -136,7 +143,14 @@ class SaveSheetTest {
         )
         compose.setContent {
             StickersTheme {
-                SaveSheetContent(state, onToggle = {}, onSelect = {}, onNewCollection = {}, onSave = {}, onDone = {})
+                SaveSheetContent(
+                    state,
+                    onToggle = {},
+                    onSelect = {},
+                    onNewCollection = {},
+                    onSave = {},
+                    onDone = {},
+                )
             }
         }
         compose.onNodeWithText("Saving 2 of 2, 40%").assertIsDisplayed()
