@@ -10,16 +10,22 @@ import kotlin.math.min
  *
  * Words the user taught the keyboard ([withLearned]; docs/KEYBOARD.md, Learned words) sit in a second, small
  * index next to the bundled one, so learning a word never rebuilds the big index.
+ *
+ * With [pairs] (docs/KEYBOARD.md, Word pairs), the word before the one typed lifts the words that often follow it,
+ * by at most [PAIR_WEIGHT]: enough to choose between close candidates ("hello wprld" to "world"), never enough to
+ * make a typo cheap or to change a known word.
  */
 class Speller private constructor(
     private val bundled: Index,
     private val fixes: Map<String, String>,
     private val learned: Index,
+    private val pairs: WordPairs?,
 ) {
-    constructor(lists: List<WordList>) : this(
+    constructor(lists: List<WordList>, pairs: WordPairs? = null) : this(
         bundled = Index(lists.flatMap { it.words }),
         fixes = lists.fold(emptyMap()) { all, list -> list.fixes + all },
         learned = Index(emptyList()),
+        pairs = pairs,
     )
 
     private class Entry(val word: Word, val key: String) {
@@ -53,7 +59,7 @@ class Speller private constructor(
      */
     fun withLearned(words: Collection<String>): Speller {
         val extra = words.filter { bundled.byLower[it.lowercase()] == null }.map { Word(it, LEARNED_FREQUENCY) }
-        return Speller(bundled, fixes, Index(extra))
+        return Speller(bundled, fixes, Index(extra), pairs)
     }
 
     /** True if [typed] is a known word, bundled or learned (case aside; "i" is not the acronym-like "I"). */
@@ -62,9 +68,9 @@ class Speller private constructor(
     /**
      * Up to [limit] words for [typed], best first, in the typed word's case. A known word comes first as typed;
      * then a fix pair ("cant" to "can't"), corrections (one or two typos) and completions ("tomo" to "tomorrow").
-     * Offensive words are never offered.
+     * Offensive words are never offered. Words that often follow [previous] rank higher.
      */
-    fun suggest(typed: String, limit: Int = 3): List<String> {
+    fun suggest(typed: String, previous: String? = null, limit: Int = 3): List<String> {
         val k = key(typed)
         if (k.isEmpty() || !looksLikeAWord(typed)) return emptyList()
         val scored = HashMap<String, Double>()
@@ -75,11 +81,12 @@ class Speller private constructor(
         }
         fixes[typed.lowercase()]?.let { fix -> scored[fix] = FIX_SCORE }
         for ((entry, cost) in corrections(k, MAX_SUGGEST_COST)) {
-            offer(entry.word, entry.word.frequency - COST_WEIGHT * cost)
+            offer(entry.word, entry.word.frequency - COST_WEIGHT * cost + pairBonus(previous, entry.word))
         }
         for (entry in completions(k)) {
             val extra = entry.key.length - k.length
-            offer(entry.word, entry.word.frequency - COMPLETION_BASE - COMPLETION_PER_CHAR * extra)
+            val score = entry.word.frequency - COMPLETION_BASE - COMPLETION_PER_CHAR * extra
+            offer(entry.word, score + pairBonus(previous, entry.word))
         }
         val known = knownAsTyped(typed)
         val ranked = scored.entries
@@ -94,9 +101,10 @@ class Speller private constructor(
      * Never touches: known words, words with digits or symbols, ALL CAPS or MixedCase, anything in [reverted]
      * (keys from [key]), or offensive targets. Applies a fix pair only when [typed] is not a real word. Otherwise
      * only a one-typo correction (two typos from six letters on) with a clear lead; apostrophe and case-only
-     * fixes ("dont", "i") always apply.
+     * fixes ("dont", "i") always apply. Words that often follow [previous] score higher, which can pick a
+     * different correction or give one the lead it needs; the other rules stay as they are.
      */
-    fun autocorrect(typed: String, reverted: Set<String> = emptySet()): String? {
+    fun autocorrect(typed: String, reverted: Set<String> = emptySet(), previous: String? = null): String? {
         val k = key(typed)
         if (k.isEmpty() || !looksLikeAWord(typed) || k in reverted) return null
         if (typed.length > 1 && (isAllCaps(typed) || isMixedCase(typed))) return null
@@ -106,7 +114,7 @@ class Speller private constructor(
         val maxCost = if (k.length >= LONG_WORD) MAX_AUTOCORRECT_COST_LONG else MAX_AUTOCORRECT_COST
         val candidates = corrections(k, maxCost)
             .filterNot { (e, _) -> e.word.offensive }
-            .map { (e, cost) -> Triple(e, cost, e.word.frequency - COST_WEIGHT * cost) }
+            .map { (e, cost) -> Triple(e, cost, e.word.frequency - COST_WEIGHT * cost + pairBonus(previous, e.word)) }
             .sortedWith(compareByDescending<Triple<Entry, Double, Double>> { it.third }.thenBy { it.first.word.text })
         val best = candidates.firstOrNull() ?: return null
         val (entry, cost, score) = best
@@ -116,6 +124,12 @@ class Speller private constructor(
             if (runnerUp != null && score - runnerUp < MIN_LEAD) return null
         }
         return withCase(typed, entry.word.text)
+    }
+
+    /** Up to [PAIR_WEIGHT] for a word that often follows [previous] in the pair table, else 0. */
+    private fun pairBonus(previous: String?, word: Word): Double {
+        if (previous == null || pairs == null) return 0.0
+        return PAIR_WEIGHT * pairs.score(previous, word.text) / 255.0
     }
 
     /** A known word matching [typed]: same letters ignoring case, except "i" is not the acronym-like "I". */
@@ -308,6 +322,12 @@ class Speller private constructor(
         private const val MIN_CORRECT_LENGTH = 3
         private const val MIN_TARGET_FREQUENCY = 60
         private const val MIN_LEAD = 25.0
+
+        /**
+         * Most a word-pair score adds (a pair score of 255). A typo costs [COST_WEIGHT], a neighbouring key 60, so
+         * context settles close calls between corrections but can't outweigh a whole extra typo.
+         */
+        const val PAIR_WEIGHT = 50.0
 
         /** Learned words rank like fairly common words (bundled scores run 0 to 255). */
         const val LEARNED_FREQUENCY = 150

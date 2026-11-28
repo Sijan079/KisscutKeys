@@ -27,6 +27,7 @@ import app.kisscut.keys.shared.core.words.LearnedWordsRepository
 import app.kisscut.keys.shared.core.words.Speller
 import app.kisscut.keys.shared.core.words.SwipeMatcher
 import app.kisscut.keys.shared.core.words.WordList
+import app.kisscut.keys.shared.core.words.WordPairs
 import app.kisscut.keys.shared.db.Sticker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -101,7 +102,7 @@ class StickerImeService : InputMethodService() {
     /** Bumped on every key, so a swipe result that arrives after the user typed on is dropped. */
     private var keystrokes = 0
     private val composer = Composer(
-        corrector = { typed, reverted, _ -> speller?.autocorrect(typed, reverted) },
+        corrector = { typed, reverted, previous -> speller?.autocorrect(typed, reverted, previous) },
         charBefore = ::charBeforeCursor,
         learner = ::learn,
     )
@@ -131,7 +132,7 @@ class StickerImeService : InputMethodService() {
                 val bundled = withContext(Dispatchers.Default) {
                     val lists = listOf(loadWords())
                     swiper = SwipeMatcher(lists)
-                    Speller(lists)
+                    Speller(lists, loadPairs())
                 }
                 bundledSpeller = bundled
                 speller = bundled
@@ -167,10 +168,12 @@ class StickerImeService : InputMethodService() {
         }
     }
 
-    private fun loadWords(): WordList {
-        fun read(name: String) = assets.open("words/$name").bufferedReader().use { it.readText() }
-        return WordList.parse(read("en_US.txt"), read("en_US_fixes.txt"))
-    }
+    private fun readWords(name: String) = assets.open("words/$name").bufferedReader().use { it.readText() }
+
+    private fun loadWords(): WordList = WordList.parse(readWords("en_US.txt"), readWords("en_US_fixes.txt"))
+
+    /** The English word-pair table (docs/KEYBOARD.md, Word pairs), so the word before can rank suggestions. */
+    private fun loadPairs(): WordPairs = WordPairs.parse(readWords("en_US_pairs.txt"))
 
     override fun onCreateInputView(): View {
         // Called again after a configuration change (rotation, dark mode): start fresh.
@@ -528,10 +531,15 @@ class StickerImeService : InputMethodService() {
         }
         val autocorrect = (application as App).container.keyboardSettings.value.autocorrect && composer.mayCorrect
         val reverted = composer.revertedWords
+        val previous = composer.previous
         stripJob = scope?.launch {
             val slots = withContext(Dispatchers.Default) {
-                val fix = if (autocorrect) speller.autocorrect(word, reverted)?.takeIf { it != word } else null
-                stripSlots(word, speller.suggest(word), fix)
+                val fix = if (autocorrect) {
+                    speller.autocorrect(word, reverted, previous)?.takeIf { it != word }
+                } else {
+                    null
+                }
+                stripSlots(word, speller.suggest(word, previous), fix)
             }
             if (composer.current == word) typing.showSuggestions(slots)
         }

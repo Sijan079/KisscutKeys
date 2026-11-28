@@ -25,6 +25,15 @@ class WordPairsTest {
     }
 
     @Test
+    fun scoresPairsInAnyCaseAndZeroForOthers() {
+        val pairs = WordPairs.parse(text)
+        assertEquals(240, pairs.score("Of", "THE"))
+        assertEquals(200, pairs.score("i", "Don't"))
+        assertEquals(0, pairs.score("of", "dog"))
+        assertEquals(0, pairs.score("teh", "the"))
+    }
+
+    @Test
     fun malformedLinesFailWithTheirLineNumber() {
         for (bad in listOf("of", "of\tcourse", "of\tcourse x", "of\tcourse 0", "of\tcourse 256", "\tthe 9", "of\t 9",
             "of\tthe 9\tcourse 10")) {

@@ -9,6 +9,7 @@ import app.kisscut.keys.shared.core.words.Speller
 import app.kisscut.keys.shared.core.words.SwipeMatcher
 import app.kisscut.keys.shared.core.words.KeyLayout
 import app.kisscut.keys.shared.core.words.WordList
+import app.kisscut.keys.shared.core.words.WordPairs
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertTrue
@@ -84,6 +85,36 @@ class SpellerTimingTest {
             "p95=${"%.1f".format(p95)}ms max=${"%.1f".format(times.last())}ms"
         Log.i("SpellerTiming", report)
         assertTrue(buildMs < 500, report)
+        assertTrue(p95 < 16.0, report)
+    }
+
+    @Test
+    fun wordPairsLoadOffTheTypingPathAndKeepKeystrokesWithinAFrame() {
+        val list = WordList.parse(read("en_US.txt"), read("en_US_fixes.txt"))
+        val loadStart = SystemClock.elapsedRealtime()
+        val pairs = WordPairs.parse(read("en_US_pairs.txt"))
+        val loadMs = SystemClock.elapsedRealtime() - loadStart
+        val speller = Speller(listOf(list), pairs)
+
+        val words = "teh weather tomorow looks grate so lets meet at the beach becuase its been a long weak".split(' ')
+        repeat(3) { words.zipWithNext { a, b -> speller.suggest(b, a) } }
+        val times = ArrayList<Double>()
+        words.zipWithNext { previous, word ->
+            for (end in 1..word.length) {
+                val start = System.nanoTime()
+                speller.suggest(word.substring(0, end), previous)
+                times += (System.nanoTime() - start) / 1e6
+            }
+            val start = System.nanoTime()
+            speller.autocorrect(word, previous = previous)
+            times += (System.nanoTime() - start) / 1e6
+        }
+        times.sort()
+        val p95 = times[(times.size * 95) / 100]
+        val report = "pairs=${pairs.size} load=${loadMs}ms median=${"%.1f".format(times[times.size / 2])}ms " +
+            "p95=${"%.1f".format(p95)}ms max=${"%.1f".format(times.last())}ms"
+        Log.i("SpellerTiming", report)
+        assertTrue(loadMs < 3_000, report)
         assertTrue(p95 < 16.0, report)
     }
 

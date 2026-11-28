@@ -56,7 +56,8 @@ Which words usually follow which, so suggestions and corrections can use the pre
 - Counts from books of 1950 on. Pairs seen fewer than 40 times are dropped, offensive next words too (they are never suggested); each word keeps its 12 most likely next words.
 - Words are merged by lowercase on both sides ("US" and "us", "God" and "god"): previous words are written in lowercase, a next word in its most common spelling.
 - One line per previous word: `previous<TAB>next score[<TAB>next score...]`, most likely first, scores 1-255 (log of the count). 46,550 previous words, 533,866 pairs, 4.4 MB (1.7 MB compressed; the APK compresses it).
-- `shared:core` `words.WordPairs` parses it (strict, like `WordList`); lookups ignore the previous word's case.
+- `shared:core` `words.WordPairs` parses it (strict, like `WordList`); lookups ignore case. Compact in memory (one shared string per word, scores as bytes): about 10 MB and 0.1 s to load on a desktop JVM; it loads with the word list, off the main thread.
+- Ranking (`Speller`, step 3): the word before (`Composer.previous`, Typing pipeline) adds up to `PAIR_WEIGHT` (50) to a correction or completion that often follows it, in proportion to the pair score. A typo costs 100 and a neighbouring key 60, so context settles close calls ("thank tou" to "you", "the doot" to "door", "right noe" suggests "now" first) but never outweighs a whole extra typo. Known words, undone words and the other autocorrect rules are unchanged; with no word before, results are as before.
 - Contractions are single tokens in the source ("don't"), but "'s" is split off ("it 's"), so pairs never cover "it's" or "John's".
 
 ### Suggestions and autocorrect (M7)

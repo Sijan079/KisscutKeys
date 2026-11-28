@@ -142,4 +142,30 @@ class SpellerTest {
         assertTrue(second.isKnown("sana"))
         assertEquals(1, second.suggest("hello").count { it.equals("hello", ignoreCase = true) })
     }
+
+    /** "cax" is one typo from "car" and from "cat", equally common: a tie only the word before can break. */
+    private val pets = WordList(listOf(Word("car", 100), Word("cat", 100), Word("the", 222)), emptyMap())
+    private val withPairs = Speller(listOf(pets), WordPairs.parse("the\tcat 255\tcar 20\n"))
+
+    @Test
+    fun theWordBeforeBreaksATieBetweenCorrections() {
+        assertNull(withPairs.autocorrect("cax"), "no lead without context")
+        assertNull(withPairs.autocorrect("cax", previous = "a"), "a word the table doesn't have")
+        assertEquals("cat", withPairs.autocorrect("cax", previous = "the"))
+        assertEquals("cat", withPairs.autocorrect("cax", previous = "The"), "the word before in any case")
+        assertEquals(listOf("car", "cat"), withPairs.suggest("cax"))
+        assertEquals(listOf("cat", "car"), withPairs.suggest("cax", previous = "the"))
+    }
+
+    @Test
+    fun theWordBeforeNeverChangesAKnownWordOrAnUndoneOne() {
+        assertNull(withPairs.autocorrect("car", previous = "the"))
+        assertEquals("car", withPairs.suggest("car", previous = "the").first(), "a known word stays first")
+        assertNull(withPairs.autocorrect("cax", setOf("cax"), previous = "the"))
+    }
+
+    @Test
+    fun learnedWordsKeepThePairs() {
+        assertEquals("cat", withPairs.withLearned(listOf("kisscut")).autocorrect("cax", previous = "the"))
+    }
 }
