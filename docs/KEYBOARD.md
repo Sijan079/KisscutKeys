@@ -50,6 +50,15 @@ English words for suggestions, autocorrect and swipe (used from M7 step 2 on). S
 
 Both files say in their header that they were changed from the source. `shared:core` `words.WordList` parses them (strict: a malformed line fails with its line number). The license text ships in `assets/licenses/` and shows on Settings, Open-source licenses.
 
+### Word pairs (M7b)
+
+Which words usually follow which, so suggestions and corrections can use the previous word (from M7b step 3 on). Source: Google Books Ngram Viewer v3 (20200217), English Fiction 2-grams, 47 files, about 25 GB (Creative Commons Attribution 3.0; credit and license text in `assets/licenses/CC-BY-3.0-Google-Books-Ngram.txt`, on Settings, Open-source licenses). Fiction is the smallest English set and the closest to chat; book English, so personal learning covers slang. Built once in a cloud session that streamed the files; the build script is not kept in the repo (user's call, 2026-11-28), so a rebuild means writing it again from these rules. It kept the pairs where both words are in `en_US.txt` (a capitalized word counts as its lowercase form, so "The" is "the"; tagged tokens like `clan_NOUN` and punctuation never match) and wrote `assets/words/en_US_pairs.txt`:
+- Counts from books of 1950 on. Pairs seen fewer than 40 times are dropped, offensive next words too (they are never suggested); each word keeps its 12 most likely next words.
+- Words are merged by lowercase on both sides ("US" and "us", "God" and "god"): previous words are written in lowercase, a next word in its most common spelling.
+- One line per previous word: `previous<TAB>next score[<TAB>next score...]`, most likely first, scores 1-255 (log of the count). 46,550 previous words, 533,866 pairs, 4.4 MB (1.7 MB compressed; the APK compresses it).
+- `shared:core` `words.WordPairs` parses it (strict, like `WordList`); lookups ignore the previous word's case.
+- Contractions are single tokens in the source ("don't"), but "'s" is split off ("it 's"), so pairs never cover "it's" or "John's".
+
 ### Suggestions and autocorrect (M7)
 
 `shared:core` `words.Speller` works over a list of word lists at once (English now, Tagalog later; no language switch). It is pure: the keyboard passes in what was typed and what the user undid.

@@ -273,11 +273,13 @@
     <string name="settings_storage">Storage</string>
     <string name="settings_about">About</string>
     <string name="settings_licenses">Open-source licenses</string>
-    <string name="settings_licenses_body">Word list, fonts and libraries</string>
+    <string name="settings_licenses_body">Word lists, fonts and libraries</string>
     <string name="licenses_title">Open-source licenses</string>
     <string name="licenses_intro">Kisscut Keys is built with these open-source parts. Tap one to read its license.</string>
     <string name="licenses_words">English word list</string>
     <string name="licenses_words_about">From the Android Open Source Project keyboard. Apache License 2.0. Cut to the 50,000 most common words, with offensive words marked.</string>
+    <string name="licenses_pairs">English word pairs</string>
+    <string name="licenses_pairs_about">From Google Books Ngram data (English fiction). Creative Commons Attribution 3.0. Cut to pairs of words in the word list, used to guess the next word.</string>
     <string name="licenses_libraries">Android libraries</string>
     <string name="licenses_libraries_about">AndroidX (Jetpack Compose, Room, DataStore and more), Coil, Kotlin and kotlinx. Apache License 2.0.</string>
     <string name="licenses_bricolage">Bricolage Grotesque font</string>

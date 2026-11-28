@@ -59,5 +59,7 @@ class LicensesViewModelTest {
         }
         assertTrue("Apache License" in File(dir, "Apache-2.0-AOSP-LatinIME.txt").readText())
         assertTrue("Android Open Source Project" in File(dir, "Apache-2.0-AOSP-LatinIME.txt").readText())
+        val ngram = File(dir, "CC-BY-3.0-Google-Books-Ngram.txt").readText()
+        assertTrue("Google Books Ngram" in ngram && "Creative Commons Attribution 3.0 Unported" in ngram)
     }
 }

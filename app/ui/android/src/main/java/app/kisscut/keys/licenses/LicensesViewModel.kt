@@ -19,6 +19,7 @@ data class License(@StringRes val title: Int, @StringRes val about: Int, val fil
 /** Everything bundled in the APK that asks for its license to be shown (docs/UI_SPEC.md, Open-source licenses). */
 val BUNDLED_LICENSES = listOf(
     License(R.string.licenses_words, R.string.licenses_words_about, "Apache-2.0-AOSP-LatinIME.txt"),
+    License(R.string.licenses_pairs, R.string.licenses_pairs_about, "CC-BY-3.0-Google-Books-Ngram.txt"),
     License(R.string.licenses_libraries, R.string.licenses_libraries_about, "Apache-2.0.txt"),
     License(R.string.licenses_bricolage, R.string.licenses_font_about, "OFL-BricolageGrotesque.txt"),
     License(R.string.licenses_figtree, R.string.licenses_font_about, "OFL-Figtree.txt"),
