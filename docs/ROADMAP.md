@@ -159,6 +159,7 @@ Done when: new and old stickers get tags on the emulator, search finds them in t
 
 ## M9: Polish and release prep
 - [ ] Performance pass: scrolling with 2000 stickers, animated items only when visible, memory check
+- [ ] Word data size (user's call, 2026-11-28; only if the APK size or keyboard start time matters on the phone): the bundled word list and pair table are plain text (about 2.5 MB of the APK compressed, the pairs about 10 MB in memory). A compact binary format like the AOSP keyboard's `.dict` files could roughly halve the size and load faster. They stay in the APK either way (no INTERNET permission, rule 5)
 - [ ] Animated sticker playback (app and keyboard) and the Settings animation toggle (`animateStickers`), moved from M5
 - [ ] Release build config: minify, shrink, signing config read from user-provided properties (never commit secrets)
 - [ ] App icon, name, Play listing assets (final: see `docs/BRAND.md`)
