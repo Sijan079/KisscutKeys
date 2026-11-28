@@ -33,9 +33,13 @@ sealed interface Edit {
  * its own and was kept as typed (ended by a space, punctuation, Enter or a sticker), with `meant` false; and a word
  * the user chose over its correction (undo, or the quoted word in the strip), with `meant` true. Never a swiped
  * word. The keyboard decides whether the field allows learning.
+ *
+ * [previous] is the word before, for ranking with the word-pair table (docs/KEYBOARD.md, Word pairs). Like the word
+ * being typed it comes only from this keyboard's own commits and lives in memory only: one word, dropped at a
+ * sentence break, Enter, a sticker, a cursor move and a new field.
  */
 class Composer(
-    private val corrector: (typed: String, reverted: Set<String>) -> String?,
+    private val corrector: (typed: String, reverted: Set<String>, previous: String?) -> String?,
     private val charBefore: () -> Char? = { 'x' },
     private val learner: (word: String, meant: Boolean) -> Unit = { _, _ -> },
 ) {
@@ -57,6 +61,8 @@ class Composer(
     /** The word being typed came from a swipe (Backspace removes it whole). */
     private var swiped = false
 
+    private var before: String? = null
+
     /** The word being typed, or "" between words. */
     val current: String get() = word.toString()
 
@@ -65,6 +71,13 @@ class Composer(
 
     /** The word being typed may be autocorrected when it ends (it stands on its own). */
     val mayCorrect: Boolean get() = word.isNotEmpty() && wordAtBoundary
+
+    /**
+     * The word this keyboard committed just before the one being typed (or the next one), when only its own space
+     * separates them; null after other punctuation, Enter, a sticker, a cursor move, in a new field, or when that
+     * word didn't stand on its own. Kept in memory only.
+     */
+    val previous: String? get() = before
 
     /** Words the user undid or kept in this field, for previewing a correction elsewhere (a copy). */
     val revertedWords: Set<String> get() = reverted.toSet()
@@ -93,11 +106,13 @@ class Composer(
             // The field deletes something this keyboard can't see: what comes before the cursor is unknown.
             atBoundary = null
             lastCommitted = null
+            before = null
             return listOf(Edit.DeleteKey)
         }
         undo = null
         reverted += Speller.key(last.typed)
         learner(last.typed, true)
+        before = if (last.separator == " ") last.typed else null
         val written = last.fixed.length + last.separator.length
         return listOf(Edit.DeleteBefore(written), Edit.Commit(last.typed + last.separator))
     }
@@ -117,6 +132,7 @@ class Composer(
         undo = null
         atBoundary = true
         lastCommitted = ' '
+        before = lastWordOf(text)
         return listOf(Edit.Commit("$text "))
     }
 
@@ -131,8 +147,11 @@ class Composer(
         if (word.isNotEmpty()) {
             // The word being typed must be in this commit: a commit replaces the underlined word.
             edits += Edit.Commit("$current ")
+            before = if (wordAtBoundary) current else null
             word.clear()
         } else {
+            // Only this keyboard's own space keeps the word before; otherwise what precedes the cursor is unknown.
+            if (atBoundary != true) before = null
             val before = when {
                 atBoundary == true -> null
                 lastCommitted != null -> lastCommitted
@@ -157,6 +176,7 @@ class Composer(
         undo = null
         atBoundary = null
         lastCommitted = null
+        before = null
         val wasSwiped = swiped
         swiped = false
         if (word.isEmpty()) return emptyList()
@@ -171,6 +191,7 @@ class Composer(
         undo = null
         atBoundary = null
         lastCommitted = null
+        before = null
         swiped = false
     }
 
@@ -188,12 +209,20 @@ class Composer(
         swiped = false
         atBoundary = separator.isNotEmpty() && separator.last().isWhitespace()
         lastCommitted = separator.lastOrNull()
-        if (word.isEmpty()) return listOf(Edit.Commit(separator))
+        if (word.isEmpty()) {
+            if (separator != " ") before = null // "hello  world" keeps "hello"; "hello ." does not
+            return listOf(Edit.Commit(separator))
+        }
         val typed = current
         word.clear()
-        val fixed = if (correct && startedAtBoundary) corrector(typed, reverted)?.takeIf { it != typed } else null
+        val fixed = if (correct && startedAtBoundary) {
+            corrector(typed, reverted, before)?.takeIf { it != typed }
+        } else {
+            null
+        }
         if (fixed != null) undo = Undo(typed, fixed, separator)
         if (fixed == null && startedAtBoundary && !wasSwiped && separator in CORRECTING) learner(typed, false)
+        before = if (separator == " " && startedAtBoundary) lastWordOf(fixed ?: typed) else null
         return listOf(Edit.Commit((fixed ?: typed) + separator))
     }
 
@@ -202,6 +231,9 @@ class Composer(
         val CORRECTING = setOf(" ", ".", ",", "!", "?", ";", ":", "\n")
 
         fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '\'' || c == '’'
+
+        /** The last word of a commit: a fix pair can be two words ("alot" to "a lot"). */
+        private fun lastWordOf(text: String): String = text.substringAfterLast(' ')
 
         /** Characters a swiped word follows with no space ("@name", "#tag", "(word"). */
         const val OPENERS = "@#(/[{<\"'-“‘"

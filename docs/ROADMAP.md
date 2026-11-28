@@ -144,7 +144,7 @@ Planned 2026-11-26; one commit per step, each after the user's OK. Words seen on
 Resumed 2026-11-28 (user's call; it was on hold for connection trouble, and a cloud session can stream the source). On hold from 2026-11-26 after measuring the source: Google Books Ngram v3 2-grams are about 324 GB for all English, 93 GB for British English and 29 GB for English fiction (the smallest and most chat-like; the pick if this resumes). The script would stream one file at a time and keep only pairs of the bundled words.
 Researched 2026-11-25; after M7a. Google Books Ngram (CC BY 3.0, commercial use with credit) is the source: our own table trimmed to pairs of the 50,000 bundled words, a few MB. Ready-made sets were too big (nextword-data, CC BY 4.0, 490 MB+) or share-alike (BERT bigrams, wordfreq). Book English, not chat: personal learning covers slang. Not needed for swipe typing.
 - [x] Build the trimmed pair table with a script in `tools/`, credit on the licenses screen. English Fiction 2-grams (47 files, about 25 GB) streamed through a one-off script, not kept in the repo (user's call); 46,550 previous words, 533,866 pairs, 4.4 MB (1.7 MB compressed), books from 1950 on, top 12 next words each. Parsed by `words.WordPairs` (KEYBOARD, Word pairs)
-- [ ] The previous words come from this keyboard's own typing, in memory only
+- [x] The previous words come from this keyboard's own typing, in memory only. One word (`Composer.previous`), kept only across the keyboard's own space; setup text and KEYBOARD (Typing pipeline) say so. JVM tests run here with a standalone Kotlin compiler (Gradle needs dl.google.com)
 - [ ] Rank suggestions and corrections with the previous word ("hello wlrdld" to "world")
 
 ## M8: Sticker auto-tagging and quick search

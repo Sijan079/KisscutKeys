@@ -8,13 +8,17 @@ import kotlin.test.assertTrue
 class ComposerTest {
     private val seenReverted = mutableListOf<Set<String>>()
 
+    /** The word before, as the corrector heard it for each word it was asked about. */
+    private val seenPrevious = mutableListOf<String?>()
+
     /** What the character before the cursor says when the keyboard has to check; counts the checks. */
     private var boundaryBefore = false
     private var charBeforeCursor: Char? = 'x'
     private var checks = 0
     private val composer = Composer(
-        corrector = { typed, reverted ->
+        corrector = { typed, reverted, previous ->
             seenReverted += reverted.toSet()
+            seenPrevious += previous
             if (typed.lowercase() == "teh" && "teh" !in reverted) "the" else null
         },
         charBefore = {
@@ -255,5 +259,69 @@ class ComposerTest {
         composer.reset()
         typeAll("tag ")
         assertEquals(emptyList(), learned)
+    }
+
+    @Test
+    fun theWordBeforeIsKeptAcrossTheKeyboardsOwnSpace() {
+        assertEquals(null, composer.previous)
+        typeAll("hello ")
+        assertEquals("hello", composer.previous)
+        typeAll("teh ")
+        assertEquals(listOf(null, "hello"), seenPrevious, "the corrector hears the word before")
+        assertEquals("the", composer.previous, "the corrected word, not what was typed")
+        composer.type(" ", true)
+        assertEquals("the", composer.previous, "a second space keeps it")
+        typeAll("cat")
+        assertEquals("the", composer.previous, "while a word is typed it is the word before that one")
+    }
+
+    @Test
+    fun punctuationEnterAndCursorMovesDropTheWordBefore() {
+        typeAll("hello, ")
+        assertEquals(null, composer.previous)
+        typeAll("hi ")
+        composer.type(".", true)
+        assertEquals(null, composer.previous, "a full stop after the space")
+        typeAll("hi ")
+        typeAll("there")
+        composer.finish()
+        assertEquals(null, composer.previous, "Enter, a sticker or a cursor slide")
+        typeAll("hi ")
+        composer.reset()
+        assertEquals(null, composer.previous)
+        typeAll("hi ")
+        composer.newField(atStart = true)
+        assertEquals(null, composer.previous)
+        typeAll("hi ")
+        composer.backspace()
+        assertEquals(null, composer.previous, "the field deleted something the keyboard can't see")
+    }
+
+    @Test
+    fun undoPicksAndSwipesSetTheWordBefore() {
+        typeAll("teh ")
+        composer.backspace()
+        assertEquals("teh", composer.previous, "undo puts back what was typed")
+        typeAll("wor")
+        composer.pick("world", keep = false)
+        assertEquals("world", composer.previous)
+        typeAll("alo")
+        composer.pick("a lot", keep = false)
+        assertEquals("lot", composer.previous, "the last word of a two-word pick")
+        composer.swipe("hello")
+        assertEquals("lot", composer.previous, "a swipe after the keyboard's own space")
+        composer.swipe("there")
+        assertEquals("hello", composer.previous, "the swiped word before is committed with a space")
+    }
+
+    @Test
+    fun aWordThatDoesntStandAloneIsNoWordBefore() {
+        composer.newField(atStart = false)
+        charBeforeCursor = '@'
+        typeAll("john ")
+        assertEquals(null, composer.previous)
+        composer.newField(atStart = false)
+        composer.swipe("hello")
+        assertEquals(null, composer.previous, "a swipe where the text before is unknown")
     }
 }

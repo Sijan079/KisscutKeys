@@ -101,7 +101,7 @@ class StickerImeService : InputMethodService() {
     /** Bumped on every key, so a swipe result that arrives after the user typed on is dropped. */
     private var keystrokes = 0
     private val composer = Composer(
-        corrector = { typed, reverted -> speller?.autocorrect(typed, reverted) },
+        corrector = { typed, reverted, _ -> speller?.autocorrect(typed, reverted) },
         charBefore = ::charBeforeCursor,
         learner = ::learn,
     )
